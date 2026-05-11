@@ -9,23 +9,183 @@ npm install --legacy-peer-deps
 npx expo start -c
 ```
 
-- **Web:** open the URL Expo prints (favicon: `assets/favicon.svg`).
+- **Web:** open the URL Expo prints (favicon: `public/favicon.svg` and `assets/favicon.svg`).
 - **Node:** use **20 LTS** for best compatibility with Expo SDK 52.
 
 ## Documentation
 
 See **[DOCUMENTATION.md](./DOCUMENTATION.md)** for the full **tech stack**, **engineering process**, routing notes, and attendance simulation overview.
 
-## Web SEO & document head
+See **[FILE_STRUCTURE.md](./FILE_STRUCTURE.md)** for a **beginner-friendly map** of every important file and **which file to open for which kind of work**.
 
-Expo Router does **not** use a hand-written `public/index.html` for the app shell (that can break client routing). Use **`app/+html.tsx`** for `<title>`, **meta description**, Open Graph, Twitter Card, and favicon links. Copy **[.env.example](./.env.example)** to `.env` and set **`EXPO_PUBLIC_SITE_URL`** when you deploy for canonical + `og:url`.
+## Web document head & SEO
+
+- **Default Metro web:** the HTML shell is **`public/index.html`** (title, meta, OG/Twitter, favicon link). Expo injects the JS bundle there.
+- **Static / server web output:** root document can come from **`app/+html.tsx`** when `expo.web.output` is `static` or `server` — keep both in sync if you change branding or SEO.
+- Copy **[.env.example](./.env.example)** to `.env` and set **`EXPO_PUBLIC_SITE_URL`** when you deploy (for `og:url` / canonical in `+html.tsx` builds).
 
 ## Brand
 
 - Product name: **STARS** (`StarsWordmark` component).
 - Footer: **Created by the MUT Innovation Lab** (`InnovationLabFooter`).
 
+---
+
+## Project flow (diagrams)
+
+### 1. Application entry, auth, and role routing
+
+High-level navigation from cold start to role-specific areas. Route groups such as `(auth)` organize files only; URLs are shown as users see them.
+
+```mermaid
+flowchart TB
+  subgraph entry["App entry"]
+    A["/  index"] --> B{Auth state}
+    B -->|loading| S["/splash"]
+    B -->|no user| O["/onboarding"]
+    B -->|logged in| R{Role}
+  end
+
+  subgraph auth["Unauthenticated flows"]
+    O --> L["/login"]
+    O --> RS["/register-student"]
+    L --> R
+    RS --> R
+  end
+
+  subgraph roles["Authenticated home"]
+    R -->|student| SD["/student/dashboard"]
+    R -->|lecturer| LD["/lecturer/dashboard"]
+    R -->|admin| AD["/admin/seed"]
+  end
+
+  subgraph shared["Shared screens"]
+    N["/notifications"]
+    ST["/settings"]
+  end
+
+  SD --> N
+  SD --> ST
+  LD --> N
+  LD --> ST
+  AD --> N
+  AD --> ST
+```
+
+### 2. Attendance session lifecycle (mock simulation)
+
+How a live class check works end-to-end using the in-memory store, **one-shot GPS** on both sides, and a **time-based rotating 6-digit code** (no per-tick server writes).
+
+```mermaid
+sequenceDiagram
+  participant L as Lecturer app
+  participant DB as Mock DB
+  participant S as Student app
+
+  L->>L: GPS capture once
+  L->>DB: Create session moduleId seed radius expiry
+  DB-->>L: Session + algorithmSeed
+  Note over L: UI shows rotating code every 30s
+
+  S->>DB: Read module activeSessionId
+  S->>S: GPS capture once
+  S->>S: Enter 6-digit code
+  S->>DB: Verify code + distance + enrollment + no duplicate
+  DB-->>S: Attendance record or error reason
+```
+
+### 3. Data & service layers (conceptual)
+
+```mermaid
+flowchart LR
+  subgraph ui["Screens app/ + src/components"]
+    UI[Expo Router UI]
+  end
+
+  subgraph state["Client state"]
+    Z[Zustand stores]
+  end
+
+  subgraph services["Services"]
+    AUTH[mockAuthService]
+    ATT[attendanceSimulationService]
+    MOD[moduleEnrollmentService]
+  end
+
+  subgraph data["Data today"]
+    MDB["mockDB + JSON seeds"]
+  end
+
+  subgraph future["Planned"]
+    FB[Firebase Auth + Firestore]
+  end
+
+  UI --> Z
+  UI --> AUTH
+  UI --> ATT
+  UI --> MOD
+  AUTH --> MDB
+  ATT --> MDB
+  MOD --> MDB
+  MDB -.->|same contracts| FB
+```
+
+---
+
+## Functional requirements
+
+Requirements reflect **current mock behaviour**; production hardening (real auth, policies, audit logs) is assumed for a Firebase cutover.
+
+### Authentication & session
+
+| ID | Requirement |
+|----|----------------|
+| **FR-A1** | The system shall support three roles: **student**, **lecturer**, and **admin**, with route guards so each role only reaches allowed screens. |
+| **FR-A2** | Unauthenticated users shall be directed through **onboarding**, **login**, or **register-student** before accessing role dashboards. |
+| **FR-A3** | **Students** may self-register with profile fields (name, student number, gender, faculty, course) and receive a generated **@live.mut.ac.za**-style email; mock passwords follow documented demo rules. |
+| **FR-A4** | **Lecturers** shall authenticate with email present in seed data; **admin** shall use the fixed demo admin account (see `mockAuthService`). |
+| **FR-A5** | Session persistence shall use **SecureStore** on native and **localStorage** on web via a single **authStorage** abstraction. |
+
+### Student
+
+| ID | Requirement |
+|----|----------------|
+| **FR-S1** | Students shall view a **dashboard** listing registered modules and navigation to module detail, attendance, profile, and history. |
+| **FR-S2** | Students shall **join a class** using a module **class code** (enrollment updates module and student records). |
+| **FR-S3** | Students may **request enrollment** on a module; lecturers can accept or reject **pending** requests. |
+| **FR-S4** | When a module has an **active attendance session**, students shall **mark attendance** with **one GPS capture** and the **current rotating code** shown by the lecturer. |
+| **FR-S5** | Attendance submission shall fail with a clear reason if: session missing/expired, code invalid, student too far outside **radius**, not enrolled, or **duplicate** mark for the session. |
+| **FR-S6** | Students shall access **attendance history** and **profile** consistent with mock data. |
+
+### Lecturer
+
+| ID | Requirement |
+|----|----------------|
+| **FR-L1** | Lecturers shall use a **dashboard** hub for modules, sessions, analytics, and management flows. |
+| **FR-L2** | Lecturers shall **create an attendance session** for an owned module with **one GPS capture**, default **radius** and **duration**, and server-side session metadata including **algorithmSeed**. |
+| **FR-L3** | During an active session, the UI shall display a **rotating 6-digit code** derived from seed and time window (~30s). |
+| **FR-L4** | Lecturers shall **manage modules** (view/control flows wired to mock DB). |
+| **FR-L5** | Lecturers shall **manage students** on a module: view enrollment, **accept/reject** pending joins. |
+| **FR-L6** | Lecturers shall open an **active session** screen for monitoring/timing and access **analytics** views backed by mock data. |
+
+### Admin
+
+| ID | Requirement |
+|----|----------------|
+| **FR-M1** | Admins shall reach **`/admin/seed`** (not under a visible `(admin)` URL segment). |
+| **FR-M2** | Admins shall see **collection counts** for faculties, courses, modules, lecturers, students, sessions, and records. |
+| **FR-M3** | Admins shall **re-seed** the mock database to restore demo state. |
+
+### Cross-cutting
+
+| ID | Requirement |
+|----|----------------|
+| **FR-X1** | The app shall provide **notifications** and **settings** routes shared across roles. |
+| **FR-X2** | The data layer shall mimic **Firestore-style** collections (`mockDB`) so services can be swapped for **Firebase** without rewriting navigation. |
+| **FR-X3** | UI shall follow STARS **design tokens** (e.g. `#E8E8E8`, `#006281`, `#4F1A1D`) and reuse **ScreenShell**, **InnovationLabFooter**, and **StarsWordmark** for consistency. |
+
+---
+
 ## Legacy bootstrap note
 
 If you scaffold from zero with `create-expo-app`, align dependencies with `package.json` in this repo, then copy `app/` and `src/` as needed.
-"# STARS" 
