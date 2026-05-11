@@ -28,3 +28,4 @@ Expo Router does **not** use a hand-written `public/index.html` for the app shel
 ## Legacy bootstrap note
 
 If you scaffold from zero with `create-expo-app`, align dependencies with `package.json` in this repo, then copy `app/` and `src/` as needed.
+"# STARS" 
