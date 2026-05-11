@@ -1,0 +1,17 @@
+[
+  {
+    "id": "course_it",
+    "facultyId": "fac_eng",
+    "courseName": "Information Technology",
+    "modules": ["mod_mobile", "mod_db", "mod_net"],
+    "createdAt": "2026-01-10T08:10:00.000Z"
+  },
+  {
+    "id": "course_elec",
+    "facultyId": "fac_eng",
+    "courseName": "Electrical Engineering",
+    "modules": ["mod_circuits"],
+    "createdAt": "2026-01-10T08:12:00.000Z"
+  }
+]
+

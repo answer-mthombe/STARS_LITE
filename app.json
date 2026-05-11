@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "STARS",
+    "slug": "stars-mut",
+    "scheme": "stars",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#E8E8E8"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#E8E8E8"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "lang": "en-ZA",
+      "favicon": "./assets/favicon.svg"
+    },
+    "plugins": ["expo-router"],
+    "extra": {
+      "router": {
+        "origin": false
+      }
+    }
+  }
+}
+

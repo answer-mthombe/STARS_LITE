@@ -1,0 +1,17 @@
+[
+  {
+    "id": "lec_mkhize",
+    "fullName": "Dr. L. Mkhize",
+    "email": "mkhize@mut.ac.za",
+    "modules": ["mod_mobile", "mod_db"],
+    "createdAt": "2026-01-10T08:20:00.000Z"
+  },
+  {
+    "id": "lec_naidoo",
+    "fullName": "Ms. S. Naidoo",
+    "email": "naidoo@mut.ac.za",
+    "modules": ["mod_net", "mod_circuits"],
+    "createdAt": "2026-01-10T08:22:00.000Z"
+  }
+]
+

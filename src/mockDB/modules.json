@@ -1,0 +1,47 @@
+[
+  {
+    "id": "mod_mobile",
+    "moduleCode": "ITM301",
+    "moduleName": "Mobile Development",
+    "lecturerId": "lec_mkhize",
+    "classCode": "MUT-ITM301",
+    "enrolledStudents": ["stu_22001234", "stu_22005678"],
+    "pendingRequests": [],
+    "activeSessionId": null,
+    "courseId": "course_it"
+  },
+  {
+    "id": "mod_db",
+    "moduleCode": "ITD210",
+    "moduleName": "Database Systems",
+    "lecturerId": "lec_mkhize",
+    "classCode": "MUT-ITD210",
+    "enrolledStudents": ["stu_22005678"],
+    "pendingRequests": ["stu_22001234"],
+    "activeSessionId": null,
+    "courseId": "course_it"
+  },
+  {
+    "id": "mod_net",
+    "moduleCode": "ITN220",
+    "moduleName": "Networking",
+    "lecturerId": "lec_naidoo",
+    "classCode": "MUT-ITN220",
+    "enrolledStudents": ["stu_22001234"],
+    "pendingRequests": [],
+    "activeSessionId": null,
+    "courseId": "course_it"
+  },
+  {
+    "id": "mod_circuits",
+    "moduleCode": "EEE110",
+    "moduleName": "Circuits 1",
+    "lecturerId": "lec_naidoo",
+    "classCode": "MUT-EEE110",
+    "enrolledStudents": [],
+    "pendingRequests": [],
+    "activeSessionId": null,
+    "courseId": "course_elec"
+  }
+]
+

@@ -1,0 +1,31 @@
+[
+  {
+    "id": "stu_22001234",
+    "fullName": "Amahle Dlamini",
+    "studentNumber": "22001234",
+    "gender": "female",
+    "email": "22001234@live.mut.ac.za",
+    "facultyId": "fac_eng",
+    "courseId": "course_it",
+    "registeredModules": ["mod_mobile", "mod_net"],
+    "attendanceStats": { "totalSessions": 6, "attended": 5, "absent": 1, "attendanceRate": 0.8333333333 },
+    "profileImage": null,
+    "deviceId": "device_demo_1",
+    "createdAt": "2026-01-12T09:00:00.000Z"
+  },
+  {
+    "id": "stu_22005678",
+    "fullName": "Thabo Khumalo",
+    "studentNumber": "22005678",
+    "gender": "male",
+    "email": "22005678@live.mut.ac.za",
+    "facultyId": "fac_eng",
+    "courseId": "course_it",
+    "registeredModules": ["mod_mobile", "mod_db"],
+    "attendanceStats": { "totalSessions": 6, "attended": 4, "absent": 2, "attendanceRate": 0.6666666667 },
+    "profileImage": null,
+    "deviceId": "device_demo_2",
+    "createdAt": "2026-01-12T09:03:00.000Z"
+  }
+]
+
