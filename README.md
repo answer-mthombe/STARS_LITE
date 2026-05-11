@@ -18,6 +18,8 @@ See **[DOCUMENTATION.md](./DOCUMENTATION.md)** for the full **tech stack**, **en
 
 See **[FILE_STRUCTURE.md](./FILE_STRUCTURE.md)** for a **beginner-friendly map** of every important file and **which file to open for which kind of work**.
 
+See **[FIREBASE_INTEGRATION.md](./FIREBASE_INTEGRATION.md)** for **milestones (M0–M5)**, **user stories**, and team tasks (**Brightman**, **Gugulethu**, **Basil**) to wire **Firebase Auth + Firestore**.
+
 ## Web document head & SEO
 
 - **Default Metro web:** the HTML shell is **`public/index.html`** (title, meta, OG/Twitter, favicon link). Expo injects the JS bundle there.

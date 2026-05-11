@@ -264,9 +264,26 @@ Images referenced from **`app.json`** (icon, splash, web favicon path). Placehol
 
 ---
 
+## Firebase backend (Auth + Firestore)
+
+Scaffolded for live backend work; screens still use **mock** services until you complete milestones in **[FIREBASE_INTEGRATION.md](./FIREBASE_INTEGRATION.md)**.
+
+| Path | Purpose |
+|------|---------|
+| `src/firebase/app.ts` | Initialise Firebase when `EXPO_PUBLIC_FIREBASE_*` env vars are set; exposes `getFirebaseDb`, `getFirebaseAuth`. |
+| `src/firebase/collections.ts` | Firestore collection id constants — keep in sync with security rules. |
+| `src/firebase/converters/` | `FirestoreDataConverter` helpers mapping document `id` ↔ client models. |
+| `src/services/firebase/` | Thin repositories: Auth + `get*ById` reads (extend with queries/writes per milestones). |
+| `src/types/firebaseUserProfile.ts` | Shape for `userProfiles/{uid}` — extend in **M2**. |
+| `src/pipelines/` | **You add** orchestration (auth → profile → store). See `src/pipelines/README.md`. |
+| `src/utils/firebase/` | **You add** helpers (errors, retry, batch). See `src/utils/firebase/README.md`. |
+
+---
+
 ## Related docs
 
 - **[README.md](./README.md)** — quick start, diagrams, functional requirements summary.
 - **[DOCUMENTATION.md](./DOCUMENTATION.md)** — stack, process, troubleshooting.
+- **[FIREBASE_INTEGRATION.md](./FIREBASE_INTEGRATION.md)** — milestones, user stories, Brightman / Gugulethu / Basil ownership.
 
 If a path is missing from this list, search the repo for a screen name or feature word; new files should be added under **`app/`** (routes) or **`src/`** (shared code) following the patterns above.
