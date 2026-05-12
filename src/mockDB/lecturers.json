@@ -3,6 +3,8 @@
     "id": "lec_mkhize",
     "fullName": "Dr. L. Mkhize",
     "email": "mkhize@mut.ac.za",
+    "facultyId": "fac_eng",
+    "departmentId": "dep_it",
     "modules": ["mod_mobile", "mod_db"],
     "createdAt": "2026-01-10T08:20:00.000Z"
   },
@@ -10,8 +12,27 @@
     "id": "lec_naidoo",
     "fullName": "Ms. S. Naidoo",
     "email": "naidoo@mut.ac.za",
-    "modules": ["mod_net", "mod_circuits"],
+    "facultyId": "fac_eng",
+    "departmentId": "dep_it",
+    "modules": ["mod_net"],
     "createdAt": "2026-01-10T08:22:00.000Z"
+  },
+  {
+    "id": "lec_elec",
+    "fullName": "Mr. J. Dube",
+    "email": "dube@mut.ac.za",
+    "facultyId": "fac_eng",
+    "departmentId": "dep_elec",
+    "modules": ["mod_circuits"],
+    "createdAt": "2026-01-10T08:23:00.000Z"
+  },
+  {
+    "id": "lec_bus",
+    "fullName": "Ms. K. Mahlangu",
+    "email": "mahlangu@mut.ac.za",
+    "facultyId": "fac_mgmt",
+    "departmentId": "dep_bus",
+    "modules": ["mod_bus101"],
+    "createdAt": "2026-01-10T08:24:00.000Z"
   }
 ]
-

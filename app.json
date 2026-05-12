@@ -27,7 +27,15 @@
       "lang": "en-ZA",
       "favicon": "./assets/favicon.svg"
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "STARS needs camera access to scan attendance QR codes."
+        }
+      ]
+    ],
     "extra": {
       "router": {
         "origin": false

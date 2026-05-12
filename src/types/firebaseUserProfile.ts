@@ -8,7 +8,9 @@ export interface FirebaseUserProfileDoc {
   id: string;
   role: UserRole;
   email: string;
-  /** Points to `students` or `lecturers` document when applicable */
+  /** Points to person doc (`students`, `lecturers`, `deans`, `hods`, etc.) when applicable */
   linkedPersonId?: string | null;
+  facultyId?: string | null;
+  departmentId?: string | null;
   updatedAt: string;
 }

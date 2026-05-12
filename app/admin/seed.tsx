@@ -21,6 +21,9 @@ export default function AdminSeedScreen() {
     mockDB.touch();
     return {
       faculties: mockDB.list("faculties").length,
+      departments: mockDB.list("departments").length,
+      deans: mockDB.list("deans").length,
+      hods: mockDB.list("hods").length,
       courses: mockDB.list("courses").length,
       modules: mockDB.list("modules").length,
       lecturers: mockDB.list("lecturers").length,
@@ -50,6 +53,10 @@ export default function AdminSeedScreen() {
       </AppCard>
 
       <View style={{ height: 16 }} />
+
+      <AppButton title="Back to university dashboard" variant="outline" onPress={() => router.push("/admin/dashboard")} />
+
+      <View style={{ height: 12 }} />
 
       <AppButton
         title="Re-seed mock database"

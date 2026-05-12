@@ -20,6 +20,8 @@ See **[FILE_STRUCTURE.md](./FILE_STRUCTURE.md)** for a **beginner-friendly map**
 
 See **[FIREBASE_INTEGRATION.md](./FIREBASE_INTEGRATION.md)** for **milestones (M0–M5)**, **user stories**, and team tasks (**Brightman**, **Gugulethu**, **Basil**) to wire **Firebase Auth + Firestore**.
 
+See **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)** for **faculty → department → course** structure, **Admin / Dean / HOD / Lecturer / Student** roles, and **scoped analytics**.
+
 ## Web document head & SEO
 
 - **Default Metro web:** the HTML shell is **`public/index.html`** (title, meta, OG/Twitter, favicon link). Expo injects the JS bundle there.
@@ -58,7 +60,7 @@ flowchart TB
   subgraph roles["Authenticated home"]
     R -->|student| SD["/student/dashboard"]
     R -->|lecturer| LD["/lecturer/dashboard"]
-    R -->|admin| AD["/admin/seed"]
+    R -->|admin| AD["/admin/dashboard"]
   end
 
   subgraph shared["Shared screens"]
@@ -87,7 +89,7 @@ sequenceDiagram
   L->>L: GPS capture once
   L->>DB: Create session moduleId seed radius expiry
   DB-->>L: Session + algorithmSeed
-  Note over L: UI shows rotating code every 30s
+  Note over L: UI shows rotating code every 5s
 
   S->>DB: Read module activeSessionId
   S->>S: GPS capture once
@@ -165,7 +167,7 @@ Requirements reflect **current mock behaviour**; production hardening (real auth
 |----|----------------|
 | **FR-L1** | Lecturers shall use a **dashboard** hub for modules, sessions, analytics, and management flows. |
 | **FR-L2** | Lecturers shall **create an attendance session** for an owned module with **one GPS capture**, default **radius** and **duration**, and server-side session metadata including **algorithmSeed**. |
-| **FR-L3** | During an active session, the UI shall display a **rotating 6-digit code** derived from seed and time window (~30s). |
+| **FR-L3** | During an active session, the UI shall display a **rotating 6-digit code** (and matching QR) derived from seed and time window (~5s). |
 | **FR-L4** | Lecturers shall **manage modules** (view/control flows wired to mock DB). |
 | **FR-L5** | Lecturers shall **manage students** on a module: view enrollment, **accept/reject** pending joins. |
 | **FR-L6** | Lecturers shall open an **active session** screen for monitoring/timing and access **analytics** views backed by mock data. |
@@ -174,7 +176,7 @@ Requirements reflect **current mock behaviour**; production hardening (real auth
 
 | ID | Requirement |
 |----|----------------|
-| **FR-M1** | Admins shall reach **`/admin/seed`** (not under a visible `(admin)` URL segment). |
+| **FR-M1** | Admins shall use **`/admin/dashboard`** for university analytics and **`/admin/seed`** for simulation controls (not under a visible `(admin)` URL segment). |
 | **FR-M2** | Admins shall see **collection counts** for faculties, courses, modules, lecturers, students, sessions, and records. |
 | **FR-M3** | Admins shall **re-seed** the mock database to restore demo state. |
 

@@ -1,0 +1,16 @@
+[
+  {
+    "id": "dean_eng",
+    "fullName": "Prof. N. Cele",
+    "email": "dean.engineering@mut.ac.za",
+    "facultyId": "fac_eng",
+    "createdAt": "2026-01-10T08:15:00.000Z"
+  },
+  {
+    "id": "dean_mgmt",
+    "fullName": "Prof. R. Pillay",
+    "email": "dean.management@mut.ac.za",
+    "facultyId": "fac_mgmt",
+    "createdAt": "2026-01-10T08:15:30.000Z"
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "dep_it",
+    "departmentName": "Information Technology",
+    "facultyId": "fac_eng",
+    "hodId": "hod_it",
+    "lecturerIds": ["lec_mkhize", "lec_naidoo"],
+    "courseIds": ["course_it"],
+    "createdAt": "2026-01-10T08:05:00.000Z"
+  },
+  {
+    "id": "dep_elec",
+    "departmentName": "Electrical Engineering",
+    "facultyId": "fac_eng",
+    "hodId": "hod_elec",
+    "lecturerIds": ["lec_elec"],
+    "courseIds": ["course_elec"],
+    "createdAt": "2026-01-10T08:05:30.000Z"
+  },
+  {
+    "id": "dep_civil",
+    "departmentName": "Civil Engineering",
+    "facultyId": "fac_eng",
+    "hodId": "hod_civil",
+    "lecturerIds": [],
+    "courseIds": [],
+    "createdAt": "2026-01-10T08:06:00.000Z"
+  },
+  {
+    "id": "dep_bus",
+    "departmentName": "Business Administration",
+    "facultyId": "fac_mgmt",
+    "hodId": "hod_bus",
+    "lecturerIds": ["lec_bus"],
+    "courseIds": ["course_bus"],
+    "createdAt": "2026-01-10T08:06:30.000Z"
+  }
+]

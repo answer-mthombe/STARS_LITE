@@ -12,7 +12,9 @@ This guide helps **beginners** find the right file when fixing a bug or adding a
 |---------------------|--------------------------------|
 | **First screen after app opens**, redirects by role | `app/index.tsx`, `app/splash.tsx` |
 | **Login, onboarding, register** | `app/(auth)/login.tsx`, `onboarding.tsx`, `register-student.tsx` |
-| **Who can see which screen** | `src/hooks/useRoleGuard.ts`, `app/index.tsx` |
+| **Who can see which screen** | `src/hooks/useRoleGuard.ts`, `src/permissions/institutionPermissions.ts`, `app/index.tsx` |
+| **University / faculty / department analytics** | `src/services/institutionAnalytics.ts`, **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)** |
+| **Admin / Dean / HOD dashboards** | `app/admin/dashboard.tsx`, `app/dean/dashboard.tsx`, `app/hod/dashboard.tsx` |
 | **Sign-in / sign-out / stored user** | `src/store/authStore.ts`, `src/services/mockAuthService.ts`, `src/utils/authStorage.ts` |
 | **Student home, modules list** | `app/student/dashboard.tsx`, `app/student/modules/` |
 | **Join class with code** | `app/student/join-class.tsx`, `src/services/moduleEnrollmentService.ts` |
@@ -56,6 +58,7 @@ ATTANDANCE/
 ├── .env.example            # Example environment variables (copy to .env)
 ├── README.md               # Quick start & diagrams
 ├── DOCUMENTATION.md        # Deeper technical write-up
+├── INSTITUTION_HIERARCHY.md # Roles, org structure, analytics scoping
 └── FILE_STRUCTURE.md       # This file
 ```
 
@@ -75,7 +78,7 @@ ATTANDANCE/
 | `(auth)/` | **Group** (URL does not include `(auth)`). Auth stack layout + screens: |
 | `(auth)/_layout.tsx` | Stack layout for auth screens (headers off). |
 | `(auth)/onboarding.tsx` | Marketing / welcome; paths like **`/onboarding`**. |
-| `(auth)/login.tsx` | Role + email + password login → **`/login`**. |
+| `(auth)/login.tsx` | Role + email + password login → **`/login`**; quick demo chips (`src/constants/demoLogins.ts`). |
 | `(auth)/register-student.tsx` | New student signup → **`/register-student`**. |
 | `student/` | **Student** area; `_layout.tsx` stacks student tabs/screens. |
 | `student/dashboard.tsx` | Student home. |
@@ -94,7 +97,15 @@ ATTANDANCE/
 | `lecturer/analytics.tsx` | Analytics views. |
 | `admin/` | **Admin** tools (real URL under **`/admin/...`**). |
 | `admin/_layout.tsx` | Admin stack layout. |
+| `admin/dashboard.tsx` | **`/admin/dashboard`** — university-wide analytics (simulation). |
+| `admin/analytics.tsx` | **`/admin/analytics`** — bar / trend / heatmap charts (mock + hybrid). |
 | `admin/seed.tsx` | **`/admin/seed`** — counts, re-seed mock DB. |
+| `dean/` | **Dean (faculty)** — scoped faculty dashboards. |
+| `dean/dashboard.tsx` | **`/dean/dashboard`** — faculty KPIs. |
+| `dean/analytics.tsx` | **`/dean/analytics`** — faculty chart simulation. |
+| `hod/` | **HOD (department)** — scoped department dashboards. |
+| `hod/dashboard.tsx` | **`/hod/dashboard`** — department KPIs. |
+| `hod/analytics.tsx` | **`/hod/analytics`** — department chart simulation. |
 | `notifications.tsx` | **`/notifications`** — shared. |
 | `settings.tsx` | **`/settings`** — shared. |
 
@@ -160,7 +171,8 @@ Small, focused components used by many screens.
 | File | Purpose |
 |------|---------|
 | `mockDBService.ts` | CRUD, list, query, **seed** — the fake Firestore API. |
-| `*.json` | Seed data: `faculties`, `courses`, `modules`, `lecturers`, `students`, `attendanceSessions`, `attendanceRecords`. |
+| `syntheticPopulation.ts` | Generates ~118 synthetic students for realistic scale. |
+| `*.json` | Seed data: `faculties`, **`departments`**, **`deans`**, **`hods`**, `courses`, `modules`, `lecturers`, `students`, `attendanceSessions`, `attendanceRecords`. |
 
 Edit JSON for **demo users and modules**; edit `mockDBService.ts` for **how data is stored or reset**.
 
@@ -171,9 +183,23 @@ Edit JSON for **demo users and modules**; edit `mockDBService.ts` for **how data
 | File | Purpose |
 |------|---------|
 | `Student.ts`, `Lecturer.ts`, `Module.ts`, `Course.ts`, `Faculty.ts` | Entity types + helpers. |
+| `Department.ts`, `Dean.ts`, `Hod.ts` | Department + leadership roles linked to faculty/department. |
+| `University.ts` | MUT singleton metadata. |
 | `Attendance.ts` | Sessions + records types. |
 | `Analytics.ts` | Analytics-related types. |
 | `common.ts` | Shared small types. |
+
+## `src/permissions/`
+
+| File | Purpose |
+|------|---------|
+| `institutionPermissions.ts` | Role → permission matrix and analytics scope labels (reference for guards & Firebase rules). |
+
+## `src/services/` (extra)
+
+| File | Purpose |
+|------|---------|
+| `institutionAnalytics.ts` | Scoped aggregates for Admin / Dean / HOD / Lecturer / Student dashboards. |
 
 Use these when typing service functions or screen props.
 
@@ -285,5 +311,6 @@ Scaffolded for live backend work; screens still use **mock** services until you 
 - **[README.md](./README.md)** — quick start, diagrams, functional requirements summary.
 - **[DOCUMENTATION.md](./DOCUMENTATION.md)** — stack, process, troubleshooting.
 - **[FIREBASE_INTEGRATION.md](./FIREBASE_INTEGRATION.md)** — milestones, user stories, Brightman / Gugulethu / Basil ownership.
+- **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)** — faculty / department / course tree and five roles.
 
 If a path is missing from this list, search the repo for a screen name or feature word; new files should be added under **`app/`** (routes) or **`src/`** (shared code) following the patterns above.

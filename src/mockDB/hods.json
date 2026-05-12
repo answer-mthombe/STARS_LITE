@@ -1,0 +1,30 @@
+[
+  {
+    "id": "hod_it",
+    "fullName": "Dr. P. Govender",
+    "email": "hod.it@mut.ac.za",
+    "departmentId": "dep_it",
+    "createdAt": "2026-01-10T08:18:00.000Z"
+  },
+  {
+    "id": "hod_elec",
+    "fullName": "Dr. T. Moyo",
+    "email": "hod.electrical@mut.ac.za",
+    "departmentId": "dep_elec",
+    "createdAt": "2026-01-10T08:18:15.000Z"
+  },
+  {
+    "id": "hod_civil",
+    "fullName": "Dr. V. Nkomo",
+    "email": "hod.civil@mut.ac.za",
+    "departmentId": "dep_civil",
+    "createdAt": "2026-01-10T08:18:30.000Z"
+  },
+  {
+    "id": "hod_bus",
+    "fullName": "Ms. L. Reddy",
+    "email": "hod.business@mut.ac.za",
+    "departmentId": "dep_bus",
+    "createdAt": "2026-01-10T08:18:45.000Z"
+  }
+]

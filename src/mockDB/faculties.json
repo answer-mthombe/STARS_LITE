@@ -1,5 +1,16 @@
 [
-  { "id": "fac_eng", "facultyName": "Engineering", "createdAt": "2026-01-10T08:00:00.000Z" },
-  { "id": "fac_mgmt", "facultyName": "Management Sciences", "createdAt": "2026-01-10T08:00:00.000Z" }
+  {
+    "id": "fac_eng",
+    "facultyName": "Engineering",
+    "deanId": "dean_eng",
+    "departmentIds": ["dep_it", "dep_elec", "dep_civil"],
+    "createdAt": "2026-01-10T08:00:00.000Z"
+  },
+  {
+    "id": "fac_mgmt",
+    "facultyName": "Management Sciences",
+    "deanId": "dean_mgmt",
+    "departmentIds": ["dep_bus"],
+    "createdAt": "2026-01-10T08:00:00.000Z"
+  }
 ]
-

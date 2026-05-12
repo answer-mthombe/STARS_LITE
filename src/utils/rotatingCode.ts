@@ -1,5 +1,5 @@
-/** 30s windows — code derived locally from seed + window (no Firestore writes per tick). */
-export const ATTENDANCE_CODE_WINDOW_MS = 30_000;
+/** 5s windows — code and QR payload derived locally from seed + window (no Firestore writes per tick). */
+export const ATTENDANCE_CODE_WINDOW_MS = 5_000;
 
 export function attendanceTimeWindow(nowMs = Date.now()) {
   return Math.floor(nowMs / ATTENDANCE_CODE_WINDOW_MS);

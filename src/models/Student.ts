@@ -14,6 +14,8 @@ export interface StudentModel extends WithTimestamps {
   gender: "male" | "female" | "other";
   email: string;
   facultyId: string;
+  /** Department derived from course — stored for scoped analytics */
+  departmentId?: string;
   courseId: string;
   registeredModules: string[];
   attendanceStats: StudentAttendanceStats;

@@ -9,7 +9,9 @@ type AuthStatus = "loading" | "ready";
 export type AuthUser =
   | { role: "student"; id: string; email: string; fullName: string }
   | { role: "lecturer"; id: string; email: string; fullName: string }
-  | { role: "admin"; id: string; email: string; fullName: string };
+  | { role: "admin"; id: string; email: string; fullName: string }
+  | { role: "dean"; id: string; email: string; fullName: string; facultyId: string }
+  | { role: "hod"; id: string; email: string; fullName: string; departmentId: string };
 
 type AuthState = {
   status: AuthStatus;
@@ -62,4 +64,3 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user });
   },
 }));
-

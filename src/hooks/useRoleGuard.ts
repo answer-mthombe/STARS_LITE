@@ -3,6 +3,22 @@ import { useRouter } from "expo-router";
 import { useAuthStore } from "@/store/authStore";
 import type { UserRole } from "@/types/roles";
 
+function homeForRole(role: NonNullable<ReturnType<typeof useAuthStore.getState>["user"]>["role"]): string {
+  switch (role) {
+    case "admin":
+      return "/admin/dashboard";
+    case "dean":
+      return "/dean/dashboard";
+    case "hod":
+      return "/hod/dashboard";
+    case "lecturer":
+      return "/lecturer/dashboard";
+    case "student":
+    default:
+      return "/student/dashboard";
+  }
+}
+
 export function useRoleGuard(allowed: UserRole | UserRole[]) {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
@@ -17,9 +33,7 @@ export function useRoleGuard(allowed: UserRole | UserRole[]) {
       return;
     }
     if (!list.includes(user.role)) {
-      if (user.role === "lecturer") router.replace("/lecturer/dashboard");
-      else if (user.role === "admin") router.replace("/admin/seed");
-      else router.replace("/student/dashboard");
+      router.replace(homeForRole(user.role) as never);
     }
   }, [user, status, allowedKey, router]);
 }

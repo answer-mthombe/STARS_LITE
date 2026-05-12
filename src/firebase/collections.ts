@@ -4,6 +4,9 @@
  */
 export const COLLECTIONS = {
   faculties: "faculties",
+  departments: "departments",
+  deans: "deans",
+  hods: "hods",
   courses: "courses",
   modules: "modules",
   lecturers: "lecturers",

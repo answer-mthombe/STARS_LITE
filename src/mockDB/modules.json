@@ -36,12 +36,22 @@
     "id": "mod_circuits",
     "moduleCode": "EEE110",
     "moduleName": "Circuits 1",
-    "lecturerId": "lec_naidoo",
+    "lecturerId": "lec_elec",
     "classCode": "MUT-EEE110",
     "enrolledStudents": [],
     "pendingRequests": [],
     "activeSessionId": null,
     "courseId": "course_elec"
+  },
+  {
+    "id": "mod_bus101",
+    "moduleCode": "BUS101",
+    "moduleName": "Introduction to Business",
+    "lecturerId": "lec_bus",
+    "classCode": "MUT-BUS101",
+    "enrolledStudents": [],
+    "pendingRequests": [],
+    "activeSessionId": null,
+    "courseId": "course_bus"
   }
 ]
-

@@ -5,6 +5,9 @@ import coursesSeed from "./courses.json";
 import modulesSeed from "./modules.json";
 import attendanceSessionsSeed from "./attendanceSessions.json";
 import attendanceRecordsSeed from "./attendanceRecords.json";
+import departmentsSeed from "./departments.json";
+import deansSeed from "./deans.json";
+import hodsSeed from "./hods.json";
 
 import type { StudentModel } from "@/models/Student";
 import type { LecturerModel } from "@/models/Lecturer";
@@ -12,6 +15,11 @@ import type { FacultyModel } from "@/models/Faculty";
 import type { CourseModel } from "@/models/Course";
 import type { ModuleModel } from "@/models/Module";
 import type { AttendanceRecordModel, AttendanceSessionModel } from "@/models/Attendance";
+import type { DepartmentModel } from "@/models/Department";
+import type { DeanModel } from "@/models/Dean";
+import type { HodModel } from "@/models/Hod";
+
+import { generateSyntheticStudents } from "./syntheticPopulation";
 
 export type MockCollectionName =
   | "students"
@@ -20,7 +28,10 @@ export type MockCollectionName =
   | "courses"
   | "modules"
   | "attendanceSessions"
-  | "attendanceRecords";
+  | "attendanceRecords"
+  | "departments"
+  | "deans"
+  | "hods";
 
 export type MockCollections = {
   students: StudentModel[];
@@ -30,6 +41,9 @@ export type MockCollections = {
   modules: ModuleModel[];
   attendanceSessions: AttendanceSessionModel[];
   attendanceRecords: AttendanceRecordModel[];
+  departments: DepartmentModel[];
+  deans: DeanModel[];
+  hods: HodModel[];
 };
 
 type AnyRecord = { id: string };
@@ -57,6 +71,9 @@ function matches<T extends AnyRecord>(row: T, where: Query<T>) {
   return true;
 }
 
+/** Hand-built seed students + ~118 synthetic across courses ≈ 120 total for demos */
+const SYNTHETIC_STUDENT_TARGET = 118;
+
 class InMemoryMockDB {
   private data: MockCollections;
 
@@ -69,18 +86,32 @@ class InMemoryMockDB {
       modules: [],
       attendanceSessions: [],
       attendanceRecords: [],
+      departments: [],
+      deans: [],
+      hods: [],
     };
     this.seedInitialData();
   }
 
   seedInitialData() {
-    this.data.students = (studentsSeed as unknown as StudentModel[]).map((s) => ({ ...s }));
-    this.data.lecturers = (lecturersSeed as unknown as LecturerModel[]).map((l) => ({ ...l }));
     this.data.faculties = (facultiesSeed as unknown as FacultyModel[]).map((f) => ({ ...f }));
+    this.data.departments = (departmentsSeed as unknown as DepartmentModel[]).map((d) => ({ ...d }));
+    this.data.deans = (deansSeed as unknown as DeanModel[]).map((d) => ({ ...d }));
+    this.data.hods = (hodsSeed as unknown as HodModel[]).map((h) => ({ ...h }));
     this.data.courses = (coursesSeed as unknown as CourseModel[]).map((c) => ({ ...c }));
+    this.data.lecturers = (lecturersSeed as unknown as LecturerModel[]).map((l) => ({ ...l }));
     this.data.modules = (modulesSeed as unknown as ModuleModel[]).map((m) => ({ ...m }));
     this.data.attendanceSessions = (attendanceSessionsSeed as unknown as AttendanceSessionModel[]).map((s) => ({ ...s }));
     this.data.attendanceRecords = (attendanceRecordsSeed as unknown as AttendanceRecordModel[]).map((r) => ({ ...r }));
+
+    const baseStudents = (studentsSeed as unknown as StudentModel[]).map((s) => ({ ...s }));
+    const numbers = new Set(baseStudents.map((s) => s.studentNumber));
+    const synthetic = generateSyntheticStudents({
+      courses: this.data.courses,
+      existingStudentNumbers: numbers,
+      targetExtra: SYNTHETIC_STUDENT_TARGET,
+    });
+    this.data.students = [...baseStudents, ...synthetic];
   }
 
   create<K extends MockCollectionName, T extends MockCollections[K][number]>(
@@ -133,7 +164,6 @@ class InMemoryMockDB {
     return results.map((x) => ({ ...x }));
   }
 
-  // Convenience helpers for session expiry without “backend”
   expireSessions() {
     const now = Date.now();
     for (const s of this.data.attendanceSessions) {
@@ -150,4 +180,3 @@ class InMemoryMockDB {
 }
 
 export const mockDB = new InMemoryMockDB();
-

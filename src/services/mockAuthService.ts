@@ -11,15 +11,17 @@ function buildStudentEmail(studentNumber: string) {
 }
 
 function deviceIdFallback() {
-  // Expo Device doesn't guarantee stable unique ID cross-platform in all cases,
-  // but for the simulation it's enough. Later swap to Firebase + secure device binding.
   return `${Device.osName ?? "unknown"}_${Device.modelName ?? "device"}_${Date.now().toString(16)}`;
 }
 
-// Simulation credentials:
-// - Lecturer: email in lecturers.json, password: "password"
-// - Student: email auto-generated, password: "password"
-// - Admin: admin@mut.ac.za / password
+/**
+ * Simulation credentials (password for all demo accounts): `password`
+ * - Admin: admin@mut.ac.za
+ * - Dean: dean.engineering@mut.ac.za | dean.management@mut.ac.za
+ * - HOD: hod.it@mut.ac.za | hod.electrical@mut.ac.za | hod.business@mut.ac.za
+ * - Lecturer: emails from lecturers.json
+ * - Student: *@live.mut.ac.za from students (seed + synthetic)
+ */
 export const mockAuthService = {
   async login(args: { role: UserRole; email: string; password: string }): Promise<AuthUser> {
     const email = args.email.trim().toLowerCase();
@@ -27,7 +29,19 @@ export const mockAuthService = {
 
     if (args.role === "admin") {
       if (email !== "admin@mut.ac.za") throw new Error("Admin account not found.");
-      return { role: "admin", id: "admin_1", email, fullName: "MUT Admin" };
+      return { role: "admin", id: "admin_1", email, fullName: "MUT System Administrator" };
+    }
+
+    if (args.role === "dean") {
+      const dean = mockDB.query("deans", { email })[0];
+      if (!dean) throw new Error("Dean account not found.");
+      return { role: "dean", id: dean.id, email: dean.email, fullName: dean.fullName, facultyId: dean.facultyId };
+    }
+
+    if (args.role === "hod") {
+      const hod = mockDB.query("hods", { email })[0];
+      if (!hod) throw new Error("HOD account not found.");
+      return { role: "hod", id: hod.id, email: hod.email, fullName: hod.fullName, departmentId: hod.departmentId };
     }
 
     if (args.role === "lecturer") {
@@ -57,6 +71,9 @@ export const mockAuthService = {
     const existing = mockDB.query("students", { studentNumber })[0] ?? mockDB.query("students", { email })[0];
     if (existing) throw new Error("Student already exists.");
 
+    const course = mockDB.read("courses", args.courseId);
+    const departmentId = course?.departmentId;
+
     const student: StudentModel = mockDB.create("students", {
       fullName: args.fullName.trim(),
       studentNumber,
@@ -64,6 +81,7 @@ export const mockAuthService = {
       email,
       facultyId: args.facultyId,
       courseId: args.courseId,
+      ...(departmentId ? { departmentId } : {}),
       registeredModules: [],
       attendanceStats: { totalSessions: 0, attended: 0, absent: 0, attendanceRate: 0 },
       profileImage: null,
@@ -75,4 +93,3 @@ export const mockAuthService = {
     return { role: "student", id: student.id, email: student.email, fullName: student.fullName };
   },
 };
-

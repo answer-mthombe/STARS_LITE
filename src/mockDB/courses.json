@@ -2,16 +2,25 @@
   {
     "id": "course_it",
     "facultyId": "fac_eng",
-    "courseName": "Information Technology",
+    "departmentId": "dep_it",
+    "courseName": "Diploma in Information Technology",
     "modules": ["mod_mobile", "mod_db", "mod_net"],
     "createdAt": "2026-01-10T08:10:00.000Z"
   },
   {
     "id": "course_elec",
     "facultyId": "fac_eng",
+    "departmentId": "dep_elec",
     "courseName": "Electrical Engineering",
     "modules": ["mod_circuits"],
     "createdAt": "2026-01-10T08:12:00.000Z"
+  },
+  {
+    "id": "course_bus",
+    "facultyId": "fac_mgmt",
+    "departmentId": "dep_bus",
+    "courseName": "Higher Certificate in Business Administration",
+    "modules": ["mod_bus101"],
+    "createdAt": "2026-01-10T08:13:00.000Z"
   }
 ]
-

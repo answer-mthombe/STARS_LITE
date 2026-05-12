@@ -6,6 +6,7 @@
     "gender": "female",
     "email": "22001234@live.mut.ac.za",
     "facultyId": "fac_eng",
+    "departmentId": "dep_it",
     "courseId": "course_it",
     "registeredModules": ["mod_mobile", "mod_net"],
     "attendanceStats": { "totalSessions": 6, "attended": 5, "absent": 1, "attendanceRate": 0.8333333333 },
@@ -20,6 +21,7 @@
     "gender": "male",
     "email": "22005678@live.mut.ac.za",
     "facultyId": "fac_eng",
+    "departmentId": "dep_it",
     "courseId": "course_it",
     "registeredModules": ["mod_mobile", "mod_db"],
     "attendanceStats": { "totalSessions": 6, "attended": 4, "absent": 2, "attendanceRate": 0.6666666667 },
@@ -28,4 +30,3 @@
     "createdAt": "2026-01-12T09:03:00.000Z"
   }
 ]
-

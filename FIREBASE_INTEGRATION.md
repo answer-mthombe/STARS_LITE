@@ -26,6 +26,8 @@ This document ties **milestones**, **user stories**, and **file ownership** toge
 | Converters (id ↔ document body) | `src/firebase/converters/` | Generic `idBasedConverter` + per-entity exports |
 | Auth API | `src/services/firebase/authRepository.ts` | Sign-in, sign-out, auth state subscription |
 | Read-by-id repositories | `src/services/firebase/*Repository.ts` | `get*ById` patterns for each main entity + `getUserProfileByUid` |
+| Leadership analytics **simulation** (mock UI) | `app/admin/analytics.tsx`, `app/dean/analytics.tsx`, `app/hod/analytics.tsx` | View-based charts + `dashboardChartDummy.ts` — replace with live aggregates in JOB-019–JOB-022 |
+| Demo sign-in presets | `src/constants/demoLogins.ts`, `app/(auth)/login.tsx` | Quick-fill chips for every institutional role (password `password`) |
 
 **Your team builds:**
 
@@ -89,6 +91,10 @@ Each row is **one** assignable job. Use the **job number** in commits, PR titles
 | **JOB-016** | Gugulethu | M5 | Feature flag `mock` vs `firebase` data source | Lets the team **demo with mock** while **staging/production use Firestore** without maintaining two codebases forever. |
 | **JOB-017** | Brightman | M5 | Production cutover checklist (mock off in prod) | Guarantees **real deployments** never accidentally ship demo behaviour or mock-only assumptions to students or staff. |
 | **JOB-018** | Basil | M5 | Observability / logging policy for Auth + Firestore | Gives **operations** enough signal to fix outages while respecting **privacy** (no raw passwords, minimal PII in logs). |
+| **JOB-019** | Gugulethu | M3 | Leadership analytics **Firestore reads** (admin / dean / HOD) | Maps **`institutionAnalytics`**-style payloads to **indexed queries** or stats docs so dashboards scale past mock RAM. |
+| **JOB-020** | Brightman | M3 | **Attendance trend / time-bucket** series in Firestore | Supplies **non-synthetic** trend arrays for charts (daily/weekly rollups), aligned with `dashboardChartDummy` shapes until UI switches data source. |
+| **JOB-021** | Basil | M4 | Rules: **scoped analytics reads** (leadership routes) | Ensures **dean** reads only their **faculty** aggregates and **HOD** only **department** — `/admin/analytics`, `/dean/analytics`, `/hod/analytics` cannot leak peer institutions. |
+| **JOB-022** | Basil | M5 | Optional **production chart library** + accessibility | Replace View-based **Mock*** charts when bundle size, RTL, and screen-reader requirements are agreed (Victory Native / Skia / Recharts web). |
 
 ---
 
@@ -104,6 +110,7 @@ Each row is **one** assignable job. Use the **job number** in commits, PR titles
 | **JOB-012** | M3 | Faculty/course read strategy (batch/utils + doc) | **Performance & cost**: keeps lookups from blocking UI as data grows. |
 | **JOB-013** | M4 | Session create write path | **Teaching moment truth**: when a lecturer starts class, the system of record must update everywhere. |
 | **JOB-017** | M5 | Prod cutover checklist | **Release safety**: separates “demo” from “real campus use”. |
+| **JOB-020** | M3 | Attendance trend / time-bucket series (Firestore) | **Truthful chart trends** instead of dummy slopes; aligns with `dashboardChartDummy` series shapes. |
 
 ### Gugulethu — assigned jobs
 
@@ -115,6 +122,7 @@ Each row is **one** assignable job. Use the **job number** in commits, PR titles
 | **JOB-010** | M3 | Student dashboard from Firestore | **Student experience source of truth**: modules shown = modules enrolled in cloud. |
 | **JOB-014** | M4 | Attendance write + stats | **Academic record**: marks must survive app restarts and match policy. |
 | **JOB-016** | M5 | Data-source flag implementation | **Operational flexibility**: mock for labs, Firebase for pilots/production. |
+| **JOB-019** | M3 | Leadership analytics Firestore reads | Same as register — **scale + correctness** for hierarchy dashboards. |
 
 ### Basil — assigned jobs
 
@@ -126,6 +134,8 @@ Each row is **one** assignable job. Use the **job number** in commits, PR titles
 | **JOB-011** | M3 | Lecturer Firestore reads + UI | **Lecturer experience source of truth**: teaches only modules Firestore says they own. |
 | **JOB-015** | M4 | Rules + emulator tests | **Tamper resistance**: attendance cannot be forged by a modified client. |
 | **JOB-018** | M5 | Logging policy | **Runbook quality**: incidents can be debugged responsibly. |
+| **JOB-021** | M4 | Analytics-scoped security rules | **Privacy boundary** between faculties/departments at the database edge. |
+| **JOB-022** | M5 | Chart library + a11y | **Publication-ready** visuals for council papers and accreditation packs. |
 
 ---
 
@@ -184,8 +194,8 @@ Each job below repeats the **user story** format, then spells out **purpose in S
 
 **Purpose in STARS:** Reduces **wrong-password panic** and **needless IT tickets**; students and lecturers understand whether to retry, reset password, or check connectivity.  
 **Role in the system:** You own **UX for failure modes** at the boundary of Firebase Auth (mapping error codes → copy) and the login screen.  
-**Acceptance:** Map common `auth/` error codes to short messages (Zulu/English copy later).  
-**Files:** `src/utils/firebase/` (you create helpers), UI in `app/(auth)/login.tsx`.
+**Acceptance:** Map common `auth/` error codes to short messages (Zulu/English copy later); keep parity with **`src/constants/demoLogins.ts`** quick presets used on the login screen (seed matching Firebase Auth users in dev/staging).  
+**Files:** `src/utils/firebase/` (you create helpers), UI in `app/(auth)/login.tsx`, presets in `src/constants/demoLogins.ts`.
 
 ---
 
@@ -243,6 +253,21 @@ Each job below repeats the **user story** format, then spells out **purpose in S
 **Acceptance:** Document query strategy (batch `getAll` or cached denormalization).  
 **Files:** `courseRepository.ts`, `facultyRepository.ts`, utils for batching in `src/utils/firebase/`.
 
+**JOB-019 — Gugulethu — M3**  
+*As an institutional leader, I want chart dashboards backed by Firestore so university-scale data does not rely on in-memory joins.*
+
+**Purpose in STARS:** Admin / dean / HOD screens (`app/admin/analytics.tsx`, `app/dean/analytics.tsx`, `app/hod/analytics.tsx`) already render **mock + hybrid** series via `dashboardChartDummy.ts`; production must **query** aggregates scoped by role without loading all students client-side.  
+**Role in the system:** You mirror **`institutionAnalytics`** outputs with Firestore queries (or materialised stats documents), composite indexes as needed.  
+**Acceptance:** Same dashboard shapes with **Firebase** data source flag; latency acceptable on realistic dataset.  
+**Files:** `src/services/institutionAnalytics.ts` (fork or adapter), `src/services/firebase/*`, `JOB-016` data-source router.
+
+**JOB-020 — Brightman — M3**  
+*As a reporting officer, I want attendance trend lines backed by dated buckets—not purely synthetic arrays.*
+
+**Purpose in STARS:** Trend charts currently anchor dummy slopes to live overall rates; Firebase should persist **daily/weekly rollups** for governance reporting.  
+**Role in the system:** You design collection(s) or scheduled Cloud Functions that emit series compatible with **`dashboardChartDummy`** trend shapes until the UI switches props source.  
+**Acceptance:** Document schema for buckets; at least one environment shows non-random trend from Firestore.
+
 ---
 
 ### M4 — Write paths (sessions + attendance)
@@ -271,6 +296,13 @@ Each job below repeats the **user story** format, then spells out **purpose in S
 **Acceptance:** Rules file versioned in repo (e.g. `firebase/rules/firestore.rules`) or linked doc; tests with Emulator.  
 **Approach hint:** Start from deny-all, open least privilege.
 
+**JOB-021 — Basil — M4**  
+*As a dean, I cannot read another faculty’s underlying analytics documents.*
+
+**Purpose in STARS:** Leadership analytics routes must respect the same **faculty / department boundaries** as product rules (`institutionPermissions.ts`).  
+**Role in the system:** Extend rules tests so queries used by **`/dean/analytics`** and **`/hod/analytics`** fail cross-scope; admin remains university-wide.  
+**Acceptance:** Emulator tests prove isolation; document rule snippets next to `JOB-015`.
+
 ---
 
 ### M5 — Cutover & hardening
@@ -297,6 +329,13 @@ Each job below repeats the **user story** format, then spells out **purpose in S
 **Role in the system:** You define **operational policy**: what gets logged, where (console vs remote), and redaction rules for the whole team to follow.  
 **Acceptance:** Document what is logged vs PII restrictions.
 
+**JOB-022 — Basil — M5**  
+*As an accessibility auditor, I want leadership charts to meet contrast and screen-reader expectations.*
+
+**Purpose in STARS:** View-based **MockBarChart** / **MockTrendChart** / **MockHeatmapGrid** are placeholders; production may adopt a chart library with semantic labels.  
+**Role in the system:** Evaluate Victory Native / Skia / web Recharts behind **`expo-web`** branch; gate behind bundle budget.  
+**Acceptance:** Decision doc + optional spike PR; no regression to mock mode.
+
 ---
 
 ## Ownership rotation (suggested)
@@ -308,9 +347,9 @@ Use **job numbers** for accountability; use this table only for **who reviews fi
 | M0 | Brightman | JOB-001 … JOB-003 |
 | M1 | Gugulethu | JOB-004 … JOB-006 |
 | M2 | Basil | JOB-007 … JOB-009 |
-| M3 | Brightman | JOB-010 … JOB-012 |
-| M4 | Gugulethu | JOB-013 … JOB-015 |
-| M5 | Basil | JOB-016 … JOB-018 |
+| M3 | Brightman | JOB-010 … JOB-012 · extended: **JOB-019** (Gugulethu), **JOB-020** (Brightman) |
+| M4 | Gugulethu | JOB-013 … JOB-015 · extended: **JOB-021** (Basil) |
+| M5 | Basil | JOB-016 … JOB-018 · extended: **JOB-022** (Basil) |
 
 Swap lead reviewer each milestone so everyone touches Auth, Firestore, and rules.
 
@@ -344,6 +383,16 @@ src/types/
   firebaseUserProfile.ts # Firestore profile shape (extend as needed)
 
 src/models/              # Existing domain models (shared mock + live)
+
+src/constants/
+  demoLogins.ts          # Demo account presets (sign-in chips)
+
+src/services/
+  dashboardChartDummy.ts # Chart series helpers (mock / hybrid until JOB-019–020)
+
+app/admin/analytics.tsx  # Leadership charts simulation (admin)
+app/dean/analytics.tsx
+app/hod/analytics.tsx
 ```
 
 ---
@@ -351,7 +400,7 @@ src/models/              # Existing domain models (shared mock + live)
 ## Non-goals (for this phase)
 
 - Choosing between Cloud Functions vs client-only writes (team decision in M4).
-- Production analytics dashboards.
+- **Firebase-backed** leadership dashboards and trends — tracked as **JOB-019–JOB-022** (mock/simulation UI exists in-repo).
 - Replacing every mock screen in one PR — use M3/M5 incremental cutover.
 
 ---

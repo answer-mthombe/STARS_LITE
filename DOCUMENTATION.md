@@ -42,14 +42,14 @@ npx expo start -c
 ### 2. Architecture principles
 
 1. **Repository-style services** — `mockDB` mimics Firestore collections; `attendanceSimulationService` and `moduleEnrollmentService` sit above it so Firebase can replace `mockDB` later without rewriting screens.
-2. **Role-based routes** — `/student/*`, `/lecturer/*`, `/admin/*`, plus shared `/notifications`, `/settings`.
+2. **Role-based routes** — `/admin/*` (university + simulation), `/dean/*`, `/hod/*`, `/lecturer/*`, `/student/*`, plus shared `/notifications`, `/settings`. Hierarchy and permissions: **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)**.
 3. **Route groups** — `(auth)` only organizes files; URLs are **`/onboarding`**, **`/login`**, **`/register-student`** (parentheses are not in the path).
 4. **UI system** — `ScreenShell` + tokens in `src/theme/`; **Innovation Lab** footer is pinned below scroll content for brand consistency.
 
 ### 3. Attendance simulation (mock)
 
 1. Lecturer starts a session → one GPS read → session row + `algorithmSeed` + expiry.
-2. Rotating **6-digit code** is derived locally from seed + 30s time window (no per-tick Firestore writes).
+2. Rotating **6-digit code** (and QR payload) is derived locally from seed + 5s time window (no per-tick Firestore writes).
 3. Student submits code → one GPS read → Haversine distance vs session radius → record written to mock DB.
 
 ### 4. Design & brand
@@ -73,7 +73,10 @@ npx expo start -c
 | `app/onboarding.tsx` (via `(auth)/onboarding`) | STARS marketing home |
 | `app/student/dashboard.tsx` | Student **home** (STARS hero + modules) |
 | `app/lecturer/dashboard.tsx` | Lecturer hub |
-| `app/admin/seed.tsx` | Admin / simulation utilities |
+| `app/admin/dashboard.tsx` | Admin university-wide analytics |
+| `app/admin/seed.tsx` | Admin simulation utilities (re-seed) |
+| `app/dean/dashboard.tsx` | Dean faculty-scoped dashboard |
+| `app/hod/dashboard.tsx` | HOD department-scoped dashboard |
 | `src/mockDB/` | JSON seeds + `mockDBService` |
 | `src/services/` | Auth, attendance, enrollment |
 | `src/components/ui/` | Buttons, shell, **InnovationLabFooter**, **StarsWordmark** |

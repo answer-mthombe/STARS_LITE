@@ -57,8 +57,28 @@ export default function StudentDashboard() {
         </Text>
       ) : null}
       <Text style={{ color: colors.ink.muted, marginBottom: 22, fontSize: 15, lineHeight: 22 }}>
-        Your week at a glance — modules below, attendance in one card.
+        Start with your classes — tap Attend when a session is live, then scan the QR or enter the code.
       </Text>
+
+      <Text style={{ color: colors.palette.accent, fontWeight: "900", marginBottom: 12, fontSize: 13, letterSpacing: 0.8 }}>
+        MY CLASSES
+      </Text>
+      <View style={{ gap: 12, marginBottom: 22 }}>
+        {data.modules.map((m) => (
+          <ModuleCard
+            key={m.id}
+            code={m.moduleCode}
+            name={m.moduleName}
+            meta={m.activeSessionId ? "Session active — scan lecturer QR or enter rotating code" : "No active session"}
+            onPress={() => router.push(`/student/modules/${m.id}`)}
+            actionLabel={m.activeSessionId ? "Attend now" : undefined}
+            onActionPress={m.activeSessionId ? () => router.push(`/student/mark-attendance/${m.id}`) : undefined}
+          />
+        ))}
+        {data.modules.length === 0 ? (
+          <Text style={{ color: colors.ink.muted, lineHeight: 22 }}>No modules yet. Use Join class with your code.</Text>
+        ) : null}
+      </View>
 
       <AppCard>
         <Text style={{ color: colors.palette.accent, fontWeight: "900", fontSize: 12, letterSpacing: 1 }}>ATTENDANCE</Text>
@@ -119,24 +139,6 @@ export default function StudentDashboard() {
         <Pressable onPress={() => router.push("/settings")} style={{ paddingVertical: 10, paddingHorizontal: 8 }}>
           <Text style={{ color: colors.ink.muted, fontWeight: "700", fontSize: 13 }}>Settings</Text>
         </Pressable>
-      </View>
-
-      <Text style={{ color: colors.palette.accent, fontWeight: "900", marginBottom: 12, fontSize: 13, letterSpacing: 0.8 }}>
-        MY MODULES
-      </Text>
-      <View style={{ gap: 12 }}>
-        {data.modules.map((m) => (
-          <ModuleCard
-            key={m.id}
-            code={m.moduleCode}
-            name={m.moduleName}
-            meta={m.activeSessionId ? "Session active — open to mark attendance" : "No active session"}
-            onPress={() => router.push(`/student/modules/${m.id}`)}
-          />
-        ))}
-        {data.modules.length === 0 ? (
-          <Text style={{ color: colors.ink.muted, lineHeight: 22 }}>No modules yet. Use Join class with your code.</Text>
-        ) : null}
       </View>
 
       <View style={{ height: 32 }} />
