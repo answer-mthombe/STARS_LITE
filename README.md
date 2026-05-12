@@ -10,7 +10,7 @@ npx expo start -c
 ```
 
 - **Web:** open the URL Expo prints (favicon: `public/favicon.svg` and `assets/favicon.svg`).
-- **Node:** use **20 LTS** for best compatibility with Expo SDK 52.
+- **Node:** use **20.19+** for Expo SDK 54.
 
 ## Documentation
 
@@ -124,6 +124,12 @@ flowchart LR
     FB[Firebase Auth + Firestore]
   end
 
+  subgraph offline["Offline-first (PouchDB)"]
+    PDB[PouchDB local store]
+    OUT[Outbox mutations]
+    SYNC[Sync engine]
+  end
+
   UI --> Z
   UI --> AUTH
   UI --> ATT
@@ -132,7 +138,21 @@ flowchart LR
   ATT --> MDB
   MOD --> MDB
   MDB -.->|same contracts| FB
+  UI --> PDB
+  UI --> OUT
+  OUT --> SYNC
+  SYNC -.-> FB
 ```
+
+---
+
+## Engineering best practices (project rules)
+
+- **Single source of truth**: screens (`app/`) do not talk to databases directly. They call services in `src/services/`.
+- **No code duplication**: if logic repeats across two screens/services, extract it into `src/services/`, `src/utils/`, or `src/components/ui/` once.
+- **No component duplication**: create one shared component and parametrize it instead of copying a screen card/button/chart.
+- **Offline-first writes**: any user action that creates/updates data should be able to run offline by **enqueueing a mutation**; sync runs in the background.
+
 
 ---
 

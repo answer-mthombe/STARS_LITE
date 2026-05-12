@@ -1,4 +1,5 @@
 import "@/styles/global.css";
+import "@/polyfills/setImmediate";
 
 import { Stack } from "expo-router";
 import { StatusBar } from "react-native";

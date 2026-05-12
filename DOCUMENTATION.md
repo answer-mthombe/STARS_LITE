@@ -8,8 +8,8 @@
 
 | Layer | Technology |
 |--------|--------------|
-| **Runtime** | Node.js **20 LTS** recommended (Expo SDK 52 + Metro are not reliable on Node 24+) |
-| **Framework** | [Expo](https://expo.dev/) SDK **52** (managed workflow, EAS-ready) |
+| **Runtime** | Node.js **20.19+** recommended (Expo SDK 54 minimum) |
+| **Framework** | [Expo](https://expo.dev/) SDK **54** (managed workflow, EAS-ready) |
 | **Language** | **TypeScript** (strict) |
 | **Routing** | [Expo Router](https://docs.expo.dev/router/introduction/) (file-based, deep links, web + native) |
 | **UI** | React Native, **NativeWind v4** + **Tailwind** tokens, custom theme (`#E8E8E8`, `#006281`, `#4F1A1D`) |
@@ -22,6 +22,7 @@
 | **Crypto** | **expo-crypto** (session seed for mock sessions) |
 | **Data (current)** | In-memory **mock Firestore** (`src/mockDB/`) + JSON seeds |
 | **Data (future)** | Firebase v9 modular (**Auth**, **Firestore**, **Storage**) — interfaces and services structured to swap |
+| **Offline-first (new)** | **PouchDB** local store + mutation outbox + background sync (`src/services/offline/`) |
 
 ---
 
@@ -45,6 +46,28 @@ npx expo start -c
 2. **Role-based routes** — `/admin/*` (university + simulation), `/dean/*`, `/hod/*`, `/lecturer/*`, `/student/*`, plus shared `/notifications`, `/settings`. Hierarchy and permissions: **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)**.
 3. **Route groups** — `(auth)` only organizes files; URLs are **`/onboarding`**, **`/login`**, **`/register-student`** (parentheses are not in the path).
 4. **UI system** — `ScreenShell` + tokens in `src/theme/`; **Innovation Lab** footer is pinned below scroll content for brand consistency.
+
+### 2.1 DRY rules (no duplication)
+
+1. **Screens are thin**: keep data fetching/writes inside `src/services/`.
+2. **One component per concept**: if two screens need the same UI, create a shared component and parametrize it.
+3. **One helper per repeated rule**: if the same validation / parsing / formatting appears twice, extract it into `src/utils/`.
+4. **Offline-first mindset**: user actions create **mutations** that can be retried; do not block UX on network availability.
+
+### 2.2 Offline-first + sync (PouchDB)
+
+**Where it lives**
+
+- `src/services/offline/pouchDb.ts`: PouchDB config (AsyncStorage on native, IndexedDB on web) + shared doc types.
+- `src/services/offline/offlineRepository.ts`: generic upsert/get/list helpers (no business logic).
+- `src/services/offline/offlineSync.ts`: mutation outbox + background push to Firestore.
+
+**How to use it (pattern)**
+
+- When a screen needs to write “live data”, call a service that:
+  - writes to PouchDB (so the UI works offline)
+  - enqueues a mutation (outbox)
+- Sync runs in the background (push-only for now) and marks mutations as `acked` or `failed` for retry.
 
 ### 3. Attendance simulation (mock)
 
@@ -86,6 +109,7 @@ npx expo start -c
 ## Troubleshooting
 
 - **Metro `TerminalReporter` / Node issues** — use Node 20 LTS, delete `node_modules`, reinstall.
+- **Expo Go stuck on “Loading your space…”** — ensure assets referenced in `app.json` exist, start with `npx expo start -c --lan`, use hotspot if campus Wi‑Fi blocks device traffic.
 - **NativeWind preset error** — `tailwind.config.js` must include `presets: [require("nativewind/preset")]`.
 - **SecureStore on web** — use `src/utils/authStorage.ts` (already wired in `authStore`).
 

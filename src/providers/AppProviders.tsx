@@ -5,6 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAuthStore } from "@/store/authStore";
 import { useToastStore } from "@/store/toastStore";
 import { ToastNotification } from "@/components/ui/ToastNotification";
+import { processOutboxOnce } from "@/services/offline/offlineSync";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const bootstrap = useAuthStore((s) => s.bootstrap);
@@ -14,6 +15,14 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     bootstrap();
   }, [bootstrap]);
+
+  useEffect(() => {
+    // Simple background sync loop (push-only) — safe to call even when Firebase isn't configured yet.
+    const id = setInterval(() => {
+      void processOutboxOnce();
+    }, 12_000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
