@@ -5,12 +5,35 @@
 ## Quick start
 
 ```bash
-npm install --legacy-peer-deps
+npm install
 npx expo start -c
 ```
 
 - **Web:** open the URL Expo prints (favicon: `public/favicon.svg` and `assets/favicon.svg`).
 - **Node:** use **20.19+** for Expo SDK 54.
+
+## Clone-and-run (no surprises)
+
+- **Prereqs**: Node **20.19+** (see `.nvmrc`)
+- **Clean reset** (when things get weird after upgrades):
+
+```bash
+rm -rf node_modules
+rm -f package-lock.json
+npm cache verify
+npm install
+npx expo start -c
+```
+
+- **Windows PowerShell reset**:
+
+```powershell
+Remove-Item -Recurse -Force node_modules
+Remove-Item -Force package-lock.json
+npm cache verify
+npm install
+npx expo start -c
+```
 
 ## Documentation
 

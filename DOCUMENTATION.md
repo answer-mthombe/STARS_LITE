@@ -32,7 +32,7 @@
 
 ```bash
 cd ATTANDANCE
-npm install --legacy-peer-deps
+npm install
 npx expo start -c
 ```
 

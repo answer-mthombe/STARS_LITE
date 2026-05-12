@@ -35,23 +35,21 @@ export async function enqueueMutation(args: Omit<OfflineMutationDoc, "_id" | "ki
 export async function processOutboxOnce() {
   const db = getOfflineDb();
 
-  // PouchDB requires an index for sort fields. Create it once (safe to call repeatedly).
-  try {
-    await (db as any).createIndex({
-      index: { fields: ["kind", "status", "createdAt"] },
-      name: "idx_outbox_kind_status_createdAt",
-    });
-  } catch {
-    // ignore index errors (older adapters / race conditions)
-  }
+  // For maximum cross-adapter stability (IndexedDB/AsyncStorage), avoid Mango sort/index requirements.
+  // Use allDocs on the outbox prefix and sort in memory (outbox is small).
+  const res = await db.allDocs({
+    include_docs: true,
+    startkey: "mutation:",
+    endkey: "mutation:\uffff",
+    limit: 200,
+  });
 
-  const res = await db.find({
-    selector: { kind: "mutation", status: { $in: ["pending", "failed"] } },
-    sort: ["createdAt"],
-    limit: 50,
-  } as any);
-
-  const pending = res.docs as OfflineMutationDoc[];
+  const pending = res.rows
+    .map((r) => r.doc)
+    .filter((d): d is OfflineMutationDoc => Boolean(d && (d as any).kind === "mutation"))
+    .filter((m) => m.status === "pending" || m.status === "failed")
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .slice(0, 50);
   if (pending.length === 0) return { pushed: 0 };
 
   // Minimal Firestore push implementation.
