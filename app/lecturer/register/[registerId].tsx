@@ -1,15 +1,12 @@
 import { useMemo, useState } from "react";
-import { Text, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
-import { ScreenShell } from "@/components/ui/ScreenShell";
-import { AppButton } from "@/components/ui/AppButton";
+import { AppButton, AppText, ScreenShell, Spacer, Stack } from "@/components/ui";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { classRegisterService } from "@/services/classRegisterService";
 import { testInvigilationService } from "@/services/testInvigilationService";
 import { mockDB } from "@/mockDB/mockDBService";
 import { useMockDbVersionStore } from "@/store/mockDbVersionStore";
-import { colors } from "@/theme";
 import { useToastStore } from "@/store/toastStore";
 
 export default function ViewRegisterScreen() {
@@ -32,16 +29,13 @@ export default function ViewRegisterScreen() {
   if (!data) {
     return (
       <ScreenShell title="Register" showBack>
-        <Text style={{ color: colors.ink.muted }}>Register not found.</Text>
+        <AppText variant="body">Register not found.</AppText>
       </ScreenShell>
     );
   }
 
   const title = data.kind === "class" ? `${data.reg.moduleCode} class register` : data.reg.title;
-  const present =
-    data.kind === "class"
-      ? data.reg.students.filter((s) => s.present).length
-      : data.reg.students.filter((s) => s.present).length;
+  const present = data.reg.students.filter((s) => s.present).length;
   const total = data.reg.students.length;
   const meta =
     data.kind === "class"
@@ -50,16 +44,16 @@ export default function ViewRegisterScreen() {
 
   return (
     <ScreenShell title={title} showBack subtitle={`${present}/${total} present · ${meta}`}>
-      <Text style={{ color: colors.ink.muted, marginBottom: 12, fontSize: 13 }}>
+      <AppText variant="body" style={{ marginBottom: 12 }}>
         Print-ready PDF — pre-loaded in simulator demo data.
-      </Text>
-      <View style={{ gap: 8, marginBottom: 16 }}>
+      </AppText>
+      <Stack gap="xs" style={{ marginBottom: 16 }}>
         {data.reg.students.map((s) => (
-          <Text key={s.studentId} style={{ color: colors.ink.default, fontSize: 14 }}>
+          <AppText key={s.studentId} variant="bodyStrong">
             {s.present ? "✓" : "○"} {s.studentNumber} — {s.fullName}
-          </Text>
+          </AppText>
         ))}
-      </View>
+      </Stack>
       <AppButton
         title={busy ? "Preparing…" : "Print register"}
         onPress={async () => {
@@ -78,7 +72,7 @@ export default function ViewRegisterScreen() {
           }
         }}
       />
-      <View style={{ height: 10 }} />
+      <Spacer size="sm" />
       <AppButton
         title="Share PDF"
         variant="outline"

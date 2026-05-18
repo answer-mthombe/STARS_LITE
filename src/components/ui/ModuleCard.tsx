@@ -1,7 +1,8 @@
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
 
+import { AppText } from "@/components/ui/AppText";
+import { Badge } from "@/components/ui/Badge";
 import { colors, radius } from "@/theme";
-import { Badge } from "./Badge";
 
 export function ModuleCard({
   code,
@@ -15,7 +16,6 @@ export function ModuleCard({
   name: string;
   meta?: string;
   onPress?: () => void;
-  /** Optional primary action (e.g. attend) shown below the header row */
   actionLabel?: string;
   onActionPress?: () => void;
 }) {
@@ -38,10 +38,14 @@ export function ModuleCard({
       >
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.ink.muted, fontSize: 12, fontWeight: "700" }}>{code}</Text>
-            <Text style={{ color: colors.ink.default, fontSize: 16, fontWeight: "800", marginTop: 4 }}>{name}</Text>
+            <AppText variant="label">{code}</AppText>
+            <AppText variant="bodyStrong" style={{ fontSize: 16, marginTop: 4 }}>
+              {name}
+            </AppText>
             {meta ? (
-              <Text style={{ color: colors.ink.subtle, fontSize: 13, marginTop: 6 }}>{meta}</Text>
+              <AppText variant="caption" color={colors.ink.subtle} style={{ marginTop: 6 }}>
+                {meta}
+              </AppText>
             ) : null}
           </View>
           <Badge label="Module" tone="muted" />
@@ -59,7 +63,9 @@ export function ModuleCard({
             opacity: pressed ? 0.88 : 1,
           })}
         >
-          <Text style={{ color: colors.palette.primary, fontWeight: "900", fontSize: 14, textAlign: "center" }}>{actionLabel}</Text>
+          <AppText variant="chip" color={colors.palette.primary} style={{ textAlign: "center" }}>
+            {actionLabel}
+          </AppText>
         </Pressable>
       ) : null}
     </View>

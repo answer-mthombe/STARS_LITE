@@ -1,15 +1,21 @@
 import { useCallback, useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
 
 import { StudentCardScanner } from "@/components/invigilation/StudentCardScanner";
-import { AppInput } from "@/components/ui/AppInput";
-import { AppButton } from "@/components/ui/AppButton";
-import { AppCard } from "@/components/ui/AppCard";
+import {
+  AppButton,
+  AppCard,
+  AppInput,
+  AppText,
+  Chip,
+  SectionHeader,
+  Spacer,
+  Stack,
+} from "@/components/ui";
 import { testInvigilationService } from "@/services/testInvigilationService";
 import { mockDB } from "@/mockDB/mockDBService";
 import { useMockDbVersionStore } from "@/store/mockDbVersionStore";
 import { useToastStore } from "@/store/toastStore";
-import { colors } from "@/theme";
+
 type Props = {
   testSessionId: string;
   personId: string;
@@ -55,32 +61,36 @@ export function TestInvigilatePanel({ testSessionId, personId, role, isLecturer,
   );
 
   if (!session) {
-    return <Text style={{ color: colors.ink.muted }}>Test session not found.</Text>;
+    return <AppText variant="body">Test session not found.</AppText>;
   }
 
   return (
-    <View style={{ gap: 16 }}>
+    <Stack gap="lg">
       <AppCard>
-        <Text style={{ fontWeight: "800", color: colors.palette.primary }}>{session.title}</Text>
-        <Text style={{ color: colors.ink.muted, marginTop: 4 }}>{session.moduleCode} · {session.status}</Text>
-        <Text style={{ color: colors.ink.muted, marginTop: 8 }}>
+        <AppText variant="heading">{session.title}</AppText>
+        <AppText variant="body" style={{ marginTop: 4 }}>
+          {session.moduleCode} · {session.status}
+        </AppText>
+        <AppText variant="body" style={{ marginTop: 8 }}>
           Present: {marks.length} · Invigilators share one register (no duplicates)
-        </Text>
+        </AppText>
         {myInvigilator ? (
-          <Text style={{ color: colors.ink.subtle, marginTop: 6, fontSize: 12 }}>
+          <AppText variant="caption" style={{ marginTop: 6 }}>
             Your station: {myInvigilator.scanSide} · Scanning {myInvigilator.canScan ? "on" : "off"}
-          </Text>
+          </AppText>
         ) : null}
       </AppCard>
 
       {isLecturer && session.status === "active" ? (
-        <View>
-          <Text style={{ fontWeight: "800", color: colors.palette.primary, marginBottom: 8 }}>Delegate scanning</Text>
+        <Stack gap="sm">
+          <SectionHeader title="Delegate scanning" />
           {session.invigilators
             .filter((i) => i.role === "tutor")
             .map((inv) => (
-              <Pressable
+              <Chip
                 key={inv.personId}
+                label={`${inv.fullName} — ${inv.canScan ? "Can scan" : "Paused"}`}
+                variant={inv.canScan ? "accent" : "outline"}
                 onPress={() =>
                   testInvigilationService.setInvigilatorCanScan(
                     testSessionId,
@@ -89,26 +99,13 @@ export function TestInvigilatePanel({ testSessionId, personId, role, isLecturer,
                     session.lecturerId
                   )
                 }
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  padding: 10,
-                  marginBottom: 6,
-                  borderRadius: 8,
-                  backgroundColor: inv.canScan ? "rgba(0,98,129,0.1)" : colors.surface.base,
-                  borderWidth: 1,
-                  borderColor: colors.border.subtle,
-                }}
-              >
-                <Text style={{ fontWeight: "600" }}>{inv.fullName}</Text>
-                <Text style={{ color: colors.palette.accent }}>{inv.canScan ? "Can scan" : "Paused"}</Text>
-              </Pressable>
+              />
             ))}
-        </View>
+        </Stack>
       ) : null}
 
       {canScan ? (
-        <>
+        <Stack gap="md">
           <StudentCardScanner
             onScan={(data) => markStudent(data, "barcode")}
             hint="Scan student card barcode (MUT:studentNumber)"
@@ -120,28 +117,25 @@ export function TestInvigilatePanel({ testSessionId, personId, role, isLecturer,
             keyboardType="number-pad"
           />
           <AppButton title="Mark present" onPress={() => manual.trim() && markStudent(manual.trim(), "manual")} />
-        </>
+        </Stack>
       ) : session.status === "closed" && session.registerId ? (
-        <AppButton
-          title="View / share PDF register"
-          onPress={() => onRegisterReady?.(session.registerId!)}
-        />
+        <AppButton title="View / share PDF register" onPress={() => onRegisterReady?.(session.registerId!)} />
       ) : (
-        <Text style={{ color: colors.ink.muted }}>
+        <AppText variant="body">
           {session.status === "awaiting_lecturer_confirm"
             ? "Waiting for lecturer to confirm test is over."
             : "Scanning disabled for your role."}
-        </Text>
+        </AppText>
       )}
 
-      <View>
-        <Text style={{ fontWeight: "800", marginBottom: 8 }}>Marked ({marks.length})</Text>
+      <Stack gap="xs">
+        <SectionHeader title={`Marked (${marks.length})`} />
         {marks.map((m) => (
-          <Text key={m.id} style={{ fontSize: 13, color: colors.ink.default, marginBottom: 4 }}>
+          <AppText key={m.id} variant="caption">
             {m.studentNumber} {m.fullName}
-          </Text>
+          </AppText>
         ))}
-      </View>
+      </Stack>
 
       {isLecturer && session.status === "active" ? (
         <AppButton
@@ -172,6 +166,6 @@ export function TestInvigilatePanel({ testSessionId, personId, role, isLecturer,
           }}
         />
       ) : null}
-    </View>
+    </Stack>
   );
 }

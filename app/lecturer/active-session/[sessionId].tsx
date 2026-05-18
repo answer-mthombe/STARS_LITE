@@ -1,13 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { LiveSessionQr } from "@/components/attendance/LiveSessionQr";
-import { ScreenShell } from "@/components/ui/ScreenShell";
-import { AppCard } from "@/components/ui/AppCard";
-import { SessionTimer } from "@/components/ui/SessionTimer";
-import { AppButton } from "@/components/ui/AppButton";
-import { colors } from "@/theme";
+import { AppButton, AppCard, AppText, ScreenShell, SessionTimer, Spacer } from "@/components/ui";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { useAuthStore } from "@/store/authStore";
 import { mockDB } from "@/mockDB/mockDBService";
@@ -70,10 +66,12 @@ export default function LecturerActiveSessionScreen() {
   return (
     <ScreenShell title="Live attendance" showBack>
       {!session ? (
-        <Text style={{ color: colors.ink.muted }}>Session not found.</Text>
+        <AppText variant="body">Session not found.</AppText>
       ) : session.classRegisterId ? (
         <>
-          <Text style={{ color: colors.ink.muted, marginBottom: 12 }}>Class ended — register is ready.</Text>
+          <AppText variant="body" style={{ marginBottom: 12 }}>
+            Class ended — register is ready.
+          </AppText>
           <AppButton
             title="View PDF register"
             onPress={() => router.push(`/lecturer/register/${session.classRegisterId}` as never)}
@@ -82,22 +80,21 @@ export default function LecturerActiveSessionScreen() {
       ) : (
         <>
           <SessionTimer expiresAtIso={session.expiresAt} />
-          <View style={{ height: 16 }} />
+          <Spacer size="lg" />
           <AppCard>
-            <Text style={{ color: colors.ink.muted, fontWeight: "800" }}>
-              Scan this QR (updates every {ATTENDANCE_CODE_WINDOW_MS / 1000}s)
-            </Text>
+            <AppText variant="label">Scan this QR (updates every {ATTENDANCE_CODE_WINDOW_MS / 1000}s)</AppText>
             <View style={{ alignItems: "center", marginTop: 14, marginBottom: 8 }}>
               {qrPayload ? <LiveSessionQr value={qrPayload} /> : null}
             </View>
-            <Text style={{ color: colors.ink.muted, fontSize: 12, textAlign: "center", marginBottom: 12 }}>
+            <AppText variant="caption" align="center" style={{ marginBottom: 12 }}>
               Next refresh in ~{secsToRefresh}s
-            </Text>
-            <Text style={{ color: colors.palette.primary, fontSize: 40, fontWeight: "900", letterSpacing: 4, marginTop: 8 }}>
+            </AppText>
+            <AppText variant="label">Or enter code manually</AppText>
+            <AppText variant="metric" color="#4F1A1D" style={{ fontSize: 40, letterSpacing: 4, marginTop: 8 }}>
               {code}
-            </Text>
+            </AppText>
           </AppCard>
-          <View style={{ height: 16 }} />
+          <Spacer size="lg" />
           <AppButton
             title={busy ? "Finalising…" : isLecturer ? "Confirm class ended & PDF" : "Confirm class ended (tutor)"}
             variant="outline"
@@ -105,9 +102,9 @@ export default function LecturerActiveSessionScreen() {
             onPress={endClass}
           />
           {session.tutorEndConfirmations?.length ? (
-            <Text style={{ color: colors.ink.muted, marginTop: 10, fontSize: 12 }}>
+            <AppText variant="caption" style={{ marginTop: 10 }}>
               Tutor confirmations: {session.tutorEndConfirmations.length}
-            </Text>
+            </AppText>
           ) : null}
         </>
       )}

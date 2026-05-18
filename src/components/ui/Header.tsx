@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { useRouter } from "expo-router";
 
+import { LogoutButton } from "@/components/navigation/LogoutButton";
+import { AppText } from "@/components/ui/AppText";
+import { useAuthStore } from "@/store/authStore";
 import { colors } from "@/theme";
 
 export function Header({
@@ -9,13 +12,16 @@ export function Header({
   subtitle,
   right,
   showBack,
+  showLogout = true,
 }: {
   title: string;
   subtitle?: string;
   right?: ReactNode;
   showBack?: boolean;
+  showLogout?: boolean;
 }) {
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   return (
     <View
       style={{
@@ -30,18 +36,23 @@ export function Header({
     >
       {showBack ? (
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Text style={{ color: colors.palette.primary, fontWeight: "800", fontSize: 15 }}>←</Text>
+          <AppText variant="link" color={colors.palette.primary}>
+            ←
+          </AppText>
         </Pressable>
       ) : null}
       <View style={{ flex: 1 }}>
-        <Text style={{ color: colors.palette.accent, fontSize: 18, fontWeight: "800", letterSpacing: -0.2 }}>
-          {title}
-        </Text>
+        <AppText variant="title">{title}</AppText>
         {subtitle ? (
-          <Text style={{ color: colors.ink.muted, fontSize: 13, marginTop: 2 }}>{subtitle}</Text>
+          <AppText variant="caption" style={{ marginTop: 2 }}>
+            {subtitle}
+          </AppText>
         ) : null}
       </View>
-      {right}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        {right}
+        {showLogout && user ? <LogoutButton compact /> : null}
+      </View>
     </View>
   );
 }

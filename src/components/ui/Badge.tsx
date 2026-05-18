@@ -1,5 +1,6 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
 
+import { AppText } from "@/components/ui/AppText";
 import { colors, radius } from "@/theme";
 
 export function Badge({ label, tone = "accent" }: { label: string; tone?: "accent" | "primary" | "muted" }) {
@@ -18,7 +19,9 @@ export function Badge({ label, tone = "accent" }: { label: string; tone?: "accen
         borderColor: tone === "primary" ? "transparent" : colors.palette.accent,
       }}
     >
-      <Text style={{ color: fg, fontSize: 11, fontWeight: "800", letterSpacing: 0.3 }}>{label}</Text>
+      <AppText variant="caption" color={fg} style={{ fontWeight: "800", letterSpacing: 0.3 }}>
+        {label}
+      </AppText>
     </View>
   );
 }

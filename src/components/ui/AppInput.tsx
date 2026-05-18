@@ -1,4 +1,6 @@
-import { Text, TextInput, View, type TextInputProps } from "react-native";
+import { TextInput, View, type TextInputProps } from "react-native";
+
+import { AppText } from "@/components/ui/AppText";
 import { colors, radius } from "@/theme";
 
 export function AppInput({
@@ -8,7 +10,7 @@ export function AppInput({
 }: TextInputProps & { label?: string; error?: string }) {
   return (
     <View style={{ gap: 6 }}>
-      {label ? <Text style={{ color: colors.palette.accent, fontWeight: "800" }}>{label}</Text> : null}
+      {label ? <AppText variant="label">{label}</AppText> : null}
       <TextInput
         placeholderTextColor="rgba(39,49,58,0.55)"
         style={{
@@ -23,8 +25,11 @@ export function AppInput({
         }}
         {...props}
       />
-      {error ? <Text style={{ color: colors.palette.primary, fontWeight: "700" }}>{error}</Text> : null}
+      {error ? (
+        <AppText variant="label" color={colors.palette.primary}>
+          {error}
+        </AppText>
+      ) : null}
     </View>
   );
 }
-

@@ -1,9 +1,6 @@
-import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
 
-import { ScreenShell } from "@/components/ui/ScreenShell";
-import { AppCard } from "@/components/ui/AppCard";
-import { colors } from "@/theme";
+import { AppCard, AppText, LinkText, ScreenShell, Stack } from "@/components/ui";
 
 const ITEMS = [
   { id: "1", title: "Session starting soon", body: "Mobile Development — Dr. Mkhize may open attendance shortly." },
@@ -16,17 +13,17 @@ export default function NotificationsScreen() {
 
   return (
     <ScreenShell title="Notifications" showBack>
-      <View style={{ gap: 12 }}>
+      <Stack gap="md">
         {ITEMS.map((n) => (
           <AppCard key={n.id}>
-            <Text style={{ color: colors.ink.default, fontWeight: "900" }}>{n.title}</Text>
-            <Text style={{ color: colors.ink.muted, marginTop: 6, lineHeight: 20 }}>{n.body}</Text>
+            <AppText variant="heading">{n.title}</AppText>
+            <AppText variant="body" style={{ marginTop: 6 }}>
+              {n.body}
+            </AppText>
           </AppCard>
         ))}
-      </View>
-      <Text style={{ color: colors.palette.primary, fontWeight: "900", marginTop: 20 }} onPress={() => router.back()}>
-        Close
-      </Text>
+      </Stack>
+      <LinkText onPress={() => router.back()}>Close</LinkText>
     </ScreenShell>
   );
 }

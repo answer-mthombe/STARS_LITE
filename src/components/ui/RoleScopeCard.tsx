@@ -1,6 +1,5 @@
-import { View, Text } from "react-native";
 import { AppCard } from "@/components/ui/AppCard";
-import { colors } from "@/theme";
+import { AppText } from "@/components/ui/AppText";
 import type { InstitutionRole } from "@/types/roles";
 
 const ROLE_LABELS: Record<InstitutionRole, string> = {
@@ -12,19 +11,25 @@ const ROLE_LABELS: Record<InstitutionRole, string> = {
   student: "Student",
 };
 
-type Props = {
+export function RoleScopeCard({
+  role,
+  scopeLabel,
+  detail,
+}: {
   role: InstitutionRole;
   scopeLabel: string;
   detail?: string;
-};
-
-export function RoleScopeCard({ role, scopeLabel, detail }: Props) {
+}) {
   return (
     <AppCard>
-      <Text style={{ color: colors.palette.primary, fontWeight: "800", fontSize: 13 }}>{ROLE_LABELS[role]}</Text>
-      <Text style={{ color: colors.ink.default, fontWeight: "700", marginTop: 4, fontSize: 16 }}>{scopeLabel}</Text>
+      <AppText variant="label">{ROLE_LABELS[role]}</AppText>
+      <AppText variant="heading" style={{ marginTop: 4, fontSize: 16 }}>
+        {scopeLabel}
+      </AppText>
       {detail ? (
-        <Text style={{ color: colors.ink.muted, marginTop: 6, fontSize: 13 }}>{detail}</Text>
+        <AppText variant="body" style={{ marginTop: 6 }}>
+          {detail}
+        </AppText>
       ) : null}
     </AppCard>
   );

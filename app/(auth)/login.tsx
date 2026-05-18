@@ -1,12 +1,20 @@
 import { useMemo, useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
-import { AppButton } from "@/components/ui/AppButton";
-import { AppInput } from "@/components/ui/AppInput";
-import { StarsWordmark } from "@/components/ui/StarsWordmark";
-import { InnovationLabFooter } from "@/components/ui/InnovationLabFooter";
+import {
+  AppButton,
+  AppInput,
+  AppText,
+  Chip,
+  ChipPicker,
+  ChipSelectGroup,
+  InnovationLabFooter,
+  LinkText,
+  Stack,
+  StarsWordmark,
+} from "@/components/ui";
 import { colors } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
 import { useToastStore } from "@/store/toastStore";
@@ -54,79 +62,55 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.palette.lightBg }} edges={["top", "left", "right"]}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+      <View style={{ flex: 1, padding: 20, paddingBottom: 40 }}>
         <View style={{ alignItems: "center", marginBottom: 8 }}>
           <StarsWordmark />
         </View>
 
         <View style={{ flex: 1, justifyContent: "center", minHeight: 420 }}>
-          <Text style={{ color: colors.palette.accent, fontSize: 26, fontWeight: "800" }}>Sign in</Text>
-          <Text style={{ color: colors.ink.muted, marginTop: 8 }}>{hint}</Text>
+          <AppText variant="display">Sign in</AppText>
+          <AppText variant="body" style={{ marginTop: 8 }}>
+            {hint}
+          </AppText>
 
-          <View style={{ marginTop: 18, gap: 12 }}>
-            <Text style={{ color: colors.palette.primary, fontWeight: "800", marginBottom: 4 }}>Role</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {INSTITUTION_ROLES.map((r) => {
-                const active = role === r;
-                return (
-                  <Pressable
-                    key={r}
-                    onPress={() => {
-                      setRole(r);
-                      setEmail(ROLE_DEFAULT_EMAIL[r]);
-                      setPassword("password");
-                    }}
-                    style={{
-                      paddingVertical: 8,
-                      paddingHorizontal: 12,
-                      borderRadius: 9999,
-                      backgroundColor: active ? colors.palette.accent : "rgba(0,98,129,0.10)",
-                      borderWidth: 1,
-                      borderColor: colors.palette.accent,
-                    }}
-                  >
-                    <Text style={{ color: active ? colors.ink.inverse : colors.palette.accent, fontWeight: "800", textTransform: "capitalize" }}>
-                      {r}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+          <Stack gap="md" style={{ marginTop: 18 }}>
+            <AppText variant="heading">Role</AppText>
+            <ChipSelectGroup
+              options={INSTITUTION_ROLES}
+              value={role}
+              capitalize
+              onChange={(r) => {
+                setRole(r);
+                setEmail(ROLE_DEFAULT_EMAIL[r]);
+                setPassword("password");
+              }}
+            />
 
             <AppInput label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" />
             <AppInput label="Password" value={password} onChangeText={setPassword} secureTextEntry />
 
-            <Text style={{ color: colors.palette.primary, fontWeight: "800", marginTop: 8, marginBottom: 6 }}>
+            <AppText variant="heading" style={{ marginTop: 8 }}>
               Quick demo (password: password)
-            </Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+            </AppText>
+            <ChipPicker>
               {DEMO_LOGIN_PRESETS.map((p) => (
-                <Pressable
+                <Chip
                   key={`${p.role}-${p.email}`}
+                  label={p.label}
+                  variant="muted"
                   onPress={() => {
                     setRole(p.role);
                     setEmail(p.email);
                     setPassword("password");
                   }}
-                  style={{
-                    paddingVertical: 6,
-                    paddingHorizontal: 10,
-                    borderRadius: 10,
-                    backgroundColor: "rgba(79,26,29,0.08)",
-                    borderWidth: 1,
-                    borderColor: colors.border.subtle,
-                  }}
-                >
-                  <Text style={{ color: colors.ink.default, fontSize: 11, fontWeight: "700" }} numberOfLines={2}>
-                    {p.label}
-                  </Text>
-                </Pressable>
+                />
               ))}
-            </View>
+            </ChipPicker>
 
             <AppButton
               title={busy ? "Signing in…" : "Sign in"}
               disabled={busy}
+              fullWidth
               onPress={async () => {
                 setBusy(true);
                 try {
@@ -144,14 +128,12 @@ export default function LoginScreen() {
               }}
             />
 
-            <Pressable onPress={() => router.push("/register-student")} style={{ paddingVertical: 10 }}>
-              <Text style={{ color: colors.palette.primary, fontWeight: "700" }}>Create a student account</Text>
-            </Pressable>
-          </View>
+            <LinkText onPress={() => router.push("/register-student")}>Create a student account</LinkText>
+          </Stack>
         </View>
 
         <InnovationLabFooter />
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }

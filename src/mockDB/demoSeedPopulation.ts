@@ -12,6 +12,17 @@ function minsBetween(start: string, end: string) {
   return Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60_000));
 }
 
+function mockDBCourseDept(data: MockCollections, courseId: string): string | undefined {
+  const course = data.courses.find((c) => c.id === courseId);
+  return course?.departmentId ?? undefined;
+}
+
+function mockDBCourseFaculty(data: MockCollections, courseId: string): string | undefined {
+  const deptId = mockDBCourseDept(data, courseId);
+  if (!deptId) return undefined;
+  return data.departments.find((d) => d.id === deptId)?.facultyId;
+}
+
 /**
  * Fills simulator with complete demo data: past sessions, class/test registers (HTML print-ready),
  * test marks, timesheets, and one live test session for scanning demos.
@@ -331,6 +342,9 @@ export function populateDemoRegistersAndTests(data: MockCollections): void {
     }
   }
 
+  const deptId = modMobile.courseId ? mockDBCourseDept(data, modMobile.courseId) : undefined;
+  const facultyId = modMobile.courseId ? mockDBCourseFaculty(data, modMobile.courseId) : undefined;
+
   const auditLogs: AuditLogModel[] = [
     {
       id: "audit_demo_1",
@@ -349,6 +363,65 @@ export function populateDemoRegistersAndTests(data: MockCollections): void {
       scopeType: "module",
       scopeId: modMobile.id,
       createdAt: classStart,
+    },
+    {
+      id: "audit_demo_3",
+      action: "session.ended",
+      actorRole: "lecturer",
+      actorPersonId: mkhize.id,
+      scopeType: "module",
+      scopeId: modMobile.id,
+      createdAt: classEnd,
+    },
+    {
+      id: "audit_demo_4",
+      action: "delegation.created",
+      actorRole: "lecturer",
+      actorPersonId: mkhize.id,
+      scopeType: "module",
+      scopeId: modMobile.id,
+      targetPersonId: thabo?.id ?? null,
+      metadata: { delegateType: "module_tutor" },
+      createdAt: "2026-05-10T10:00:00.000Z",
+    },
+    {
+      id: "audit_demo_5",
+      action: "proxy.activated",
+      actorRole: "dean",
+      actorPersonId: data.deans[0]?.id ?? "dean_demo",
+      scopeType: "faculty",
+      scopeId: facultyId ?? "fac_eng",
+      metadata: { proxyType: "acting_dean" },
+      createdAt: "2026-05-12T09:00:00.000Z",
+    },
+    {
+      id: "audit_demo_6",
+      action: "request.approved",
+      actorRole: "lecturer",
+      actorPersonId: mkhize.id,
+      scopeType: "module",
+      scopeId: modDb?.id ?? modMobile.id,
+      targetPersonId: amahle?.id ?? null,
+      createdAt: "2026-05-14T11:30:00.000Z",
+    },
+    {
+      id: "audit_demo_7",
+      action: "user.privilege_granted",
+      actorRole: "admin",
+      actorPersonId: "admin_sys",
+      scopeType: "university",
+      scopeId: null,
+      metadata: { role: "hod" },
+      createdAt: "2026-05-01T08:00:00.000Z",
+    },
+    {
+      id: "audit_demo_8",
+      action: "attendance.marked",
+      actorRole: "student",
+      actorPersonId: "stu_22005678",
+      scopeType: "module",
+      scopeId: modNet?.id ?? modMobile.id,
+      createdAt: "2026-05-16T08:20:00.000Z",
     },
   ];
 

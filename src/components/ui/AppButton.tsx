@@ -1,32 +1,52 @@
-import { Pressable, Text, View } from "react-native";
+import type { ReactNode } from "react";
+import { Pressable, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
-import { colors, radius } from "@/theme";
 
-type Variant = "primary" | "outline" | "ghost";
+import { AppText } from "@/components/ui/AppText";
+import { colors, radius, spacing } from "@/theme";
+
+export type AppButtonVariant = "primary" | "accent" | "outline" | "ghost";
+export type AppButtonSize = "sm" | "md" | "lg";
+
+const sizeStyles: Record<AppButtonSize, { py: number; px: number; fontSize: number }> = {
+  sm: { py: 8, px: 12, fontSize: 12 },
+  md: { py: 10, px: 14, fontSize: 14 },
+  lg: { py: 12, px: 18, fontSize: 15 },
+};
 
 export function AppButton({
   title,
   onPress,
   disabled,
   variant = "primary",
+  size = "md",
   leftIcon,
+  fullWidth,
 }: {
   title: string;
   onPress?: () => void;
   disabled?: boolean;
-  variant?: Variant;
-  leftIcon?: React.ReactNode;
+  variant?: AppButtonVariant;
+  size?: AppButtonSize;
+  leftIcon?: ReactNode;
+  fullWidth?: boolean;
 }) {
   const scale = useSharedValue(1);
   const anim = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const sz = sizeStyles[size];
 
   const bg =
-    variant === "primary" ? colors.palette.primary : variant === "outline" ? "transparent" : "transparent";
+    variant === "primary"
+      ? colors.palette.primary
+      : variant === "accent"
+        ? colors.palette.accent
+        : "transparent";
   const borderColor = variant === "outline" ? colors.palette.accent : "transparent";
-  const textColor = variant === "primary" ? colors.ink.inverse : colors.palette.primary;
+  const textColor =
+    variant === "primary" || variant === "accent" ? colors.ink.inverse : colors.palette.primary;
 
   return (
-    <Animated.View style={anim}>
+    <Animated.View style={[anim, fullWidth ? { width: "100%" } : null]}>
       <Pressable
         accessibilityRole="button"
         disabled={disabled}
@@ -42,18 +62,19 @@ export function AppButton({
           borderColor,
           borderWidth: variant === "outline" ? 1 : 0,
           borderRadius: radius.pill,
-          paddingVertical: 10,
-          paddingHorizontal: 14,
+          paddingVertical: sz.py,
+          paddingHorizontal: sz.px,
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "center",
-          gap: 8,
+          gap: spacing.sm,
         }}
       >
         {leftIcon ? <View>{leftIcon}</View> : null}
-        <Text style={{ color: textColor, fontWeight: "700", fontSize: 14 }}>{title}</Text>
+        <AppText variant="chip" color={textColor} style={{ fontSize: sz.fontSize }}>
+          {title}
+        </AppText>
       </Pressable>
     </Animated.View>
   );
 }
-
