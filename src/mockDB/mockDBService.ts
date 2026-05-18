@@ -8,6 +8,9 @@ import attendanceRecordsSeed from "./attendanceRecords.json";
 import departmentsSeed from "./departments.json";
 import deansSeed from "./deans.json";
 import hodsSeed from "./hods.json";
+import moduleDelegationsSeed from "./moduleDelegations.json";
+import proxyAssignmentsSeed from "./proxyAssignments.json";
+import tutorsSeed from "./tutors.json";
 
 import type { StudentModel } from "@/models/Student";
 import type { LecturerModel } from "@/models/Lecturer";
@@ -18,8 +21,17 @@ import type { AttendanceRecordModel, AttendanceSessionModel } from "@/models/Att
 import type { DepartmentModel } from "@/models/Department";
 import type { DeanModel } from "@/models/Dean";
 import type { HodModel } from "@/models/Hod";
+import type { ModuleDelegationModel } from "@/models/ModuleDelegation";
+import type { ProxyAssignmentModel } from "@/models/ProxyAssignment";
+import type { TutorModel } from "@/models/Tutor";
+import type { AuditLogModel } from "@/models/AuditLog";
+import type { ClassRegisterModel } from "@/models/ClassRegister";
+import type { TestSessionModel, TestMarkModel, TestRegisterModel } from "@/models/TestSession";
+import type { TutorTimesheetModel } from "@/models/TutorTimesheet";
+import { studentCardBarcodeValue } from "@/utils/studentCardBarcode";
 
 import { generateSyntheticStudents } from "./syntheticPopulation";
+import { populateDemoRegistersAndTests } from "./demoSeedPopulation";
 
 export type MockCollectionName =
   | "students"
@@ -31,7 +43,16 @@ export type MockCollectionName =
   | "attendanceRecords"
   | "departments"
   | "deans"
-  | "hods";
+  | "hods"
+  | "moduleDelegations"
+  | "proxyAssignments"
+  | "tutors"
+  | "auditLogs"
+  | "classRegisters"
+  | "testSessions"
+  | "testMarks"
+  | "testRegisters"
+  | "tutorTimesheets";
 
 export type MockCollections = {
   students: StudentModel[];
@@ -44,6 +65,15 @@ export type MockCollections = {
   departments: DepartmentModel[];
   deans: DeanModel[];
   hods: HodModel[];
+  moduleDelegations: ModuleDelegationModel[];
+  proxyAssignments: ProxyAssignmentModel[];
+  tutors: TutorModel[];
+  auditLogs: AuditLogModel[];
+  classRegisters: ClassRegisterModel[];
+  testSessions: TestSessionModel[];
+  testMarks: TestMarkModel[];
+  testRegisters: TestRegisterModel[];
+  tutorTimesheets: TutorTimesheetModel[];
 };
 
 type AnyRecord = { id: string };
@@ -89,6 +119,15 @@ class InMemoryMockDB {
       departments: [],
       deans: [],
       hods: [],
+      moduleDelegations: [],
+      proxyAssignments: [],
+      tutors: [],
+      auditLogs: [],
+      classRegisters: [],
+      testSessions: [],
+      testMarks: [],
+      testRegisters: [],
+      tutorTimesheets: [],
     };
     this.seedInitialData();
   }
@@ -101,10 +140,31 @@ class InMemoryMockDB {
     this.data.courses = (coursesSeed as unknown as CourseModel[]).map((c) => ({ ...c }));
     this.data.lecturers = (lecturersSeed as unknown as LecturerModel[]).map((l) => ({ ...l }));
     this.data.modules = (modulesSeed as unknown as ModuleModel[]).map((m) => ({ ...m }));
-    this.data.attendanceSessions = (attendanceSessionsSeed as unknown as AttendanceSessionModel[]).map((s) => ({ ...s }));
+    this.data.moduleDelegations = (moduleDelegationsSeed as unknown as ModuleDelegationModel[]).map((d) => ({ ...d }));
+    this.data.proxyAssignments = (proxyAssignmentsSeed as unknown as ProxyAssignmentModel[]).map((p) => ({ ...p }));
+    this.data.tutors = (tutorsSeed as unknown as TutorModel[]).map((t) => ({
+      ...t,
+      yearLevel: t.yearLevel ?? 3,
+      totalLoggedHours: t.totalLoggedHours ?? 0,
+    }));
+    this.data.auditLogs = [];
+    this.data.classRegisters = [];
+    this.data.testSessions = [];
+    this.data.testMarks = [];
+    this.data.testRegisters = [];
+    this.data.tutorTimesheets = [];
+    this.data.attendanceSessions = (attendanceSessionsSeed as unknown as AttendanceSessionModel[]).map((s) => ({
+      ...s,
+      startedByRole: s.startedByRole ?? "lecturer",
+      startedById: s.startedById ?? s.lecturerId,
+    }));
     this.data.attendanceRecords = (attendanceRecordsSeed as unknown as AttendanceRecordModel[]).map((r) => ({ ...r }));
 
-    const baseStudents = (studentsSeed as unknown as StudentModel[]).map((s) => ({ ...s }));
+    const baseStudents = (studentsSeed as unknown as StudentModel[]).map((s) => ({
+      yearLevel: s.yearLevel ?? 2,
+      cardBarcode: s.cardBarcode ?? studentCardBarcodeValue(s),
+      ...s,
+    }));
     const numbers = new Set(baseStudents.map((s) => s.studentNumber));
     const synthetic = generateSyntheticStudents({
       courses: this.data.courses,
@@ -112,6 +172,7 @@ class InMemoryMockDB {
       targetExtra: SYNTHETIC_STUDENT_TARGET,
     });
     this.data.students = [...baseStudents, ...synthetic];
+    populateDemoRegistersAndTests(this.data);
   }
 
   create<K extends MockCollectionName, T extends MockCollections[K][number]>(

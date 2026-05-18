@@ -1,0 +1,14 @@
+[
+  {
+    "id": "tutor_22005678",
+    "studentId": "stu_22005678",
+    "fullName": "Thabo Khumalo",
+    "email": "22005678@live.mut.ac.za",
+    "facultyId": "fac_eng",
+    "departmentId": "dep_it",
+    "yearLevel": 3,
+    "moduleIds": ["mod_mobile"],
+    "totalLoggedHours": 0,
+    "createdAt": "2026-01-15T08:00:00.000Z"
+  }
+]

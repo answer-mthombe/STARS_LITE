@@ -36,7 +36,7 @@ This document ties **milestones**, **user stories**, and **file ownership** toge
 | Pipelines | `src/pipelines/` | Orchestration between Auth, Firestore, and stores |
 | Helpers | `src/utils/firebase/` | Error mapping, retries, batch utilities, etc. |
 
-Domain **models** stay in `src/models/` (already used by mocks). Firestore-specific profile shape: `src/types/firebaseUserProfile.ts`.
+Domain **models** stay in `src/models/` (including `ModuleDelegation`, `ProxyAssignment`, `Tutor`, `AuditLog`). Firestore profile: `src/types/firebaseUserProfile.ts` (role, `linkedStudentId`, `delegatedModuleIds`, `activeProxyIds`). Delegation logic: `src/services/delegationService.ts`, `src/permissions/delegationPermissions.ts`.
 
 ---
 
@@ -55,7 +55,7 @@ Domain **models** stay in `src/models/` (already used by mocks). Firestore-speci
 
 ## Team roles in the STARS system (who does what, and why it matters)
 
-STARS has **three audiences** in the product: **students** (join classes, mark attendance), **lecturers** (run sessions, manage modules), and **admins** (oversight). The Firebase work turns the app from a **demo mock** into a **real system of record** for identity, profiles, modules, sessions, and attendance.
+STARS serves **students**, **tutors** (students with module delegation), **lecturers**, **HODs**, **deans**, and **admins**. The hierarchy supports **flexible delegation**: lecturers can assign a **module tutor** or **class registrar**; deans/HODs can activate **proxies** (acting dean, secretary). Firebase must persist `moduleDelegations`, `proxyAssignments`, and `auditLogs` alongside sessions and attendance. See **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)**.
 
 | Team member | Overall **purpose** on this project | **System role** (what the product “sees” them as responsible for) |
 |-------------|-------------------------------------|---------------------------------------------------------------------|
@@ -95,6 +95,10 @@ Each row is **one** assignable job. Use the **job number** in commits, PR titles
 | **JOB-020** | Brightman | M3 | **Attendance trend / time-bucket** series in Firestore | Supplies **non-synthetic** trend arrays for charts (daily/weekly rollups), aligned with `dashboardChartDummy` shapes until UI switches data source. |
 | **JOB-021** | Basil | M4 | Rules: **scoped analytics reads** (leadership routes) | Ensures **dean** reads only their **faculty** aggregates and **HOD** only **department** — `/admin/analytics`, `/dean/analytics`, `/hod/analytics` cannot leak peer institutions. |
 | **JOB-022** | Basil | M5 | Optional **production chart library** + accessibility | Replace View-based **Mock*** charts when bundle size, RTL, and screen-reader requirements are agreed (Victory Native / Skia / Recharts web). |
+| **JOB-023** | Gugulethu | M2 | `moduleDelegations` + `tutors` Firestore writes | Lecturer grants tutor/registrar; profile stores `delegatedModuleIds`; rules enforce delegate capabilities. |
+| **JOB-024** | Brightman | M2 | `proxyAssignments` + dean/HOD proxy lifecycle | Acting dean / department proxy activate/deactivate with `expiresAt` and audit trail. |
+| **JOB-025** | Basil | M4 | Rules: **delegated session hosts** | Only lecturer, active tutor, or active registrar may create `attendanceSessions` with matching `startedByRole` / `startedById`. |
+| **JOB-026** | Basil | M4 | `auditLogs` collection + admin read path | Admin audit viewer; append-only writes from trusted flows; no PII in log metadata. |
 
 ---
 
@@ -382,7 +386,14 @@ src/utils/firebase/      # YOU create helpers here
 src/types/
   firebaseUserProfile.ts # Firestore profile shape (extend as needed)
 
-src/models/              # Existing domain models (shared mock + live)
+src/models/              # Domain models (incl. ModuleDelegation, ProxyAssignment, Tutor, AuditLog)
+
+src/permissions/
+  institutionPermissions.ts
+  delegationPermissions.ts
+
+src/services/
+  delegationService.ts   # Mock orchestration — mirror in pipelines for Firebase
 
 src/constants/
   demoLogins.ts          # Demo account presets (sign-in chips)

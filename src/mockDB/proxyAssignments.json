@@ -1,0 +1,16 @@
+[
+  {
+    "id": "proxy_dean_eng_hod",
+    "grantorRole": "dean",
+    "grantorPersonId": "dean_eng",
+    "granteePersonId": "hod_it",
+    "granteeEmail": "hod.it@mut.ac.za",
+    "scope": "faculty",
+    "scopeId": "fac_eng",
+    "capabilities": ["faculty.view_analytics", "faculty.view_departments", "faculty.view_attendance", "faculty.reports"],
+    "active": true,
+    "expiresAt": null,
+    "notes": "Acting dean proxy — IT HOD when dean unavailable",
+    "createdAt": "2026-01-12T08:00:00.000Z"
+  }
+]

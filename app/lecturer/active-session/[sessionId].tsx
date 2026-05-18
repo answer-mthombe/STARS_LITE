@@ -9,17 +9,23 @@ import { SessionTimer } from "@/components/ui/SessionTimer";
 import { AppButton } from "@/components/ui/AppButton";
 import { colors } from "@/theme";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
+import { useAuthStore } from "@/store/authStore";
 import { mockDB } from "@/mockDB/mockDBService";
 import { useMockDbVersionStore } from "@/store/mockDbVersionStore";
 import { ATTENDANCE_CODE_WINDOW_MS, currentAttendanceCode } from "@/utils/rotatingCode";
 import { buildAttendanceQrPayload } from "@/utils/attendanceQr";
+import { classRegisterService } from "@/services/classRegisterService";
+import { useToastStore } from "@/store/toastStore";
 
 export default function LecturerActiveSessionScreen() {
-  useRoleGuard("lecturer");
+  useRoleGuard(["lecturer", "tutor"]);
   const { sessionId } = useLocalSearchParams() as { sessionId: string };
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const show = useToastStore((s) => s.show);
   const v = useMockDbVersionStore((s) => s.version);
   const [tick, setTick] = useState(0);
+  const [busy, setBusy] = useState(false);
 
   const session = useMemo(() => {
     mockDB.touch();
@@ -35,41 +41,74 @@ export default function LecturerActiveSessionScreen() {
   const code = rot?.code ?? "------";
   const qrPayload = session && rot ? buildAttendanceQrPayload(session.id, session.algorithmSeed) : "";
   const secsToRefresh = rot ? Math.max(0, Math.ceil((rot.nextChangeAt - Date.now()) / 1000)) : 0;
+  const isLecturer = user?.role === "lecturer";
+
+  const endClass = async () => {
+    if (!session || !user) return;
+    setBusy(true);
+    try {
+      const personId = user.role === "tutor" ? user.studentId : user.id;
+      const role = user.role === "tutor" ? "tutor" : "lecturer";
+      const res = await classRegisterService.confirmClassEnded({
+        sessionId: session.id,
+        confirmedByRole: role,
+        confirmedByPersonId: personId,
+      });
+      if (res.ok) {
+        show({ type: "success", title: "Class register PDF generated" });
+        router.replace(`/lecturer/register/${res.register.id}` as never);
+      } else {
+        show({ type: "info", title: res.reason });
+      }
+    } catch (e) {
+      show({ type: "error", title: e instanceof Error ? e.message : "Could not end class" });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <ScreenShell title="Live attendance" showBack>
       {!session ? (
         <Text style={{ color: colors.ink.muted }}>Session not found.</Text>
+      ) : session.classRegisterId ? (
+        <>
+          <Text style={{ color: colors.ink.muted, marginBottom: 12 }}>Class ended — register is ready.</Text>
+          <AppButton
+            title="View PDF register"
+            onPress={() => router.push(`/lecturer/register/${session.classRegisterId}` as never)}
+          />
+        </>
       ) : (
         <>
           <SessionTimer expiresAtIso={session.expiresAt} />
           <View style={{ height: 16 }} />
           <AppCard>
-            <Text style={{ color: colors.ink.muted, fontWeight: "800" }}>Scan this QR (updates every {ATTENDANCE_CODE_WINDOW_MS / 1000}s)</Text>
+            <Text style={{ color: colors.ink.muted, fontWeight: "800" }}>
+              Scan this QR (updates every {ATTENDANCE_CODE_WINDOW_MS / 1000}s)
+            </Text>
             <View style={{ alignItems: "center", marginTop: 14, marginBottom: 8 }}>
               {qrPayload ? <LiveSessionQr value={qrPayload} /> : null}
             </View>
             <Text style={{ color: colors.ink.muted, fontSize: 12, textAlign: "center", marginBottom: 12 }}>
-              Next refresh in ~{secsToRefresh}s · same code as below
+              Next refresh in ~{secsToRefresh}s
             </Text>
-            <Text style={{ color: colors.ink.muted, fontWeight: "800" }}>Or enter code manually</Text>
-            <Text style={{ color: colors.palette.primary, fontSize: 40, fontWeight: "900", letterSpacing: 4, marginTop: 8 }}>{code}</Text>
-            <Text style={{ color: colors.ink.muted, marginTop: 10, lineHeight: 22 }}>
-              Refreshes locally from the session seed; no Firestore writes per tick.
+            <Text style={{ color: colors.palette.primary, fontSize: 40, fontWeight: "900", letterSpacing: 4, marginTop: 8 }}>
+              {code}
             </Text>
           </AppCard>
           <View style={{ height: 16 }} />
           <AppButton
-            title="End session (demo)"
+            title={busy ? "Finalising…" : isLecturer ? "Confirm class ended & PDF" : "Confirm class ended (tutor)"}
             variant="outline"
-            onPress={() => {
-              mockDB.update("attendanceSessions", session.id, { active: false });
-              const mod = mockDB.read("modules", session.moduleId);
-              if (mod?.activeSessionId === session.id) mockDB.update("modules", session.moduleId, { activeSessionId: null });
-              useMockDbVersionStore.getState().bump();
-              router.replace("/lecturer/dashboard");
-            }}
+            disabled={busy}
+            onPress={endClass}
           />
+          {session.tutorEndConfirmations?.length ? (
+            <Text style={{ color: colors.ink.muted, marginTop: 10, fontSize: 12 }}>
+              Tutor confirmations: {session.tutorEndConfirmations.length}
+            </Text>
+          ) : null}
         </>
       )}
     </ScreenShell>

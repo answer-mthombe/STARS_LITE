@@ -3,8 +3,11 @@ import * as Crypto from "expo-crypto";
 import { mockDB } from "@/mockDB/mockDBService";
 import { haversineMeters } from "@/utils/haversine";
 import { verifyAttendanceCode } from "@/utils/rotatingCode";
-import type { AttendanceSessionModel } from "@/models/Attendance";
+import type { AttendanceSessionModel, SessionHostRole } from "@/models/Attendance";
 import { useMockDbVersionStore } from "@/store/mockDbVersionStore";
+import { delegationService } from "@/services/delegationService";
+import { canStartModuleSession } from "@/permissions/delegationPermissions";
+import type { InstitutionRole } from "@/types/roles";
 
 function bump() {
   useMockDbVersionStore.getState().bump();
@@ -13,7 +16,10 @@ function bump() {
 export const attendanceSimulationService = {
   async createSession(args: {
     moduleId: string;
-    lecturerId: string;
+    hostRole: SessionHostRole;
+    hostId: string;
+    /** Owning lecturer id for audit (defaults from module) */
+    lecturerId?: string;
     latitude: number;
     longitude: number;
     radiusMeters?: number;
@@ -21,7 +27,25 @@ export const attendanceSimulationService = {
   }): Promise<AttendanceSessionModel> {
     mockDB.touch();
     const mod = mockDB.read("modules", args.moduleId);
-    if (!mod || mod.lecturerId !== args.lecturerId) throw new Error("Module not found or not yours.");
+    if (!mod) throw new Error("Module not found.");
+
+    const lecturerId = args.lecturerId ?? mod.lecturerId;
+    const delegations = delegationService.listModuleDelegations(args.moduleId);
+
+    const roleForCheck: InstitutionRole =
+      args.hostRole === "lecturer" ? "lecturer" : args.hostRole === "tutor" ? "tutor" : "student";
+
+    const allowed =
+      args.hostRole === "lecturer"
+        ? mod.lecturerId === args.hostId || mod.coLecturerIds?.includes(args.hostId)
+        : canStartModuleSession({
+            role: roleForCheck,
+            personId: args.hostId,
+            module: mod,
+            delegations,
+          });
+
+    if (!allowed) throw new Error("You are not authorised to start this session.");
 
     const radius = args.radiusMeters ?? 40;
     const mins = args.durationMinutes ?? 20;
@@ -34,7 +58,9 @@ export const attendanceSimulationService = {
 
     const session = mockDB.create("attendanceSessions", {
       moduleId: args.moduleId,
-      lecturerId: args.lecturerId,
+      lecturerId,
+      startedByRole: args.hostRole,
+      startedById: args.hostId,
       lecturerLocation: { latitude: args.latitude, longitude: args.longitude },
       createdAt: new Date(now).toISOString(),
       expiresAt: new Date(now + mins * 60_000).toISOString(),
@@ -44,8 +70,34 @@ export const attendanceSimulationService = {
     });
 
     mockDB.update("modules", args.moduleId, { activeSessionId: session.id });
+    mockDB.create("auditLogs", {
+      action: "session.started",
+      actorRole: roleForCheck,
+      actorPersonId: args.hostId,
+      scopeType: "module",
+      scopeId: args.moduleId,
+      metadata: { sessionId: session.id, hostRole: args.hostRole },
+      createdAt: new Date().toISOString(),
+    });
     bump();
     return session;
+  },
+
+  /** @deprecated Use createSession with hostRole/hostId — kept for lecturer screens */
+  async createSessionAsLecturer(args: {
+    moduleId: string;
+    lecturerId: string;
+    latitude: number;
+    longitude: number;
+    radiusMeters?: number;
+    durationMinutes?: number;
+  }): Promise<AttendanceSessionModel> {
+    return this.createSession({
+      ...args,
+      hostRole: "lecturer",
+      hostId: args.lecturerId,
+      lecturerId: args.lecturerId,
+    });
   },
 
   markAttendance(args: {

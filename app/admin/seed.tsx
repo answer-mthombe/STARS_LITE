@@ -30,6 +30,12 @@ export default function AdminSeedScreen() {
       students: mockDB.list("students").length,
       sessions: mockDB.list("attendanceSessions").length,
       records: mockDB.list("attendanceRecords").length,
+      tutors: mockDB.list("tutors").length,
+      classRegisters: mockDB.list("classRegisters").length,
+      testSessions: mockDB.list("testSessions").length,
+      testMarks: mockDB.list("testMarks").length,
+      testRegisters: mockDB.list("testRegisters").length,
+      timesheets: mockDB.list("tutorTimesheets").length,
     };
   }, [v]);
 
@@ -54,6 +60,24 @@ export default function AdminSeedScreen() {
 
       <View style={{ height: 16 }} />
 
+      <AppButton
+        title="Open sample class PDF (Mobile Dev)"
+        variant="outline"
+        onPress={() => router.push("/lecturer/register/reg_class_mobile" as never)}
+      />
+      <View style={{ height: 10 }} />
+      <AppButton
+        title="Open sample test PDF (Midterm)"
+        variant="outline"
+        onPress={() => router.push("/lecturer/register/reg_test_mobile_midterm?type=test" as never)}
+      />
+      <View style={{ height: 10 }} />
+      <AppButton
+        title="Open live test invigilation (demo)"
+        variant="outline"
+        onPress={() => router.push("/lecturer/test-invigilate/test_demo_active" as never)}
+      />
+      <View style={{ height: 16 }} />
       <AppButton title="Back to university dashboard" variant="outline" onPress={() => router.push("/admin/dashboard")} />
 
       <View style={{ height: 12 }} />

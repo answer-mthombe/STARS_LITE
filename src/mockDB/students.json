@@ -12,6 +12,8 @@
     "attendanceStats": { "totalSessions": 6, "attended": 5, "absent": 1, "attendanceRate": 0.8333333333 },
     "profileImage": null,
     "deviceId": "device_demo_1",
+    "yearLevel": 2,
+    "cardBarcode": "MUT:22001234",
     "createdAt": "2026-01-12T09:00:00.000Z"
   },
   {
@@ -27,6 +29,8 @@
     "attendanceStats": { "totalSessions": 6, "attended": 4, "absent": 2, "attendanceRate": 0.6666666667 },
     "profileImage": null,
     "deviceId": "device_demo_2",
+    "yearLevel": 3,
+    "cardBarcode": "MUT:22005678",
     "createdAt": "2026-01-12T09:03:00.000Z"
   }
 ]

@@ -16,6 +16,7 @@ import { DEMO_LOGIN_PRESETS } from "@/constants/demoLogins";
 
 const ROLE_DEFAULT_EMAIL: Record<UserRole, string> = {
   student: "22001234@live.mut.ac.za",
+  tutor: "22005678@live.mut.ac.za",
   lecturer: "mkhize@mut.ac.za",
   hod: "hod.it@mut.ac.za",
   dean: "dean.engineering@mut.ac.za",
@@ -36,6 +37,8 @@ export default function LoginScreen() {
     switch (role) {
       case "student":
         return "Student: any seeded @live.mut.ac.za (e.g. 22001234) / password";
+      case "tutor":
+        return "Tutor (also a student): 22005678@live.mut.ac.za — module tutor for Mobile Dev / password";
       case "lecturer":
         return "Lecturer: mkhize@mut.ac.za, naidoo@mut.ac.za, dube@mut.ac.za, mahlangu@mut.ac.za / password";
       case "hod":

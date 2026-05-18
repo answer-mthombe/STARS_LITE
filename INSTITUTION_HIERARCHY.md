@@ -1,35 +1,43 @@
 # STARS — Institutional hierarchy, roles & permissions
 
-This document describes how **Mangosuthu University of Technology** is modelled inside STARS: structure (University → Faculty → Department → Course → Module), **five institutional roles**, **scoped analytics**, and **navigation separation**.
+This document describes how **Mangosuthu University of Technology** is modelled inside STARS: structure, **six institutional roles**, **flexible delegation** (tutor, class registrar, acting dean/HOD proxy), scoped analytics, and navigation.
 
 ---
 
 ## Structural model
 
 ```
-University (MUT — metadata in `src/models/University.ts`)
-└── Faculties (`fac_eng`, `fac_mgmt`, …)
-    └── Departments (`dep_it`, `dep_elec`, …)
-        └── Courses (qualifications, e.g. Diploma IT)
-            └── Modules (class offerings with attendance sessions)
-                ├── Lecturers (assigned to modules)
-                └── Students (enrolled via courses / modules)
+University (MUT — `src/models/University.ts`)
+└── Faculty
+    ├── Dean (+ optional Acting Dean / faculty secretary with dean-approved proxy)
+    └── Departments
+        ├── HOD (+ optional department proxy)
+        ├── Courses (qualifications)
+        │   ├── Lecturers
+        │   ├── Students
+        │   └── Modules
+        └── Module
+            ├── Lecturer (primary)
+            ├── Tutor(s) — students with lecturer-granted privileges
+            └── Students (enrolled)
 ```
 
-**Collections (mock / future Firestore):**
+**Collections (mock / Firestore):**
 
 | Collection | Purpose |
 |------------|---------|
-| `faculties` | Top academic divisions; optional `deanId`, `departmentIds` |
-| `departments` | Sub-unit under a faculty; `hodId`, `lecturerIds`, `courseIds` |
-| `deans` | One dean per faculty (`facultyId`) |
-| `hods` | One HOD per department (`departmentId`) |
-| `courses` | Qualification streams; **`departmentId`** + `facultyId` |
-| `modules` | Teachable units; `courseId`, `lecturerId`, enrolment arrays |
-| `lecturers` | Staff; **`facultyId`**, **`departmentId`**, `modules[]` |
-| `students` | Learners; **`departmentId`** (from course), `courseId`, `facultyId` |
-
-Synthetic population: **`src/mockDB/syntheticPopulation.ts`** generates **~118** additional students (with **~2** hand-authored in JSON) so totals reach **~120** for realistic dashboards.
+| `faculties` | Top divisions; `deanId`, `secretaryId`, `actingDeanId` |
+| `facultySecretaries` | Faculty operational staff |
+| `departments` | Sub-units; `hodId`, `lecturerIds`, `courseIds` |
+| `deans` | One dean per faculty |
+| `hods` | One HOD per department |
+| `courses` | Qualifications; `lecturerIds`, `studentIds`, `modules[]` |
+| `modules` | Class offerings; `lecturerId`, `tutorIds`, enrolment |
+| `tutors` | Student-linked tutor profiles |
+| `moduleDelegations` | Lecturer grants (tutor / student registrar) |
+| `proxyAssignments` | Dean/HOD/Admin acting-on-behalf grants |
+| `auditLogs` | Privilege, proxy, session, attendance events |
+| `userProfiles` | Firebase Auth UID → role + links + extra capabilities |
 
 ---
 
@@ -37,57 +45,123 @@ Synthetic population: **`src/mockDB/syntheticPopulation.ts`** generates **~118**
 
 | Role | Scope | Primary routes |
 |------|--------|----------------|
-| **Admin** | Entire university | `/admin/dashboard`, `/admin/seed` |
-| **Dean** | Single **faculty** | `/dean/dashboard` |
-| **HOD** | Single **department** | `/hod/dashboard` |
+| **Admin** | Entire university | `/admin/dashboard`, `/admin/seed`, `/admin/analytics` |
+| **Dean** | Single **faculty** | `/dean/dashboard`, `/dean/analytics` |
+| **HOD** | Single **department** | `/hod/dashboard`, `/hod/analytics` |
 | **Lecturer** | Assigned **modules** | `/lecturer/*` |
+| **Tutor** | Delegated **modules** (also a student) | `/tutor/dashboard` |
 | **Student** | Own enrolment & attendance | `/student/*` |
 
-Role constants: `src/types/roles.ts` (`INSTITUTION_ROLES`, `InstitutionRole`).
-
-Declarative permission matrix (for product + engineering alignment): `src/permissions/institutionPermissions.ts`.
+Constants: `src/types/roles.ts` · Capabilities: `src/types/capabilities.ts` · Matrix: `src/permissions/institutionPermissions.ts` · Module/proxy rules: `src/permissions/delegationPermissions.ts`
 
 ---
 
-## Responsibilities (summary)
+## Responsibilities by role
 
 ### Admin
 
-- University-wide analytics: totals, overall attendance rate, faculty performance snapshot, low-attendance alerts (mock counts).
-- User & catalogue management **in production** would live behind Firebase rules + admin tools; current app exposes **simulation** controls on `/admin/seed`.
+- Add / edit / delete users (production: Firebase + admin tools)
+- Access all stats and **audit logs** (`auditLogs`)
+- Grant or revoke user privileges (`userProfiles.grantedCapabilities`)
+- University-wide analytics and reports
 
 ### Dean
 
-- Faculty KPIs: faculty attendance index, per-department breakdown, lecturer activity, low-performing departments, active sessions intersecting faculty modules.
-- **Charts / heatmaps:** current UI uses summary cards and lists; swap in a chart library later for literal heatmaps without changing analytics services.
+- View faculty analytics (faculty, departments, courses)
+- View attendance for all courses and lectures in the faculty
+- View department details (lecturers, students, courses)
+- Designate a **proxy** on behalf of dean (`proxyAssignments`)
+- Generate faculty reports
+- Activate and deactivate proxy assignments
 
 ### HOD
 
-- Department KPIs: attendance rate, module list, lecturer roster, course summaries, “at-risk” students (mock heuristic).
+- View attendance for all courses and lectures in their department
+- Generate department reports
+- Activate and deactivate **department proxy** privileges
+- **Quality control** — flag modules/lecturers with persistently low attendance
+- View lectures and modules in department
+- Designate proxies within department scope
 
 ### Lecturer
 
-- Unchanged flows: sessions, module roster, join approvals, module-scoped analytics (`/lecturer/*`).
+- Monitor students with low attendance on assigned modules
+- Manage attendance (start/end sessions)
+- **Activate/deactivate tutor** privileges per module (`delegationService.grantModuleDelegation`)
+- **Delegate class registrar** — student can start session / mark roll when class runs independently
+- Generate module attendance reports
+- Start and end class sessions
+- Accept / reject join requests
+- Add students to modules
+- View modules, sessions, attendance records
+
+### Tutor (also a student)
+
+- **Always sourced from `students`** — senior student helping junior cohorts (see `yearLevel` on student/tutor)
+- Run delegated class sessions; **confirm class ended** → PDF register lists all tutor names + attendance + duration
+- **Paid by institution per hours** — `tutorTimesheets` after class/test; submit via `/tutor/timesheets`
+- **Test invigilation** on any module (lecturer adds them) — scan student card barcode or manual number; shared register, no duplicate marks
+- After lecturer confirms test over, **PDF register** appears for tutors at `/tutor/registers`
+- Sign in with **Tutor** role pill (`22005678@live.mut.ac.za` demo)
 
 ### Student
 
-- Unchanged flows: join, mark attendance, history, profile (`/student/*`).
+- Check in (mark own attendance)
+- Monitor own attendance
+- Request to join a session / module
+- View module history, session history, profile
+- May receive **student_registrar** delegation for a specific module/day
+
+---
+
+## Flexible delegation flows
+
+```mermaid
+flowchart TD
+  L[Lecturer] -->|grant tutor| MD[moduleDelegations]
+  L -->|grant registrar| MD
+  MD --> T[Tutor student]
+  MD --> R[Class rep student]
+  T --> S[Start session / manage roll]
+  R --> S
+  D[Dean] -->|approve| PA[proxyAssignments]
+  H[HOD] -->|approve| PA
+  PA --> A[Acting dean / secretary / HOD proxy]
+```
+
+**Implementation**
+
+| Concern | Path |
+|---------|------|
+| Grant/revoke module delegation | `src/services/delegationService.ts` |
+| Can user start session? | `src/permissions/delegationPermissions.ts`, `src/utils/delegation.ts` |
+| Session host audit | `AttendanceSessionModel.startedByRole`, `startedById` |
+| UI badges | `src/components/ui/DelegationBadge.tsx` |
+
+**Demo seed**
+
+- Tutor: `22005678@live.mut.ac.za` → Mobile Development (`mod_mobile`)
+- Registrar: `22001234@live.mut.ac.za` → Database Systems (`mod_db`)
+- Acting dean proxy: HOD IT for Engineering faculty (`proxy_dean_eng_hod`)
+
+**Class register PDF** — `classRegisterService.confirmClassEnded` → `expo-print` PDF with tutor name(s), students, date/time, duration.
+
+**Test invigilation** — `testInvigilationService` · routes: `/lecturer/test-session/[moduleId]`, `/lecturer/test-invigilate/[id]`, `/tutor/test-invigilate/[id]`. Student cards use barcode `MUT:{studentNumber}` (`src/utils/studentCardBarcode.ts`).
 
 ---
 
 ## Analytics scoping
 
-Implementation: **`src/services/institutionAnalytics.ts`**
+`src/services/institutionAnalytics.ts`
 
-| Role | Method | Data boundary |
-|------|--------|----------------|
-| Admin | `universityOverview()` | All students, faculties, departments, sessions |
-| Dean | `facultyOverview(facultyId)` | Rows where `facultyId` matches dean |
-| HOD | `departmentOverview(departmentId)` | Courses/modules/students in department |
-| Lecturer | `lecturerScoped(lecturerId)` | Modules assigned to lecturer |
-| Student | `studentScoped(studentId)` | Own record |
-
-`forUser(authUser)` selects the correct overview for dashboard shells.
+| Role | Method | Boundary |
+|------|--------|----------|
+| Admin | `universityOverview()` | All |
+| Dean | `facultyOverview(facultyId)` | Faculty |
+| HOD | `departmentOverview(departmentId)` | Department |
+| Lecturer | `lecturerScoped(lecturerId)` | Assigned modules |
+| Tutor | Module delegations | Delegated modules only |
+| Student | `studentScoped(studentId)` | Self |
 
 ---
 
@@ -99,23 +173,25 @@ Password for all demo accounts: **`password`**
 |------|----------------|
 | Admin | `admin@mut.ac.za` |
 | Dean | `dean.engineering@mut.ac.za`, `dean.management@mut.ac.za` |
-| HOD | `hod.it@mut.ac.za`, `hod.electrical@mut.ac.za`, `hod.business@mut.ac.za`, `hod.civil@mut.ac.za` |
-| Lecturer | `mkhize@mut.ac.za`, `naidoo@mut.ac.za`, `dube@mut.ac.za`, `mahlangu@mut.ac.za` |
-| Student | Any `*@live.mut.ac.za` present in mock DB (includes synthetic `226xxxxx` range) |
+| HOD | `hod.it@mut.ac.za`, `hod.electrical@mut.ac.za`, … |
+| Lecturer | `mkhize@mut.ac.za`, `naidoo@mut.ac.za`, … |
+| Tutor | `22005678@live.mut.ac.za` |
+| Student | `*@live.mut.ac.za` (seed + synthetic) |
 
-Login UI: `app/(auth)/login.tsx` — role pills drive default email hints.
+Presets: `src/constants/demoLogins.ts` · Login: `app/(auth)/login.tsx`
 
 ---
 
 ## Firebase alignment
 
-`src/firebase/collections.ts` includes `departments`, `deans`, `hods`. Extend Firestore rules so **read/write** follows the same boundaries as `institutionAnalytics` (see `FIREBASE_INTEGRATION.md`).
+- Collections: `src/firebase/collections.ts`
+- Profile shape: `src/types/firebaseUserProfile.ts`
+- Rules must enforce: base role + `moduleDelegations` + `proxyAssignments` + `auditLogs` (see `FIREBASE_INTEGRATION.md`)
 
 ---
 
 ## Related files
 
-- Models: `src/models/Department.ts`, `Dean.ts`, `Hod.ts`, updates to `Faculty`, `Course`, `Lecturer`, `Student`
-- Dashboards: `app/admin/dashboard.tsx`, `app/dean/dashboard.tsx`, `app/hod/dashboard.tsx`
-- Routing entry: `app/index.tsx`
-- Guards: `src/hooks/useRoleGuard.ts`
+- Models: `ProxyAssignment`, `ModuleDelegation`, `Tutor`, `AuditLog`, `FacultySecretary`, updates to `Faculty`, `Course`, `Module`, `Attendance`
+- Utils: `src/utils/delegation.ts`, `src/utils/roleRouting.ts`
+- Tutor UI: `app/tutor/dashboard.tsx`

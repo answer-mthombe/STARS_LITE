@@ -7,5 +7,8 @@ export interface CourseModel extends WithTimestamps {
   departmentId: string;
   courseName: string;
   modules: string[]; // module ids
+  /** Denormalised for course-scoped queries */
+  lecturerIds?: string[];
+  studentIds?: string[];
 }
 

@@ -21,5 +21,9 @@ export interface StudentModel extends WithTimestamps {
   attendanceStats: StudentAttendanceStats;
   profileImage?: string | null;
   deviceId?: string | null;
+  /** Barcode on physical student card — defaults to MUT:{studentNumber} */
+  cardBarcode?: string | null;
+  /** Year level for senior/junior tutor matching */
+  yearLevel?: number | null;
 }
 

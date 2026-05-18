@@ -11,5 +11,6 @@ export default function Index() {
   if (user.role === "dean") return <Redirect href="/dean/dashboard" />;
   if (user.role === "hod") return <Redirect href="/hod/dashboard" />;
   if (user.role === "lecturer") return <Redirect href="/lecturer/dashboard" />;
+  if (user.role === "tutor") return <Redirect href="/tutor/dashboard" />;
   return <Redirect href="/student/dashboard" />;
 }

@@ -11,7 +11,15 @@ export type AuthUser =
   | { role: "lecturer"; id: string; email: string; fullName: string }
   | { role: "admin"; id: string; email: string; fullName: string }
   | { role: "dean"; id: string; email: string; fullName: string; facultyId: string }
-  | { role: "hod"; id: string; email: string; fullName: string; departmentId: string };
+  | { role: "hod"; id: string; email: string; fullName: string; departmentId: string }
+  | {
+      role: "tutor";
+      id: string;
+      email: string;
+      fullName: string;
+      studentId: string;
+      moduleIds: string[];
+    };
 
 type AuthState = {
   status: AuthStatus;

@@ -4,6 +4,7 @@
     "moduleCode": "ITM301",
     "moduleName": "Mobile Development",
     "lecturerId": "lec_mkhize",
+    "tutorIds": ["stu_22005678"],
     "classCode": "MUT-ITM301",
     "enrolledStudents": ["stu_22001234", "stu_22005678"],
     "pendingRequests": [],

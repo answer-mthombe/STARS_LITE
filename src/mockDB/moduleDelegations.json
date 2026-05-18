@@ -1,0 +1,36 @@
+[
+  {
+    "id": "del_tutor_mobile",
+    "moduleId": "mod_mobile",
+    "courseId": "course_it",
+    "grantedByLecturerId": "lec_mkhize",
+    "delegateType": "tutor",
+    "delegateStudentId": "stu_22005678",
+    "capabilities": [
+      "attendance.start_session",
+      "attendance.end_session",
+      "attendance.mark_for_class",
+      "attendance.approve_requests",
+      "attendance.view_records"
+    ],
+    "active": true,
+    "effectiveDate": null,
+    "sessionId": null,
+    "expiresAt": null,
+    "createdAt": "2026-01-15T08:00:00.000Z"
+  },
+  {
+    "id": "del_registrar_db",
+    "moduleId": "mod_db",
+    "courseId": "course_it",
+    "grantedByLecturerId": "lec_mkhize",
+    "delegateType": "student_registrar",
+    "delegateStudentId": "stu_22001234",
+    "capabilities": ["attendance.start_session", "attendance.mark_for_class", "attendance.view_records"],
+    "active": true,
+    "effectiveDate": null,
+    "sessionId": null,
+    "expiresAt": null,
+    "createdAt": "2026-01-16T10:00:00.000Z"
+  }
+]

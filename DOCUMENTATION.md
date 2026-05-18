@@ -43,7 +43,7 @@ npx expo start -c
 ### 2. Architecture principles
 
 1. **Repository-style services** — `mockDB` mimics Firestore collections; `attendanceSimulationService` and `moduleEnrollmentService` sit above it so Firebase can replace `mockDB` later without rewriting screens.
-2. **Role-based routes** — `/admin/*` (university + simulation), `/dean/*`, `/hod/*`, `/lecturer/*`, `/student/*`, plus shared `/notifications`, `/settings`. Hierarchy and permissions: **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)**.
+2. **Role-based routes** — `/admin/*`, `/dean/*`, `/hod/*`, `/lecturer/*`, `/tutor/*`, `/student/*`, plus shared `/notifications`, `/settings`. Hierarchy, delegation, and permissions: **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)**.
 3. **Route groups** — `(auth)` only organizes files; URLs are **`/onboarding`**, **`/login`**, **`/register-student`** (parentheses are not in the path).
 4. **UI system** — `ScreenShell` + tokens in `src/theme/`; **Innovation Lab** footer is pinned below scroll content for brand consistency.
 
@@ -71,7 +71,7 @@ npx expo start -c
 
 ### 3. Attendance simulation (mock)
 
-1. Lecturer starts a session → one GPS read → session row + `algorithmSeed` + expiry.
+1. Lecturer, **tutor**, or **delegated registrar** starts a session → one GPS read → session row records `startedByRole` / `startedById` + `algorithmSeed` + expiry.
 2. Rotating **6-digit code** (and QR payload) is derived locally from seed + 5s time window (no per-tick Firestore writes).
 3. Student submits code → one GPS read → Haversine distance vs session radius → record written to mock DB.
 

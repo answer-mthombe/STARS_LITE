@@ -12,7 +12,8 @@ This guide helps **beginners** find the right file when fixing a bug or adding a
 |---------------------|--------------------------------|
 | **First screen after app opens**, redirects by role | `app/index.tsx`, `app/splash.tsx` |
 | **Login, onboarding, register** | `app/(auth)/login.tsx`, `onboarding.tsx`, `register-student.tsx` |
-| **Who can see which screen** | `src/hooks/useRoleGuard.ts`, `src/permissions/institutionPermissions.ts`, `app/index.tsx` |
+| **Who can see which screen** | `src/hooks/useRoleGuard.ts`, `src/permissions/institutionPermissions.ts`, `src/permissions/delegationPermissions.ts`, `app/index.tsx` |
+| **Tutor / proxy / registrar delegation** | `src/services/delegationService.ts`, `src/utils/delegation.ts`, `src/mockDB/moduleDelegations.json`, `proxyAssignments.json` |
 | **University / faculty / department analytics** | `src/services/institutionAnalytics.ts`, **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)** |
 | **Admin / Dean / HOD dashboards** | `app/admin/dashboard.tsx`, `app/dean/dashboard.tsx`, `app/hod/dashboard.tsx` |
 | **Sign-in / sign-out / stored user** | `src/store/authStore.ts`, `src/services/mockAuthService.ts`, `src/utils/authStorage.ts` |
@@ -106,6 +107,8 @@ ATTANDANCE/
 | `hod/` | **HOD (department)** — scoped department dashboards. |
 | `hod/dashboard.tsx` | **`/hod/dashboard`** — department KPIs. |
 | `hod/analytics.tsx` | **`/hod/analytics`** — department chart simulation. |
+| `tutor/` | **Tutor** (delegated student) hub. |
+| `tutor/dashboard.tsx` | **`/tutor/dashboard`** — modules with active delegation. |
 | `notifications.tsx` | **`/notifications`** — shared. |
 | `settings.tsx` | **`/settings`** — shared. |
 
@@ -127,6 +130,8 @@ Small, focused components used by many screens.
 | `SessionTimer.tsx` | Countdown for active attendance session. |
 | `AttendanceCard.tsx` | Attendance summary card. |
 | `ModuleCard.tsx` | Module summary card. |
+| `DelegationBadge.tsx` | Tutor / class registrar badge. |
+| `RoleScopeCard.tsx` | Role + scope summary card. |
 | `Avatar.tsx`, `Badge.tsx` | Profile chip / status badge. |
 | `EmptyState.tsx` | Placeholder when lists are empty. |
 | `LoadingSpinner.tsx` | Loading indicator. |
@@ -184,6 +189,7 @@ Edit JSON for **demo users and modules**; edit `mockDBService.ts` for **how data
 |------|---------|
 | `Student.ts`, `Lecturer.ts`, `Module.ts`, `Course.ts`, `Faculty.ts` | Entity types + helpers. |
 | `Department.ts`, `Dean.ts`, `Hod.ts` | Department + leadership roles linked to faculty/department. |
+| `ModuleDelegation.ts`, `ProxyAssignment.ts`, `Tutor.ts`, `AuditLog.ts`, `FacultySecretary.ts` | Delegation, proxy, audit models. |
 | `University.ts` | MUT singleton metadata. |
 | `Attendance.ts` | Sessions + records types. |
 | `Analytics.ts` | Analytics-related types. |
@@ -193,7 +199,8 @@ Edit JSON for **demo users and modules**; edit `mockDBService.ts` for **how data
 
 | File | Purpose |
 |------|---------|
-| `institutionPermissions.ts` | Role → permission matrix and analytics scope labels (reference for guards & Firebase rules). |
+| `institutionPermissions.ts` | Role → capability matrix and analytics scope. |
+| `delegationPermissions.ts` | Module tutor / registrar / session host checks. |
 
 ## `src/services/` (extra)
 
@@ -230,7 +237,8 @@ Use these when typing service functions or screen props.
 
 | File | Purpose |
 |------|---------|
-| `roles.ts` | `"student" \| "lecturer" \| "admin"` and related types. |
+| `roles.ts` | `admin` \| `dean` \| `hod` \| `lecturer` \| `tutor` \| `student` |
+| `capabilities.ts` | Granular institution capabilities |
 | `expo-router.d.ts` | TypeScript augmentation for Expo Router (if present). |
 
 ---
@@ -311,6 +319,6 @@ Scaffolded for live backend work; screens still use **mock** services until you 
 - **[README.md](./README.md)** — quick start, diagrams, functional requirements summary.
 - **[DOCUMENTATION.md](./DOCUMENTATION.md)** — stack, process, troubleshooting.
 - **[FIREBASE_INTEGRATION.md](./FIREBASE_INTEGRATION.md)** — milestones, user stories, Brightman / Gugulethu / Basil ownership.
-- **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)** — faculty / department / course tree and five roles.
+- **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)** — faculty / department / course tree, six roles, delegation.
 
 If a path is missing from this list, search the repo for a screen name or feature word; new files should be added under **`app/`** (routes) or **`src/`** (shared code) following the patterns above.

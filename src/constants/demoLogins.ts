@@ -11,6 +11,7 @@ export const DEMO_LOGIN_PRESETS: DemoLoginPreset[] = [
   { role: "student", label: "Student · Amahle", email: "22001234@live.mut.ac.za" },
   { role: "student", label: "Student · Thabo", email: "22005678@live.mut.ac.za" },
   { role: "student", label: "Student · synthetic", email: "22600001@live.mut.ac.za" },
+  { role: "tutor", label: "Tutor · Thabo (Mobile Dev)", email: "22005678@live.mut.ac.za" },
   { role: "lecturer", label: "Lecturer · Dr Mkhize", email: "mkhize@mut.ac.za" },
   { role: "lecturer", label: "Lecturer · Ms Naidoo", email: "naidoo@mut.ac.za" },
   { role: "lecturer", label: "Lecturer · Mr Dube", email: "dube@mut.ac.za" },

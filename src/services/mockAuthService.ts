@@ -50,6 +50,19 @@ export const mockAuthService = {
       return { role: "lecturer", id: lecturer.id, email: lecturer.email, fullName: lecturer.fullName };
     }
 
+    if (args.role === "tutor") {
+      const tutor = mockDB.query("tutors", { email })[0];
+      if (!tutor) throw new Error("Tutor account not found. A lecturer must grant tutor privileges first.");
+      return {
+        role: "tutor",
+        id: tutor.id,
+        email: tutor.email,
+        fullName: tutor.fullName,
+        studentId: tutor.studentId,
+        moduleIds: tutor.moduleIds,
+      };
+    }
+
     const student = mockDB.query("students", { email })[0];
     if (!student) throw new Error("Student not found.");
     return { role: "student", id: student.id, email: student.email, fullName: student.fullName };

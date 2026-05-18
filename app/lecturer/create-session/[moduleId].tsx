@@ -13,7 +13,7 @@ import { captureLocationOnce } from "@/utils/captureLocationOnce";
 import { useToastStore } from "@/store/toastStore";
 
 export default function LecturerCreateSessionScreen() {
-  useRoleGuard("lecturer");
+  useRoleGuard(["lecturer", "tutor"]);
   const { moduleId } = useLocalSearchParams() as { moduleId: string };
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
@@ -31,13 +31,18 @@ export default function LecturerCreateSessionScreen() {
         title={busy ? "Starting…" : "Capture GPS & start session"}
         disabled={busy || !mod}
         onPress={async () => {
-          if (!user || user.role !== "lecturer" || !mod) return;
+          if (!user || !mod) return;
+          if (user.role !== "lecturer" && user.role !== "tutor") return;
           setBusy(true);
           try {
             const loc = await captureLocationOnce();
+            const hostRole = user.role === "tutor" ? "tutor" : "lecturer";
+            const hostId = user.role === "tutor" ? user.studentId : user.id;
             const session = await attendanceSimulationService.createSession({
               moduleId: mod.id,
-              lecturerId: user.id,
+              hostRole,
+              hostId,
+              lecturerId: mod.lecturerId,
               latitude: loc.latitude,
               longitude: loc.longitude,
               radiusMeters: 50,
