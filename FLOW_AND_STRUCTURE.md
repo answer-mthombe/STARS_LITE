@@ -315,7 +315,447 @@ Entry point: `src/mockDB/mockDBService.ts` · Demo population: `src/mockDB/demoS
 
 ---
 
-## 11. File structure diagram
+## 11. Screen representation diagrams
+
+Wireframe-style maps of what the user sees. All authenticated screens use **`ScreenShell`** unless noted.
+
+### 11.1 Universal screen chrome
+
+**Tab screen** (bottom navigation visible):
+
+```
+┌──────────────────────────────────────────┐
+│  Title                          [logout] │  ← Header (accent border)
+│  Subtitle (optional)                     │
+├──────────────────────────────────────────┤
+│                                          │
+│   Scrollable content                     │
+│   ┌────────────────────────────────┐     │
+│   │ AppCard · ModuleCard · charts  │     │
+│   └────────────────────────────────┘     │
+│   SectionHeader · ListPressableItem      │
+│                                          │
+├──────────────────────────────────────────┤
+│  Innovation Lab footer (most screens)    │
+├──────────────────────────────────────────┤
+│  🏠   📚   ➕   🕐   👤   ☰              │  ← AppTabBar (lifted above
+└──────────────────────────────────────────┘     system gesture area)
+```
+
+**Stack / detail screen** (pushed on top — **no tab bar**, back + logout in header):
+
+```
+┌──────────────────────────────────────────┐
+│  ←   Title                      [logout] │
+├──────────────────────────────────────────┤
+│   Full-screen workflow (mark attend,     │
+│   live session, PDF register, scanner)   │
+└──────────────────────────────────────────┘
+```
+
+| Chrome piece | Component | Notes |
+|--------------|-----------|--------|
+| Header row | `Header.tsx` | `showBack` on stack screens; `LogoutButton` when signed in |
+| Page body | `ScreenShell.tsx` | Scroll + `TabBarInsetContext` bottom padding on tabs |
+| Tab bar | `AppTabBar.tsx` | Icons from `roleTabs.ts`; extra safe-area lift |
+| Toasts | `ToastNotification.tsx` | Global via `toastStore` |
+
+---
+
+### 11.2 Auth & public screens
+
+```mermaid
+flowchart LR
+  subgraph AuthScreens["(auth) — no tab bar"]
+    OB["/onboarding"]
+    LG["/login"]
+    RS["/register-student"]
+  end
+  SPL["/splash"] --> OB
+  OB --> LG
+  LG --> RS
+```
+
+**Onboarding** (`/onboarding`)
+
+```
+┌──────────────────────────────────────────┐
+│           STARS wordmark                 │
+│     Welcome copy                         │
+│  ┌────────────────────────────────────┐  │
+│  │ AppButton  Get started → login     │  │
+│  └────────────────────────────────────┘  │
+│  LinkText  Register as student           │
+│  Innovation Lab footer                   │
+└──────────────────────────────────────────┘
+```
+
+**Login** (`/login`)
+
+```
+┌──────────────────────────────────────────┐
+│           STARS wordmark                 │
+│  ChipSelectGroup  role (6 roles)         │
+│  AppInput  email                         │
+│  AppInput  password                      │
+│  AppButton  Sign in                      │
+│  Chip row  demo quick-login presets      │
+│  LinkText  Register · Back               │
+└──────────────────────────────────────────┘
+```
+
+---
+
+### 11.3 Student — screen map
+
+```mermaid
+flowchart TB
+  subgraph StudentTabs["TAB SCREENS"]
+    SD["🏠 Home\n/student/dashboard"]
+    SM["📚 Modules\n/student/modules"]
+    SJ["➕ Join\n/student/join-class"]
+    SH["🕐 History\n/student/attendance-history"]
+    SP["👤 Profile\n/student/profile"]
+    SMore["☰ More"]
+  end
+
+  subgraph StudentStack["STACK — no tabs"]
+    SMD["Module detail\n/student/modules/:id"]
+    SMA["Mark attendance\n/student/mark-attendance/:id"]
+    SPBack["Profile + back\n/student/profile"]
+  end
+
+  SD --> SMD
+  SD --> SMA
+  SM --> SMD
+  SMD --> SMA
+  SMore --> Notif["/notifications"]
+  SMore --> Set["/settings"]
+```
+
+**Home** — custom header (no default `ScreenShell` title row)
+
+```
+┌──────────────────────────────────────────┐
+│ STARS          Alerts    [logout] Avatar │
+│ Hello, {firstName}                       │
+│ Intro copy                               │
+│ ── My classes ──                         │
+│ ┌ ModuleCard  CODE · Name ────────────┐  │
+│ │  meta · [Attend now] if live        │  │
+│ └─────────────────────────────────────┘  │
+│ ┌ Attendance % card ──────────────────┐  │
+│ └─────────────────────────────────────┘  │
+│ Quick navigation list                    │
+│ [tab bar]                                │
+└──────────────────────────────────────────┘
+```
+
+**Mark attendance** (stack)
+
+```
+┌──────────────────────────────────────────┐
+│  ←  Mark attendance              [logout]│
+│  SessionTimer · module name                │
+│  [ Scan QR ] [ Enter code ]  tabs        │
+│  ┌ camera or AppInput 6-digit code ───┐  │
+│  └────────────────────────────────────┘  │
+│  AppButton  Submit check-in              │
+│  (GPS captured once on submit)           │
+└──────────────────────────────────────────┘
+```
+
+---
+
+### 11.4 Lecturer — screen map
+
+```mermaid
+flowchart TB
+  subgraph LecturerTabs["TAB SCREENS"]
+    LD["🏠 Home"]
+    LMM["📦 Modules"]
+    LA["📊 Analytics"]
+    LAudit["🛡 Audit"]
+    LMore["☰ More"]
+  end
+
+  subgraph LecturerStack["STACK"]
+    LCS["Create session\n/create-session/:moduleId"]
+    LAS["Active session\n/active-session/:sessionId"]
+    LTS["Test setup\n/test-session/:moduleId"]
+    LTI["Test invigilate\n/test-invigilate/:id"]
+    LSM["Student mgmt\n/student-management/:id"]
+    LReg["PDF register\n/register/:registerId"]
+  end
+
+  LD --> LCS
+  LD --> LTI
+  LMM --> LSM
+  LCS --> LAS
+  LAS --> LReg
+  LTS --> LTI
+  LTI --> LReg
+```
+
+**Active session** (stack)
+
+```
+┌──────────────────────────────────────────┐
+│  ←  Live session                 [logout]│
+│  Module · SessionTimer                   │
+│  ┌────────────────────────────────────┐  │
+│  │   LiveSessionQr  (rotating)        │  │
+│  │   6-digit code  · refresh countdown│  │
+│  └────────────────────────────────────┘  │
+│  Present count / enrolled                │
+│  AppButton  End class → class register   │
+└──────────────────────────────────────────┘
+```
+
+**Test invigilation** (stack — lecturer or tutor)
+
+```
+┌──────────────────────────────────────────┐
+│  ←  {test title}                 [logout]│
+│  TestInvigilatePanel                     │
+│  ┌ StudentCardScanner ────────────────┐  │
+│  │  camera · barcode                   │  │
+│  └────────────────────────────────────┘  │
+│  Scanned list · mark count               │
+│  AppButton  Confirm register → PDF       │
+└──────────────────────────────────────────┘
+```
+
+---
+
+### 11.5 Tutor — screen map
+
+```mermaid
+flowchart TB
+  subgraph TutorTabs["TAB SCREENS"]
+    TD["🏠 Home"]
+    TSe["▶ Sessions"]
+    TR["📄 Registers"]
+    TT["⏱ Hours"]
+    TMore["☰ More"]
+  end
+
+  subgraph TutorStack["STACK"]
+    TTI["Test invigilate\n/tutor/test-invigilate/:id"]
+    TCS["Create session\n/lecturer/create-session/:id"]
+    TAS["Active session\n/lecturer/active-session/:id"]
+  end
+
+  TD --> TTI
+  TSe --> TCS
+  TCS --> TAS
+  TR --> LReg["/lecturer/register/:id"]
+```
+
+**Tutor home**
+
+```
+┌──────────────────────────────────────────┐
+│  Tutor hub                       [logout]│
+│  RoleScopeCard  name · year · hours      │
+│  ── Test invigilation (if active) ──     │
+│  ListPressableItem → test scan screen    │
+│  ── Delegated modules ──                 │
+│  ModuleCard + DelegationBadge            │
+│  Chip  Open live session                 │
+│  Quick navigation                        │
+│ [tab bar]                                │
+└──────────────────────────────────────────┘
+```
+
+---
+
+### 11.6 Admin · Dean · HOD — screen maps
+
+```mermaid
+flowchart TB
+  subgraph LeadershipTabs["TAB SCREENS (shared pattern)"]
+    D1["🏠 Overview dashboard"]
+    D2["📊 Analytics charts"]
+    D3["🛡 Audit log"]
+    D4["☰ More"]
+  end
+
+  subgraph AdminOnly["Admin only"]
+    Seed["🗄 Data / seed tab"]
+  end
+
+  D1 --> D2
+  D1 --> D3
+  D4 --> Notif["/notifications"]
+  D4 --> Set["/settings"]
+```
+
+**Admin overview**
+
+```
+┌──────────────────────────────────────────┐
+│  University overview             [logout]│
+│  Intro paragraph                         │
+│  StatTile grid  students · faculties …   │
+│  AppCard  activity & alerts              │
+│  AppCard  faculty performance rows       │
+│  StatsBarChart · StatsLineChart          │
+│  RoleQuickNav  audit · analytics · seed  │
+│ [tab bar: Overview|Charts|Audit|Data|More]│
+└──────────────────────────────────────────┘
+```
+
+**Dean / HOD overview** (same shell, scoped copy)
+
+```
+┌──────────────────────────────────────────┐
+│  Faculty / Department overview   [logout]│
+│  HighlightStat  attendance rate          │
+│  AppCard  modules or departments list    │
+│  StatsBarChart · StatsLineChart preview  │
+│  AppButton  → full analytics tab         │
+│  RoleQuickNav                            │
+│ [tab bar]                                │
+└──────────────────────────────────────────┘
+```
+
+**Audit log tab** (all four roles — scoped data)
+
+```
+┌──────────────────────────────────────────┐
+│  {University|Faculty|Dept|Module} audit  │
+│  Scope description card                  │
+│  ┌ AppCard per event ─────────────────┐  │
+│  │ action label · timestamp            │  │
+│  │ Actor · Scope · Target rows         │  │
+│  └────────────────────────────────────┘  │
+│ [tab bar]                                │
+└──────────────────────────────────────────┘
+```
+
+---
+
+### 11.7 Shared screens
+
+```mermaid
+flowchart LR
+  More["More tab\nany role"] --> N["/notifications"]
+  More --> S["/settings"]
+  More --> Logout["sign out → /onboarding"]
+  Header["Header logout"] --> Logout
+```
+
+**More menu** (every role)
+
+```
+┌──────────────────────────────────────────┐
+│  More                            [logout]│
+│  AppCard  signed-in user + role          │
+│  ── Your tabs ──  (hint per tab)       │
+│  ── Tools & shortcuts ──                 │
+│  ListPressableItem + description         │
+│  Notifications · Settings              │
+│  LogoutButton · SignOutLink              │
+│ [tab bar]                                │
+└──────────────────────────────────────────┘
+```
+
+**Notifications** / **Settings** (stack from More — `showBack`)
+
+```
+┌──────────────────────────────────────────┐
+│  ←  Notifications                [logout]│
+│  AppCard list of alert items             │
+│  LinkText  Close                         │
+└──────────────────────────────────────────┘
+```
+
+---
+
+### 11.8 Full app screen index (by URL)
+
+| URL | Type | Role(s) | Primary UI blocks |
+|-----|------|---------|-------------------|
+| `/splash` | Public | — | Loading indicator |
+| `/onboarding` | Auth | — | Wordmark, CTA, register link |
+| `/login` | Auth | — | Role picker, credentials, demo chips |
+| `/register-student` | Auth | — | Enrolment form |
+| `/student/dashboard` | Tab | Student | Module cards, attendance %, quick nav |
+| `/student/modules` | Tab | Student | Module list |
+| `/student/join-class` | Tab | Student | Class code input |
+| `/student/attendance-history` | Tab | Student | Past marks list |
+| `/student/profile` | Tab / stack | Student | Avatar, KeyValueRows |
+| `/student/modules/:id` | Stack | Student | Module detail |
+| `/student/mark-attendance/:id` | Stack | Student | QR / code, GPS submit |
+| `/lecturer/dashboard` | Tab | Lecturer | Promo banners, module chips |
+| `/lecturer/module-management` | Tab | Lecturer | Module list |
+| `/lecturer/analytics` | Tab | Lecturer | Charts, at-risk |
+| `/lecturer/audit-logs` | Tab | Lecturer | Audit cards |
+| `/lecturer/create-session/:id` | Stack | Lecturer, Tutor | GPS, start session |
+| `/lecturer/active-session/:id` | Stack | Lecturer, Tutor | QR, code, end class |
+| `/lecturer/test-session/:id` | Stack | Lecturer | Create test |
+| `/lecturer/test-invigilate/:id` | Stack | Lecturer, Tutor | Scanner panel |
+| `/lecturer/student-management/:id` | Stack | Lecturer | Roster, delegation |
+| `/lecturer/register/:id` | Stack | All* | HTML/PDF register view |
+| `/tutor/dashboard` | Tab | Tutor | Delegations, live tests |
+| `/tutor/sessions` | Tab | Tutor | Module session list |
+| `/tutor/registers` | Tab | Tutor | Class + test PDF list |
+| `/tutor/timesheets` | Tab | Tutor | Hours submission |
+| `/admin/dashboard` | Tab | Admin | University KPIs |
+| `/admin/analytics` | Tab | Admin | Full charts |
+| `/admin/audit-logs` | Tab | Admin | All audit events |
+| `/admin/seed` | Tab | Admin | Re-seed, demo links |
+| `/dean/dashboard` | Tab | Dean | Faculty KPIs |
+| `/dean/analytics` | Tab | Dean | Faculty charts |
+| `/dean/audit-logs` | Tab | Dean | Faculty-scoped audit |
+| `/hod/dashboard` | Tab | HOD | Department KPIs |
+| `/hod/analytics` | Tab | HOD | Department charts |
+| `/hod/audit-logs` | Tab | HOD | Department-scoped audit |
+| `/notifications` | Shared | All | Alert cards |
+| `/settings` | Shared | All | Privacy / appearance cards |
+
+\*Register screen is shared; opened from lecturer/tutor/admin demo links.
+
+---
+
+### 11.9 Role × navigation matrix
+
+```mermaid
+flowchart TB
+  subgraph Legend["Legend"]
+    T["█ Tab screen — tab bar ON"]
+    S["░ Stack screen — tab bar OFF"]
+  end
+
+  subgraph StudentNav["Student"]
+    direction TB
+    ST1["█ Home"]
+    ST2["█ Modules"]
+    ST3["░ Module detail"]
+    ST4["░ Mark attendance"]
+    ST1 --> ST3 --> ST4
+  end
+
+  subgraph LecturerNav["Lecturer"]
+    direction TB
+    LC1["█ Home"]
+    LC2["░ Active session"]
+    LC3["░ Test invigilate"]
+    LC1 --> LC2
+    LC1 --> LC3
+  end
+```
+
+| Visual | Meaning |
+|--------|---------|
+| Tab screen | User stays in `(tabs)/`; bottom icons always visible |
+| Stack screen | Slides in from right; `←` back returns to previous tab state |
+| Shared route | Same component path under `/lecturer/…` may be used by tutor (e.g. sessions) |
+
+---
+
+## 12. File structure diagram
 
 Route groups `(tabs)` and `(auth)` do **not** appear in the URL.
 
@@ -458,7 +898,7 @@ ATTANDANCE/
 
 ---
 
-## 12. Service → screen map (quick reference)
+## 13. Service → screen map (quick reference)
 
 | Service | Primary consumers |
 |---------|-------------------|
@@ -475,7 +915,7 @@ ATTANDANCE/
 
 ---
 
-## 13. Related documentation
+## 14. Related documentation
 
 | Document | Contents |
 |----------|----------|
@@ -487,4 +927,4 @@ ATTANDANCE/
 
 ---
 
-*Last updated to reflect tab navigation (`(tabs)/`), audit log tabs, tutor sessions tab, and lifted bottom tab bar.*
+*Last updated to reflect tab navigation (`(tabs)/`), audit log tabs, tutor sessions tab, lifted bottom tab bar, and screen wireframe diagrams (§11).*
