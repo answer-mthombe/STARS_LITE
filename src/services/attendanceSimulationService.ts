@@ -14,6 +14,16 @@ function bump() {
 }
 
 export const attendanceSimulationService = {
+  verifyCodeForSession(args: { sessionId: string; codeEntered: string }): { ok: true } | { ok: false; reason: string } {
+    mockDB.touch();
+    const session = mockDB.read("attendanceSessions", args.sessionId);
+    if (!session || !session.active) return { ok: false, reason: "Session not active or missing." };
+    if (new Date(session.expiresAt).getTime() <= Date.now()) return { ok: false, reason: "Session expired." };
+    const v = verifyAttendanceCode(session.algorithmSeed, args.codeEntered);
+    if (!v.ok) return { ok: false, reason: "Invalid attendance code." };
+    return { ok: true };
+  },
+
   async createSession(args: {
     moduleId: string;
     hostRole: SessionHostRole;

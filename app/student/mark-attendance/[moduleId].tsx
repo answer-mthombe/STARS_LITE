@@ -16,6 +16,7 @@ import { attendanceSimulationService } from "@/services/attendanceSimulationServ
 import { captureLocationOnce } from "@/utils/captureLocationOnce";
 import { useToastStore } from "@/store/toastStore";
 import { parseAttendanceQrPayload } from "@/utils/attendanceQr";
+import { attendanceChallengeService } from "@/services/attendanceChallengeService";
 
 type Tab = "scan" | "manual";
 
@@ -45,19 +46,30 @@ export default function StudentMarkAttendanceScreen() {
       setBusy(true);
       try {
         const loc = await captureLocationOnce();
-        const res = attendanceSimulationService.markAttendance({
+        // Gate: verify the rotating code before showing a challenge.
+        const codeCheck = attendanceSimulationService.verifyCodeForSession({
           sessionId: session.id,
-          studentId: user.id,
-          studentLat: loc.latitude,
-          studentLng: loc.longitude,
           codeEntered,
         });
-        if (!res.ok) {
-          show({ type: "error", title: "Not recorded", message: res.reason });
+        if (!codeCheck.ok) {
+          show({ type: "error", title: "Not recorded", message: codeCheck.reason });
           return false;
         }
-        show({ type: "success", title: "Attendance recorded" });
-        router.replace("/student/attendance-history");
+
+        const begin = await attendanceChallengeService.begin({
+          sessionId: session.id,
+          moduleId: String(moduleId),
+          studentId: user.id,
+          codeEntered,
+          studentLocation: { latitude: loc.latitude, longitude: loc.longitude, capturedAtMs: Date.now(), accuracyMeters: 10 },
+        });
+
+        if (!begin.ok) {
+          show({ type: "error", title: "Not recorded", message: begin.reason });
+          return false;
+        }
+
+        router.push(`/student/challenge/${begin.challengeId}` as never);
         return true;
       } catch (e) {
         show({ type: "error", title: "Error", message: e instanceof Error ? e.message : "Try again." });

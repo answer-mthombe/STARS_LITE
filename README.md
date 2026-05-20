@@ -115,10 +115,20 @@ sequenceDiagram
   Note over L: UI shows rotating code every 5s
 
   S->>DB: Read module activeSessionId
-  S->>S: GPS capture once
-  S->>S: Enter 6-digit code
-  S->>DB: Verify code + distance + enrollment + no duplicate
-  DB-->>S: Attendance record or error reason
+  S->>S: Scan QR / enter 6-digit code
+  S->>DB: Verify rotating code (seed + time window)
+  alt Code invalid
+    DB-->>S: error reason
+  else Code valid
+    S->>S: Open 2×3 Attendance Challenge (10s window)
+    Note over S: GPS polled every 2s during the window
+    S->>DB: Atomic submit (all gates green → write)
+    alt Any gate fails
+      DB-->>S: error reason (no write)
+    else All gates pass
+      DB-->>S: Attendance record written (passed)
+    end
+  end
 ```
 
 ### 3. Data & service layers (conceptual)

@@ -36,5 +36,13 @@ export interface AttendanceRecordModel {
   timestamp: ISODateString;
   distance: number;
   verified: boolean;
+  /** Challenge mechanism (optional until live backend is wired) */
+  deviceId?: string;
+  timeBucket?: number;
+  gpsBucketHash?: string;
+  tappedIndex?: number;
+  tierUsed?: number;
+  actionHash?: string;
+  passed?: boolean;
 }
 

@@ -35,7 +35,7 @@ flowchart TB
   UI --> Nav
   Svc --> Mock
   Svc --> Perm
-  Svc -.-> FB
+  Svc -.-> SB
 ```
 
 | Layer | Responsibility |
@@ -174,23 +174,72 @@ sequenceDiagram
   L->>DB: startSession (GPS, seed, radius)
   DB-->>S: module.activeSessionId set
   S->>S: dashboard / modules → Mark attend
-  S->>S: captureLocationOnce + rotatingCode
-  S->>DB: attendanceSimulationService.markAttendance
-  DB->>DB: attendanceRecords + auditLogs
-  S-->>S: success toast / history updated
+  S->>S: scan QR / enter code
+  S->>DB: verify rotating code (seed + time window)
+  alt Code invalid
+    DB-->>S: show error toast
+  else Code valid
+    S->>S: open Attendance Challenge (2×3 grid)
+    Note over S: GPS polled every 2s during 10s window
+    S->>DB: attendanceChallengeService.submit (atomic gates)
+    alt Any gate fails
+      DB-->>S: show reason (no write)
+    else All gates pass
+      DB->>DB: attendanceRecords (passed) + stats
+      S-->>S: success toast / history updated
+    end
+  end
 ```
 
 | Screen | Path | Service / util |
 |--------|------|----------------|
 | Home | `app/student/(tabs)/dashboard.tsx` | — |
 | Module detail | `app/student/modules/[moduleId].tsx` | — |
-| Mark attendance | `app/student/mark-attendance/[moduleId].tsx` | `attendanceSimulationService.ts` |
+| Mark attendance | `app/student/mark-attendance/[moduleId].tsx` | `attendanceSimulationService.ts` (code gate) |
+| Challenge | `app/student/challenge/[challengeId].tsx` | `attendanceChallengeService.ts` |
 | History | `app/student/(tabs)/attendance-history.tsx` | `mockDB.attendanceRecords` |
 | Join class | `app/student/(tabs)/join-class.tsx` | `moduleEnrollmentService.ts` |
 | Rotating code | — | `src/utils/rotatingCode.ts` |
 | GPS once | — | `src/utils/captureLocationOnce.ts`, `haversine.ts` |
 
 ---
+
+## 5.1 Attendance challenge mechanism (presentation flow)
+
+This is the *mechanism view* of the check-in: hard gates first, then the visual challenge window, then a single **atomic submit** where **all gates must be green** or **nothing is written**.
+
+```mermaid
+flowchart TB
+  classDef ok fill:#E8F8F1,stroke:#2ECC71,color:#145A32,stroke-width:1px;
+  classDef gate fill:#F4F6F7,stroke:#5D6D7E,color:#1B2631,stroke-width:1px;
+  classDef danger fill:#FDEDEC,stroke:#E74C3C,color:#7B241C,stroke-width:1px;
+  classDef write fill:#EBF5FB,stroke:#2E86C1,color:#154360,stroke-width:1px;
+
+  Start([Student opens\n\"Mark attendance\"]):::gate
+  CodeGate["Gate A: Rotating code valid\n(seed + time window)"]:::gate
+  Pre1["Gate 1: Session active"]:::gate
+  Pre2["Gate 2: Device not already checked in\n(session_id + device_id)"]:::gate
+  Pre3["Gate 3: GPS inside radius\nfresh < 4s + accuracy < 30m"]:::gate
+  Pre4["Gate 4: Audio token verified\n(dummy: pass)"]:::gate
+  Show["Render challenge UI\n2×3 object grid"]:::ok
+
+  Window["Challenge window open\n10s bucket locked"]:::gate
+  Poll["GPS continuous\npoll every 2s\nall inside radius\n≤1 missing"]:::gate
+  Obj["Correct object selected\n(seed mod 6)\nwrong twice → 60s lockout"]:::gate
+  Act["Physical action detected\nTier 1: tap N times"]:::gate
+
+  Atomic{"Atomic submit:\nALL GREEN right now?"}:::gate
+  NoWrite["Reject → show reason\nWrite NOTHING"]:::danger
+  WriteRec["Write 1 record:\nattendance_records (passed)\n+ stats update"]:::write
+
+  Start --> CodeGate
+  CodeGate -->|valid| Pre1
+  CodeGate -->|invalid| NoWrite
+  Pre1 --> Pre2 --> Pre3 --> Pre4 --> Show
+  Show --> Window --> Poll --> Obj --> Act --> Atomic
+  Atomic -->|any red| NoWrite
+  Atomic -->|all green| WriteRec
+```
 
 ## 6. Lecturer — class session & roster flow
 
