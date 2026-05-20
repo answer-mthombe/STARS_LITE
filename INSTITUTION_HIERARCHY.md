@@ -22,7 +22,7 @@ University (MUT — `src/models/University.ts`)
             └── Students (enrolled)
 ```
 
-**Collections (mock / Firestore):**
+**Collections (mock / Supabase tables):**
 
 | Collection | Purpose |
 |------------|---------|
@@ -37,7 +37,7 @@ University (MUT — `src/models/University.ts`)
 | `moduleDelegations` | Lecturer grants (tutor / student registrar) |
 | `proxyAssignments` | Dean/HOD/Admin acting-on-behalf grants |
 | `auditLogs` | Privilege, proxy, session, attendance events |
-| `userProfiles` | Firebase Auth UID → role + links + extra capabilities |
+| `userProfiles` | Supabase Auth user id → role + links + extra capabilities |
 
 ---
 
@@ -60,7 +60,7 @@ Constants: `src/types/roles.ts` · Capabilities: `src/types/capabilities.ts` · 
 
 ### Admin
 
-- Add / edit / delete users (production: Firebase + admin tools)
+- Add / edit / delete users (production: Supabase + admin tools)
 - Access all stats and **audit logs** (`auditLogs`)
 - Grant or revoke user privileges (`userProfiles.grantedCapabilities`)
 - University-wide analytics and reports
@@ -182,11 +182,11 @@ Presets: `src/constants/demoLogins.ts` · Login: `app/(auth)/login.tsx`
 
 ---
 
-## Firebase alignment
+## Supabase alignment
 
-- Collections: `src/firebase/collections.ts`
-- Profile shape: `src/types/firebaseUserProfile.ts`
-- Rules must enforce: base role + `moduleDelegations` + `proxyAssignments` + `auditLogs` (see `FIREBASE_INTEGRATION.md`)
+- Tables: `src/supabase/tables.ts`
+- Profile shape: `src/types/supabaseUserProfile.ts`
+- RLS must enforce: base role + `moduleDelegations` + `proxyAssignments` + `auditLogs` (see `SUPABASE_INTEGRATION.md`)
 
 ---
 

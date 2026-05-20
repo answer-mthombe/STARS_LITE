@@ -1,6 +1,6 @@
 # STARS
 
-**STARS** — Smart attendance for **Mangosuthu University of Technology**, built with Expo, TypeScript, and Expo Router. The app ships with a **mock JSON / in-memory database** so flows work offline-first; Firebase can replace the same service boundaries later.
+**STARS** — Smart attendance for **Mangosuthu University of Technology**, built with Expo, TypeScript, and Expo Router. The app ships with a **mock JSON / in-memory database** so flows work offline-first; Supabase can replace the same service boundaries later.
 
 ## Quick start
 
@@ -41,7 +41,7 @@ See **[DOCUMENTATION.md](./DOCUMENTATION.md)** for the full **tech stack**, **en
 
 See **[FILE_STRUCTURE.md](./FILE_STRUCTURE.md)** for a **beginner-friendly map** of every important file and **which file to open for which kind of work**.
 
-See **[FIREBASE_INTEGRATION.md](./FIREBASE_INTEGRATION.md)** for **milestones (M0–M5)**, **user stories**, and team tasks (**Brightman**, **Gugulethu**, **Basil**) to wire **Firebase Auth + Firestore**.
+See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md)** for **milestones (M0–M5)**, **user stories**, and team tasks (**Brightman**, **Gugulethu**, **Basil**) to wire **Supabase Auth + Postgres**.
 
 See **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)** for **faculty → department → course** structure, **Admin / Dean / HOD / Lecturer / Student** roles, and **scoped analytics**.
 
@@ -144,7 +144,7 @@ flowchart LR
   end
 
   subgraph future["Planned"]
-    FB[Firebase Auth + Firestore]
+    SB[Supabase Auth + Postgres]
   end
 
   subgraph offline["Offline-first (PouchDB)"]
@@ -160,11 +160,11 @@ flowchart LR
   AUTH --> MDB
   ATT --> MDB
   MOD --> MDB
-  MDB -.->|same contracts| FB
+  MDB -.->|same contracts| SB
   UI --> PDB
   UI --> OUT
   OUT --> SYNC
-  SYNC -.-> FB
+  SYNC -.-> SB
 ```
 
 ---
@@ -181,7 +181,7 @@ flowchart LR
 
 ## Functional requirements
 
-Requirements reflect **current mock behaviour**; production hardening (real auth, policies, audit logs) is assumed for a Firebase cutover.
+Requirements reflect **current mock behaviour**; production hardening (real auth, RLS policies, audit logs) is assumed for a Supabase cutover.
 
 ### Authentication & session
 
@@ -228,7 +228,7 @@ Requirements reflect **current mock behaviour**; production hardening (real auth
 | ID | Requirement |
 |----|----------------|
 | **FR-X1** | The app shall provide **notifications** and **settings** routes shared across roles. |
-| **FR-X2** | The data layer shall mimic **Firestore-style** collections (`mockDB`) so services can be swapped for **Firebase** without rewriting navigation. |
+| **FR-X2** | The data layer shall mimic **collection-style** entities (`mockDB`) so services can be swapped for **Supabase** without rewriting navigation. |
 | **FR-X3** | UI shall follow STARS **design tokens** (e.g. `#E8E8E8`, `#006281`, `#4F1A1D`) and reuse **ScreenShell**, **InnovationLabFooter**, and **StarsWordmark** for consistency. |
 
 ---

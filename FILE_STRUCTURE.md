@@ -167,7 +167,7 @@ Small, focused components used by many screens.
 | `attendanceSimulationService.ts` | Create session, validate mark (code + distance + rules). |
 | `moduleEnrollmentService.ts` | Join by class code, pending requests, accept/reject. |
 
-**Firebase later:** keep the same kinds of functions here; swap internals to call Firestore instead of `mockDB`.
+**Supabase later:** keep the same kinds of functions here; swap internals to call Supabase instead of `mockDB`.
 
 ---
 
@@ -175,7 +175,7 @@ Small, focused components used by many screens.
 
 | File | Purpose |
 |------|---------|
-| `mockDBService.ts` | CRUD, list, query, **seed** — the fake Firestore API. |
+| `mockDBService.ts` | CRUD, list, query, **seed** — the in-memory mock API. |
 | `syntheticPopulation.ts` | Generates ~118 synthetic students for realistic scale. |
 | `*.json` | Seed data: `faculties`, **`departments`**, **`deans`**, **`hods`**, `courses`, `modules`, `lecturers`, `students`, `attendanceSessions`, `attendanceRecords`. |
 
@@ -298,19 +298,19 @@ Images referenced from **`app.json`** (icon, splash, web favicon path). Placehol
 
 ---
 
-## Firebase backend (Auth + Firestore)
+## Supabase backend (Auth + Postgres)
 
-Scaffolded for live backend work; screens still use **mock** services until you complete milestones in **[FIREBASE_INTEGRATION.md](./FIREBASE_INTEGRATION.md)**.
+Scaffolded for live backend work; screens still use **mock** services until you complete milestones in **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md)**.
 
 | Path | Purpose |
 |------|---------|
-| `src/firebase/app.ts` | Initialise Firebase when `EXPO_PUBLIC_FIREBASE_*` env vars are set; exposes `getFirebaseDb`, `getFirebaseAuth`. |
-| `src/firebase/collections.ts` | Firestore collection id constants — keep in sync with security rules. |
-| `src/firebase/converters/` | `FirestoreDataConverter` helpers mapping document `id` ↔ client models. |
-| `src/services/firebase/` | Thin repositories: Auth + `get*ById` reads (extend with queries/writes per milestones). |
-| `src/types/firebaseUserProfile.ts` | Shape for `userProfiles/{uid}` — extend in **M2**. |
+| `src/supabase/client.ts` | Initialise Supabase when `EXPO_PUBLIC_SUPABASE_*` env vars are set. |
+| `src/supabase/tables.ts` | Postgres table name constants — keep in sync with RLS policies. |
+| `src/supabase/mappers/` | camelCase ↔ snake_case row helpers. |
+| `src/services/supabase/` | Thin repositories: Auth + `get*ById` reads (extend with queries/writes per milestones). |
+| `src/types/supabaseUserProfile.ts` | Shape for `user_profiles` — extend in **M2**. |
 | `src/pipelines/` | **You add** orchestration (auth → profile → store). See `src/pipelines/README.md`. |
-| `src/utils/firebase/` | **You add** helpers (errors, retry, batch). See `src/utils/firebase/README.md`. |
+| `src/utils/supabase/` | **You add** helpers (errors, retry, batch). See `src/utils/supabase/README.md`. |
 
 ---
 
@@ -318,7 +318,7 @@ Scaffolded for live backend work; screens still use **mock** services until you 
 
 - **[README.md](./README.md)** — quick start, diagrams, functional requirements summary.
 - **[DOCUMENTATION.md](./DOCUMENTATION.md)** — stack, process, troubleshooting.
-- **[FIREBASE_INTEGRATION.md](./FIREBASE_INTEGRATION.md)** — milestones, user stories, Brightman / Gugulethu / Basil ownership.
+- **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md)** — milestones, user stories, Brightman / Gugulethu / Basil ownership.
 - **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)** — faculty / department / course tree, six roles, delegation.
 
 If a path is missing from this list, search the repo for a screen name or feature word; new files should be added under **`app/`** (routes) or **`src/`** (shared code) following the patterns above.

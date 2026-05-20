@@ -1,6 +1,6 @@
 # STARS — Flow & file structure diagrams
 
-Visual guide to how the **ATTANDANCE** (STARS) app boots, routes users by role, runs attendance and invigilation flows, and where code lives. Complements [FILE_STRUCTURE.md](./FILE_STRUCTURE.md), [INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md), and [FIREBASE_INTEGRATION.md](./FIREBASE_INTEGRATION.md).
+Visual guide to how the **ATTANDANCE** (STARS) app boots, routes users by role, runs attendance and invigilation flows, and where code lives. Complements [FILE_STRUCTURE.md](./FILE_STRUCTURE.md), [INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md), and [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md).
 
 ---
 
@@ -26,7 +26,7 @@ flowchart TB
     Store["store/ authStore · toastStore · mockDbVersion"]
     Perm["permissions/ institution · delegation"]
     Mock["mockDB/ JSON seeds + demoSeedPopulation"]
-    FB["firebase/ + services/firebase/ (future)"]
+    SB["supabase/ + services/supabase/ (future)"]
   end
 
   UI --> Store
@@ -42,7 +42,7 @@ flowchart TB
 |--------|----------------|
 | **`app/`** | Routes = files. Each role uses **tabs** for main areas and a **stack** for detail screens. |
 | **`src/services/`** | Business rules: sessions, marks, delegations, PDF registers, audit filtering. |
-| **`src/mockDB/`** | In-memory simulator until Firebase is wired. |
+| **`src/mockDB/`** | In-memory simulator until Supabase is wired. |
 | **`src/navigation/`** | Tab definitions, quick-nav copy, tab bar metrics. |
 | **`src/permissions/`** | Capability matrix and delegation checks. |
 
@@ -859,11 +859,11 @@ ATTANDANCE/
 │   │   ├── tutorPayrollService.ts
 │   │   ├── auditLogService.ts
 │   │   ├── institutionAnalytics.ts
-│   │   ├── firebase/                 # Future Firestore repositories
+│   │   ├── supabase/                 # Live Postgres repositories
 │   │   └── offline/                  # PouchDB scaffold
 │   │
 │   ├── models/                       # TypeScript domain types
-│   ├── types/                        # roles, capabilities, firebaseUserProfile
+│   ├── types/                        # roles, capabilities, supabaseUserProfile
 │   ├── permissions/
 │   │   ├── institutionPermissions.ts
 │   │   └── delegationPermissions.ts
@@ -879,7 +879,7 @@ ATTANDANCE/
 │   │   ├── syntheticPopulation.ts
 │   │   └── *.json                    # Seed data
 │   │
-│   ├── firebase/                     # App init, collection names, converters
+│   ├── supabase/                     # Client init, table names, mappers
 │   ├── hooks/                        # useRoleGuard, useLogout
 │   ├── utils/                        # rotatingCode, haversine, barcodes, PDF HTML
 │   ├── theme/                        # colors, typography, radius
@@ -892,7 +892,7 @@ ATTANDANCE/
 ├── README.md
 ├── FILE_STRUCTURE.md                 # Beginner file lookup table
 ├── INSTITUTION_HIERARCHY.md          # Roles & org model
-├── FIREBASE_INTEGRATION.md           # Migration jobs & Firestore plan
+├── SUPABASE_INTEGRATION.md           # Migration jobs & Postgres plan
 └── FLOW_AND_STRUCTURE.md             # This document
 ```
 
@@ -922,7 +922,7 @@ ATTANDANCE/
 | [README.md](./README.md) | Quick start, scripts, demo logins |
 | [FILE_STRUCTURE.md](./FILE_STRUCTURE.md) | “I need to change…” lookup table |
 | [INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md) | Roles, delegation, proxy, collections |
-| [FIREBASE_INTEGRATION.md](./FIREBASE_INTEGRATION.md) | Firestore collections, security, job breakdown |
+| [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md) | Postgres tables, RLS, job breakdown |
 | [ADJUSTED_INSTITUTIONAL_HIERARCHY.md](./ADJUSTED_INSTITUTIONAL_HIERARCHY.md) | Hierarchy adjustments (if present) |
 
 ---

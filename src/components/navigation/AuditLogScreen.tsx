@@ -30,7 +30,7 @@ export function AuditLogScreen({ role }: { role: Extract<InstitutionRole, "admin
         <SectionHeader title="How to read entries" />
         <AppText variant="body">
           Each row is append-only: who acted, what changed, and which module or scope was affected. Production
-          Firebase rules will mirror the same filters shown here.
+          Supabase RLS policies will mirror the same filters shown here.
         </AppText>
       </AppCard>
 

@@ -2,13 +2,13 @@ import type { UserRole } from "@/types/roles";
 import type { InstitutionCapability } from "@/types/capabilities";
 
 /**
- * Firestore document shape for `userProfiles/{uid}` (uid = Firebase Auth UID).
+ * Postgres row shape for `user_profiles` (id = Supabase Auth user id).
  */
-export interface FirebaseUserProfileDoc {
+export interface SupabaseUserProfileDoc {
   id: string;
   role: UserRole;
   email: string;
-  /** Points to person doc (`students`, `lecturers`, `deans`, `hods`, `tutors`, etc.) */
+  /** Points to person row (`students`, `lecturers`, `deans`, `hods`, `tutors`, etc.) */
   linkedPersonId?: string | null;
   facultyId?: string | null;
   departmentId?: string | null;

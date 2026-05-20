@@ -1,4 +1,4 @@
-/** Singleton metadata for the institution (mock / future Firestore doc). */
+/** Singleton metadata for the institution (mock / future Supabase row). */
 export const UNIVERSITY = {
   id: "mut",
   name: "Mangosuthu University of Technology",

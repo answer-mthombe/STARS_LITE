@@ -17,7 +17,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   }, [bootstrap]);
 
   useEffect(() => {
-    // Simple background sync loop (push-only) — safe to call even when Firebase isn't configured yet.
+    // Simple background sync loop (push-only) — no-ops when Supabase env is not configured.
     const id = setInterval(() => {
       void processOutboxOnce();
     }, 12_000);

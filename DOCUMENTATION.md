@@ -1,6 +1,6 @@
 # STARS — Documentation
 
-**STARS** (Smart Tracking & Attendance Resource System) is the Mangosuthu University of Technology attendance experience: a production-style mobile app for students and lecturers, with a mock data layer today and a clean path to Firebase tomorrow.
+**STARS** (Smart Tracking & Attendance Resource System) is the Mangosuthu University of Technology attendance experience: a production-style mobile app for students and lecturers, with a mock data layer today and a clean path to Supabase tomorrow.
 
 ---
 
@@ -20,8 +20,8 @@
 | **Persistence (web dev)** | `localStorage` via `authStorage` helper |
 | **Location** | **expo-location** (one-shot capture for attendance simulation) |
 | **Crypto** | **expo-crypto** (session seed for mock sessions) |
-| **Data (current)** | In-memory **mock Firestore** (`src/mockDB/`) + JSON seeds |
-| **Data (future)** | Firebase v9 modular (**Auth**, **Firestore**, **Storage**) — interfaces and services structured to swap |
+| **Data (current)** | In-memory **mock DB** (`src/mockDB/`) + JSON seeds |
+| **Data (future)** | **Supabase** (**Auth**, **Postgres**, **Storage**) — interfaces and services structured to swap |
 | **Offline-first (new)** | **PouchDB** local store + mutation outbox + background sync (`src/services/offline/`) |
 
 ---
@@ -42,7 +42,7 @@ npx expo start -c
 
 ### 2. Architecture principles
 
-1. **Repository-style services** — `mockDB` mimics Firestore collections; `attendanceSimulationService` and `moduleEnrollmentService` sit above it so Firebase can replace `mockDB` later without rewriting screens.
+1. **Repository-style services** — `mockDB` mimics collection-style entities; `attendanceSimulationService` and `moduleEnrollmentService` sit above it so Supabase can replace `mockDB` later without rewriting screens.
 2. **Role-based routes** — `/admin/*`, `/dean/*`, `/hod/*`, `/lecturer/*`, `/tutor/*`, `/student/*`, plus shared `/notifications`, `/settings`. Hierarchy, delegation, and permissions: **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)**.
 3. **Route groups** — `(auth)` only organizes files; URLs are **`/onboarding`**, **`/login`**, **`/register-student`** (parentheses are not in the path).
 4. **UI system** — `ScreenShell` + tokens in `src/theme/`; **Innovation Lab** footer is pinned below scroll content for brand consistency.
@@ -60,7 +60,7 @@ npx expo start -c
 
 - `src/services/offline/pouchDb.ts`: PouchDB config (AsyncStorage on native, IndexedDB on web) + shared doc types.
 - `src/services/offline/offlineRepository.ts`: generic upsert/get/list helpers (no business logic).
-- `src/services/offline/offlineSync.ts`: mutation outbox + background push to Firestore.
+- `src/services/offline/offlineSync.ts`: mutation outbox + background push to Supabase.
 
 **How to use it (pattern)**
 
@@ -72,7 +72,7 @@ npx expo start -c
 ### 3. Attendance simulation (mock)
 
 1. Lecturer, **tutor**, or **delegated registrar** starts a session → one GPS read → session row records `startedByRole` / `startedById` + `algorithmSeed` + expiry.
-2. Rotating **6-digit code** (and QR payload) is derived locally from seed + 5s time window (no per-tick Firestore writes).
+2. Rotating **6-digit code** (and QR payload) is derived locally from seed + 5s time window (no per-tick database writes).
 3. Student submits code → one GPS read → Haversine distance vs session radius → record written to mock DB.
 
 ### 4. Design & brand
@@ -81,11 +81,11 @@ npx expo start -c
 - **Credit line:** **Created by the MUT Innovation Lab** — `InnovationLabFooter` (mixed typography and palette patterns).
 - **Palette:** light surface `#E8E8E8`, accent `#006281`, primary `#4F1A1D`.
 
-### 5. Firebase cutover (planned)
+### 5. Supabase cutover (planned)
 
-1. Add `.env` / EAS secrets with `EXPO_PUBLIC_FIREBASE_*`.
-2. Implement `src/firebase/` client + collection accessors mirroring `mockDB` collection names.
-3. Replace service internals to call Firestore while keeping the same method signatures used by screens.
+1. Add `.env` / EAS secrets with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
+2. Use `src/supabase/` client + `TABLES` mirroring `mockDB` entity names.
+3. Replace service internals to call Supabase while keeping the same method signatures used by screens. See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md)**.
 
 ---
 

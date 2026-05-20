@@ -35,7 +35,7 @@ export default function LecturerAttendanceAnalyticsScreen() {
         <Row k="Attendance records" v={String(insight.records)} />
       </AppCard>
       <Text style={{ color: colors.ink.muted, marginTop: 16, lineHeight: 22 }}>
-        Heatmaps and exports can plug into this layer when Firebase analytics is enabled.
+        Heatmaps and exports can plug into this layer when Supabase analytics is enabled.
       </Text>
       <View style={{ height: 16 }} />
       <Text onPress={() => router.push("/lecturer/dashboard")} style={{ color: colors.palette.primary, fontWeight: "900" }}>

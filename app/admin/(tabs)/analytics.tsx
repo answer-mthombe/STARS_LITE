@@ -38,7 +38,7 @@ export default function AdminAnalyticsSimulationScreen() {
   return (
     <ScreenShell title="Analytics simulation" subtitle="University-wide charts (mock + dummy trends)" scroll showBack>
       <Text style={{ color: colors.ink.muted, marginBottom: 14, lineHeight: 22 }}>
-        View-only simulation for stakeholder demos. Replace series with Firestore rollups (JOB-019 / JOB-020).
+        View-only simulation for stakeholder demos. Replace series with Supabase rollups (JOB-019 / JOB-020).
       </Text>
 
       <AppCard>

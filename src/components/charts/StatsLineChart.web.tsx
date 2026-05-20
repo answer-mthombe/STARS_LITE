@@ -53,7 +53,7 @@ export function StatsLineChart({ title, points, labels }: Props) {
         }}
       />
       <p style={{ color: colors.ink.muted, fontSize: 12, marginTop: 8 }}>
-        Simulation — Firebase phase will use dated rollups (JOB-019).
+        Simulation — Supabase phase will use dated rollups (JOB-019).
       </p>
     </div>
   );

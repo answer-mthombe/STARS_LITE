@@ -1,6 +1,6 @@
 /**
  * Chart-ready series for leadership dashboards. Combines live `institutionAnalytics`
- * outputs with **dummy** trend / heatmap padding until Firestore rollups exist (JOB-019+).
+ * outputs with **dummy** trend / heatmap padding until Supabase rollups exist (JOB-019+).
  */
 
 import { institutionAnalytics } from "@/services/institutionAnalytics";

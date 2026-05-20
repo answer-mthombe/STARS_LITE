@@ -1,6 +1,6 @@
-import { getFirebaseDb } from "@/firebase/app";
-import { COLLECTIONS } from "@/firebase/collections";
-import { doc, setDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { tryGetSupabaseClient } from "@/supabase/client";
+import { toRow } from "@/supabase/mappers";
+import { resolveTableName } from "@/supabase/tables";
 
 import { getOfflineDb, mutationDocId, type OfflineMutationDoc } from "@/services/offline/pouchDb";
 
@@ -33,6 +33,9 @@ export async function enqueueMutation(args: Omit<OfflineMutationDoc, "_id" | "ki
 }
 
 export async function processOutboxOnce() {
+  const supabase = tryGetSupabaseClient();
+  if (!supabase) return { pushed: 0 };
+
   const db = getOfflineDb();
 
   // For maximum cross-adapter stability (IndexedDB/AsyncStorage), avoid Mango sort/index requirements.
@@ -52,22 +55,32 @@ export async function processOutboxOnce() {
     .slice(0, 50);
   if (pending.length === 0) return { pushed: 0 };
 
-  // Minimal Firestore push implementation.
-  // NOTE: PouchDB doesn't sync to Firestore natively; we push mutations through this adapter.
-  const liveDb = getFirebaseDb();
-
   let pushed = 0;
   for (const m of pending) {
     try {
-      const col = (COLLECTIONS as any)[m.collection] ?? m.collection;
-      const ref = doc(liveDb, col, m.entityId);
+      const table = resolveTableName(m.collection);
+      const updatedAt = new Date().toISOString();
 
       if (m.op === "delete") {
-        await deleteDoc(ref);
+        const { error } = await supabase.from(table).delete().eq("id", m.entityId);
+        if (error) throw error;
       } else if (m.op === "set") {
-        await setDoc(ref, { ...(m.payload as any), updatedAt: serverTimestamp() }, { merge: true });
+        const row = toRow({
+          id: m.entityId,
+          ...(m.payload as Record<string, unknown>),
+          updatedAt,
+        } as { id: string });
+        const { error } = await supabase.from(table).upsert(row, { onConflict: "id" });
+        if (error) throw error;
       } else {
-        await updateDoc(ref, { ...(m.payload as any), updatedAt: serverTimestamp() } as any);
+        const row = toRow({
+          ...(m.payload as Record<string, unknown>),
+          updatedAt,
+          id: m.entityId,
+        } as { id: string });
+        const { id: _id, ...patch } = row;
+        const { error } = await supabase.from(table).update(patch).eq("id", m.entityId);
+        if (error) throw error;
       }
 
       const existing = await db.get<OfflineMutationDoc>(m._id);
@@ -86,4 +99,3 @@ export async function processOutboxOnce() {
 
   return { pushed };
 }
-

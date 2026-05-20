@@ -3,7 +3,7 @@ import type { InstitutionCapability } from "@/types/capabilities";
 
 /**
  * Declarative capability matrix — navigation, analytics, and governance.
- * Implementation: route guards, `institutionAnalytics`, Firestore rules.
+ * Implementation: route guards, `institutionAnalytics`, Supabase RLS.
  */
 export type AnalyticsScope =
   | "university"

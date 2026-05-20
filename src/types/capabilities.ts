@@ -1,6 +1,6 @@
 /**
  * Granular capabilities — composed into role defaults and module/proxy grants.
- * Firestore: store on `userProfiles`, `proxyAssignments`, `moduleDelegations`.
+ * Supabase: store on `user_profiles`, `proxy_assignments`, `module_delegations`.
  */
 export type AttendanceCapability =
   | "attendance.start_session"

@@ -50,7 +50,7 @@ export default function AdminDashboardScreen() {
     <ScreenShell title="University overview" subtitle="STARS — institutional analytics (simulation)" scroll>
       <AppText variant="body" style={{ marginBottom: 14 }}>
         Full visibility across Mangosuthu University of Technology: enrolment, attendance, and faculty performance
-        (mock data — Firebase will scope the same views per security rules).
+        (mock data — Supabase RLS will scope the same views per security policies).
       </AppText>
 
       <Row wrap gap="sm" style={{ marginBottom: 4 }}>

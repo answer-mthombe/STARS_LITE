@@ -47,7 +47,7 @@ export default function AdminSeedScreen() {
   return (
     <ScreenShell title="STARS Admin" subtitle="Simulation & data controls" scroll>
       <AppText variant="body" style={{ marginBottom: 16 }}>
-        Firebase-ready mock database for STARS. Inspect counts and reset seed data during demos.
+        Supabase-ready mock database for STARS. Inspect counts and reset seed data during demos.
       </AppText>
 
       <AppCard>

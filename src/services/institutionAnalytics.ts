@@ -13,7 +13,7 @@ function modulesForLecturer(lecturerId: string): ModuleModel[] {
   return mockDB.list("modules").filter((m) => m.lecturerId === lecturerId);
 }
 
-/** Scoped aggregates for dashboards — mock DB only; mirror queries in Firestore later. */
+/** Scoped aggregates for dashboards — mock DB only; mirror queries in Supabase later. */
 export const institutionAnalytics = {
   universityOverview() {
     mockDB.touch();
