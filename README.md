@@ -43,6 +43,8 @@ See **[FILE_STRUCTURE.md](./FILE_STRUCTURE.md)** for a **beginner-friendly map**
 
 See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md)** for **milestones (M0–M5)**, **user stories**, and team tasks (**Brightman**, **Gugulethu**, **Basil**) to wire **Supabase Auth + Postgres**.
 
+See **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** for **ER diagrams**, **table columns**, and **relationship connections**.
+
 See **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)** for **faculty → department → course** structure, **Admin / Dean / HOD / Lecturer / Student** roles, and **scoped analytics**.
 
 ## Web document head & SEO

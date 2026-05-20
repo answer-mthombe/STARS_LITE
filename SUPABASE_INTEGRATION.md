@@ -148,8 +148,9 @@ Use **JOB-xxx** in commits, PR titles, and stand-up.
 - Table in `INSTITUTION_HIERARCHY.md` matches `src/supabase/tables.ts`.
 - Each `src/models/*` entity has a mapped table (or documented exception).
 - Challenge fields on `attendance_records` documented (see JOB-031).
+- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** reviewed and signed off by team.
 
-**Files:** `src/supabase/tables.ts` · `INSTITUTION_HIERARCHY.md` · `src/models/*`
+**Files:** `src/supabase/tables.ts` · `DATABASE_SCHEMA.md` · `INSTITUTION_HIERARCHY.md` · `src/models/*`
 
 ---
 
@@ -590,6 +591,7 @@ Repeat for other `TABLES` entries in migrations. Enable **RLS** before productio
 
 ## Related docs
 
+- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** — ER diagrams, table columns, FK connection matrix
 - **[DOCUMENTATION.md](./DOCUMENTATION.md)** — stack and process
 - **[FILE_STRUCTURE.md](./FILE_STRUCTURE.md)** — where to open files
 - **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)** — roles and tables

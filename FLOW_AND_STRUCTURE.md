@@ -1,6 +1,6 @@
 # STARS — Flow & file structure diagrams
 
-Visual guide to how the **ATTANDANCE** (STARS) app boots, routes users by role, runs attendance and invigilation flows, and where code lives. Complements [FILE_STRUCTURE.md](./FILE_STRUCTURE.md), [INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md), and [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md).
+Visual guide to how the **ATTANDANCE** (STARS) app boots, routes users by role, runs attendance and invigilation flows, and where code lives. Complements [FILE_STRUCTURE.md](./FILE_STRUCTURE.md), [INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md), [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md), and [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md).
 
 ---
 

@@ -319,6 +319,7 @@ Scaffolded for live backend work; screens still use **mock** services until you 
 - **[README.md](./README.md)** — quick start, diagrams, functional requirements summary.
 - **[DOCUMENTATION.md](./DOCUMENTATION.md)** — stack, process, troubleshooting.
 - **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md)** — milestones, user stories, Brightman / Gugulethu / Basil ownership.
+- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** — ER diagrams, tables, columns, and FK connections.
 - **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)** — faculty / department / course tree, six roles, delegation.
 
 If a path is missing from this list, search the repo for a screen name or feature word; new files should be added under **`app/`** (routes) or **`src/`** (shared code) following the patterns above.

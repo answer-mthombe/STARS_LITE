@@ -39,3 +39,5 @@ EXPO_PUBLIC_DATA_SOURCE=supabase
 ## User stories
 
 All backend integration jobs (**JOB-001** … **JOB-034**) are in **[SUPABASE_INTEGRATION.md](../SUPABASE_INTEGRATION.md)**.
+
+Table definitions, ER diagrams, and FK connections: **[DATABASE_SCHEMA.md](../DATABASE_SCHEMA.md)**.
