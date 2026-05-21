@@ -2,7 +2,7 @@
 
 Postgres schema for **Supabase** (live backend) aligned with the mock DB (`src/mockDB/`) and TypeScript models (`src/models/`).
 
-**Related:** [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--foundation-sprint-start-here) (M0 foundation stories first) · [INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md) · [full-challenge-mechanism.md](./full-challenge-mechanism.md) · `src/supabase/tables.ts`
+**Related:** [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here) (M0 integration stories first) · [INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md) · [full-challenge-mechanism.md](./full-challenge-mechanism.md) · `src/supabase/tables.ts`
 
 ---
 

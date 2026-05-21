@@ -2,56 +2,88 @@
 
 **Audience:** Brightman, Gugulethu, Basil — and anyone new to the codebase.
 
-This document ties **milestones**, **user stories**, and **file ownership** together. **Start with [M0 — Foundation sprint](#m0--foundation-sprint-start-here)** (step-by-step stories for first-time Supabase work). Later sections cover M1–M6 app wiring.
+This document ties **milestones**, **user stories**, and **file ownership** together. **Start with [M0 — Integration sprint](#m0--integration-sprint-start-here)** — your job is **integration**, not rebuilding the UI. Later sections list every **JOB-xxx** in order.
 
+---
 
-## M0 — Foundation sprint (start here)
+## M0 — Integration sprint (start here)
 
-**Audience:** Brightman, Gugulethu, Basil — first-time Supabase contributors.
+**Audience:** Brightman, Gugulethu, Basil.
 
-**Scope of this sprint:** Set up the **Supabase project**, **Postgres schema**, **RLS policies**, **seed data**, **challenge parameter JSON**, and a **local `.env` file**. You will **not** wire the Expo app to Supabase yet (no `JOB-006` login, no `EXPO_PUBLIC_DATA_SOURCE=supabase` in daily dev). The app keeps using **mock JSON** until M1.
+**What this project is:** The **frontend is largely done** (`app/`, shared components, role navigation). Your work is **backend integration** — connect those screens to **Supabase Auth + Postgres**, **remove dummy/mock data paths**, and prove each flow **works end-to-end** (login → dashboard → session → challenge check-in → history/analytics).
+
+**What you do *not* do:** Rebuild screens, redesign UX, or duplicate components. If a screen already exists, you change **`src/services/`** (and SQL/RLS), not `app/` layout.
 
 **Read first (whole team, ~30 min):**
 
 | Doc | Why |
 |-----|-----|
-| [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) | Tables, columns, FKs, ER diagrams |
-| Sections below (M1–M6) | JOB register and app wiring |
-| [full-challenge-mechanism.md](./full-challenge-mechanism.md) | Challenge gates + `attendance_records` shape |
+| [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) | Tables, columns, FKs |
+| [full-challenge-mechanism.md](./full-challenge-mechanism.md) | Challenge + `attendance_records` |
+| [Developer workboards](#developer-integration-workboards) below | **Your** concrete tasks |
+
+---
+
+## Integration goal (one sentence)
+
+**Same UI, real data:** keep every `app/` route; replace `mockDB` / dummy chart data / `mockAuthService` internals with Supabase repositories so `EXPO_PUBLIC_DATA_SOURCE=supabase` runs the full demo on Postgres.
+
+```mermaid
+flowchart TB
+  subgraph ui["Already built — do not rewrite"]
+    APP["app/ screens\nstudent · lecturer · admin · dean · hod"]
+    COMP["src/components/"]
+  end
+
+  subgraph integrate["You integrate here"]
+    SVC["src/services/*\nbranch: mock vs supabase"]
+    REPO["src/services/supabase/*Repository.ts"]
+    PIPE["src/pipelines/"]
+  end
+
+  subgraph remove["Remove / bypass when supabase on"]
+    MDB["src/mockDB/"]
+    DUM["dashboardChartDummy · MockTrendChart data"]
+    MAUTH["mockAuthService default path"]
+  end
+
+  subgraph live["Supabase"]
+    AUTH["Auth"]
+    PG["Postgres + RLS"]
+    EDGE["Edge Functions"]
+  end
+
+  APP --> SVC
+  COMP --> APP
+  SVC --> REPO
+  REPO --> AUTH
+  REPO --> PG
+  SVC -.->|mock flag only| MDB
+  SVC -.->|replace reads| DUM
+  PG --> EDGE
+```
+
+| Layer | Today (mock) | After integration |
+|-------|----------------|-------------------|
+| **Screens** | `app/student/(tabs)/dashboard.tsx`, etc. | **Unchanged** — same imports from services |
+| **Auth** | `mockAuthService` + SecureStore | `authRepository` + `user_profiles` |
+| **Lists / CRUD** | `mockDB.list/create/update` | `*Repository` + PostgREST |
+| **Analytics charts** | `institutionAnalytics` + `dashboardChartDummy` | SQL aggregates; **no fake slopes** |
+| **Attendance** | `attendanceSimulationService` + in-memory challenge `Map` | Postgres sessions/records + challenge submit |
+| **Admin seed screen** | Re-seeds mock JSON | Optional: trigger `seed.sql` or hide when `supabase` |
 
 ---
 
 ## How Supabase fits STARS (learn this before coding)
 
-STARS today stores everything in **`src/mockDB/`** (JSON + in-memory). That lets the UI work offline with no cloud account. For production, the **same shapes** move to **Supabase**:
+| Supabase piece | STARS use | Integration work |
+|----------------|-----------|------------------|
+| **Auth** | Login for all roles; `user_profiles.id` = `auth.users.id` | Wire `login.tsx` → `authRepository`; create Auth users matching `demoLogins` |
+| **Postgres** | All entities in `TABLES` | Migrations + seed; services read/write via repositories |
+| **RLS** | Enforce role scope server-side | Policies before trusting client-only guards |
+| **Edge Functions** | Verify challenge rows on insert | M6; stub in M0 |
 
-```mermaid
-flowchart LR
-  subgraph today["Today — mock path"]
-    UI1["Expo screens"] --> SVC1["src/services/*"]
-    SVC1 --> MDB["mockDB + JSON seeds"]
-  end
-
-  subgraph target["Target — Supabase path (later)"]
-    UI2["Expo screens"] --> SVC2["src/services/* same method names"]
-    SVC2 --> SB["@supabase/supabase-js"]
-    SB --> AUTH["Supabase Auth\nemail/password"]
-    SB --> PG["Postgres tables\n+ RLS policies"]
-    SB --> EDGE["Edge Functions\nchallenge verify"]
-  end
-
-  MDB -.->|"same row shapes"| PG
-```
-
-| Supabase piece | STARS use | You build in M0 |
-|----------------|-----------|-----------------|
-| **Auth** | Student/lecturer/admin login; `user_profiles.id` = `auth.users.id` | Enable email provider in dashboard only |
-| **Postgres** | Faculties, modules, sessions, `attendance_records`, etc. | SQL migrations in `supabase/migrations/` |
-| **RLS** | Students only see their rows; lecturers see their modules | Policies in `*_rls.sql` + `supabase/policies.md` |
-| **Edge Functions** | Recompute challenge seed; reject forged `tapped_index` | Stub folder + README (full logic in M6) |
-| **Storage** (later) | Class register PDFs | Out of M0 scope |
-
-**Important:** Screens never import SQL. They call **`src/services/`** → repositories → Supabase client. M0 only prepares the **database contract** so M1+ can swap mock internals without rewriting `app/`.
+**Golden rule:** `app/` → **`src/services/`** only. Never `import` Supabase client in a screen.
 
 ---
 
@@ -65,15 +97,16 @@ feature/JOB-00X-short-description
 
 One branch per story. One **primary owner** per story. Open PR early (draft) so others see file locks.
 
-### File ownership (do not edit another lane’s files in the same sprint)
+### File ownership (avoid merge conflicts)
 
-| Lane | Owner | Touch only |
-|------|-------|------------|
-| **A — Platform** | Brightman | `supabase/migrations/0001_*.sql` (project notes), `0004_attendance*.sql`, `supabase/functions/`, `supabase/README.md` |
-| **B — Connectivity** | Gugulethu | `.env.example`, `README.md` (env subsection, STORY-002), `src/data/challenge-object-library.json`, `0002_institution*.sql` |
-| **C — Governance** | Basil | `DATABASE_SCHEMA.md` (sign-off comments), `supabase/policies.md`, `0003_people*.sql`, `0005_rls*.sql`, `supabase/seed.sql` |
+| Lane | Owner | SQL / infra | Service integration (mock → Supabase) |
+|------|-------|-------------|----------------------------------------|
+| **A — Platform & attendance writes** | **Brightman** | `0004_attendance*.sql`, `supabase/functions/` | `attendanceSimulationService.ts`, `attendanceChallengeService.ts`, `attendanceSessionRepository.ts`, `attendanceRecordRepository.ts`, `classRegisterService.ts` |
+| **B — Auth, reads, enrolment, flag** | **Gugulethu** | `0002_institution*.sql`, `.env.example` | `src/services/dataSource.ts` (new), `mockAuthService.ts` / `authStore.ts`, `authRepository.ts`, `userProfileRepository.ts`, `moduleRepository.ts`, `studentRepository.ts`, `moduleEnrollmentService.ts`, `offlineSync.ts`, `src/pipelines/authHydration.ts` |
+| **C — Governance, analytics, trust** | **Basil** | `0003_people*.sql`, `0005_rls*.sql`, `seed.sql`, `policies.md` | `institutionAnalytics.ts`, `auditLogService.ts`, `dashboardChartDummy.ts` + chart screens, `mapAuthError.ts`, `useRoleGuard.ts`, lecturer module list queries |
 
-**Shared read-only:** `src/supabase/tables.ts`, `src/models/*`, `src/mockDB/*.json` — propose changes in PR comments; only **JOB-003** owner merges `tables.ts` if names change.
+**Do not edit:** `app/**` unless fixing a broken import — coordinate first.  
+**Shared:** `src/supabase/tables.ts`, `src/models/*` — JOB-003 owner merges renames.
 
 ### Merge order (rebase onto `main` in this sequence)
 
@@ -87,9 +120,115 @@ One branch per story. One **primary owner** per story. Open PR early (draft) so 
 
 - [ ] PR title: `[JOB-00X] Short title`
 - [ ] Only files in your **lane** changed (or team-agreed doc)
-- [ ] `npm run` / Expo still works on **`mock`** (no requirement to set `.env`)
-- [ ] No secrets in git (no `.env`, no service role key)
+- [ ] With `EXPO_PUBLIC_DATA_SOURCE=mock`, app still works (regression)
+- [ ] With `EXPO_PUBLIC_DATA_SOURCE=supabase`, **your** integrated flow uses Postgres (screenshot or steps in PR)
+- [ ] No new dummy data introduced; mock path only when flag is `mock`
+- [ ] No secrets in git
 - [ ] Linked story section in PR description
+
+---
+
+## Developer integration workboards
+
+Use this as your **weekly task list**. Database setup is **step 1**; wiring services and **removing dummy data** is the real deliverable.
+
+### Brightman — platform & attendance integration
+
+| Order | Task | Integration outcome | Remove / stop using (when `supabase`) |
+|-------|------|---------------------|--------------------------------------|
+| 1 | STORY-001 Supabase project | Dev API + Auth enabled | — |
+| 2 | STORY-004 lane A: `0004_attendance*.sql` | Tables for sessions, records, registers | — |
+| 3 | JOB-019: `attendanceSimulationService.createSession` → repository | Lecturer **create session** persists GPS, seed, radius | `mockDB.create("attendanceSessions")` on live path |
+| 4 | JOB-020 + module repo: `active_session_id` | Student **mark attendance** sees live session | `mockDB.update("modules")` for active session |
+| 5 | JOB-021 / 033: `attendanceChallengeService.submit` → repository | Challenge check-in writes **one** `attendance_records` row | In-memory `challenges` Map + `mockDB.create` for records |
+| 6 | JOB-025: `classRegisterService` | End class → `class_registers` | mock register finalisation |
+| 7 | JOB-028: seed alignment | Demo IDs match mock JSON | Rely on Postgres seed, not `src/mockDB/*.json` at runtime |
+| 8 | STORY-008: Edge verify stub | Ready for M6 | — |
+
+**Prove it works:** Lecturer starts session → student enters code → challenge pass → row in Supabase Table Editor → student history screen shows the mark.
+
+---
+
+### Gugulethu — auth, connectivity & student integration
+
+| Order | Task | Integration outcome | Remove / stop using (when `supabase`) |
+|-------|------|---------------------|--------------------------------------|
+| 1 | STORY-002 `.env` + STORY-004 lane B: institution SQL | Team can reach one backend | — |
+| 2 | **JOB-027 early:** `src/services/dataSource.ts` + `isSupabaseDataSource()` | Single switch for all services | Copy-pasted `if (env)` in every file |
+| 3 | JOB-006: `login.tsx` → `authRepository.signInWithEmailPassword` | Real login | `mockAuthService` as default |
+| 4 | JOB-007: `subscribeAuthState` in `AppProviders` / pipeline | Session survives restart | Mock-only session fiction |
+| 5 | JOB-009: `userProfileRepository` upsert + load | Role + `linkedPersonId` from Postgres | Hard-coded role from mock login |
+| 6 | JOB-012 / 014: student dashboard + attendance history | Lists from enrolled modules + `attendance_records` | `mockDB.list("modules")` filtered in service |
+| 7 | JOB-024: `moduleEnrollmentService` | Join code + pending requests in Postgres | mock enrolment arrays only |
+| 8 | JOB-022: offline outbox → Supabase | Offline queue still works | Outbox that never leaves device |
+| 9 | STORY-006: `challenge-object-library.json` | Shared challenge vocabulary | — |
+
+**Prove it works:** Student logs in with seeded Auth user → dashboard shows modules from Postgres → join/history screens match DB.
+
+---
+
+### Basil — schema, RLS, analytics & trust integration
+
+| Order | Task | Integration outcome | Remove / stop using (when `supabase`) |
+|-------|------|---------------------|--------------------------------------|
+| 1 | STORY-003 schema sign-off | Contract frozen | — |
+| 2 | STORY-004 lane C + STORY-005 `seed.sql` | Real faculties/modules/students in Postgres | Admin **re-seed mock** as primary demo path |
+| 3 | STORY-007 RLS `0005_*` + `policies.md` | Tamper-resistant reads/writes | Client-only “security” |
+| 4 | JOB-008: `mapAuthError` | Login errors human-readable | Raw Supabase error strings |
+| 5 | JOB-011: `useRoleGuard` + live profile | No cross-role URLs with live data | Guard that only knew mock role |
+| 6 | JOB-013: lecturer modules list | Lecturer dashboard from Postgres | `mockDB` lecturer filter |
+| 7 | JOB-016 / 017: `institutionAnalytics` + charts | Admin/dean/HOD numbers from SQL | **`dashboardChartDummy`**, fake chart slopes, `MockTrendChart` placeholder series |
+| 8 | JOB-018: `auditLogService` | Audit screen from `audit_logs` | `mockDB.list("auditLogs")` |
+| 9 | JOB-029: logging policy | Safe production debugging | Logging tokens/passwords |
+
+**Prove it works:** Admin analytics cards match SQL counts; dean faculty scope ≠ admin totals; audit log filters return real rows.
+
+---
+
+## Mock & dummy data removal matrix
+
+When `EXPO_PUBLIC_DATA_SOURCE=supabase`, these must **not** feed user-visible data:
+
+| Source | Used for today | Owner | Replace with |
+|--------|----------------|-------|----------------|
+| `src/mockDB/*.json` + `mockDBService` | All entity CRUD | All | Postgres via repositories + `seed.sql` |
+| `mockAuthService.ts` | Login, roles | Gugulethu | `authRepository` + `user_profiles` |
+| `dashboardChartDummy.ts` | Chart series | Basil | SQL rollups / `institutionAnalytics` |
+| `MockTrendChart` / dummy props | Analytics UI | Basil | Live series from service (empty state if no data) |
+| `institutionAnalytics.ts` mock lists | Admin/dean/HOD dashboards | Basil | Scoped Supabase queries |
+| `attendanceChallengeService` in-memory `Map` | Active challenge | Brightman | DB session + submit only |
+| `admin/(tabs)/seed.tsx` mock re-seed | Reset demo | Basil | Document SQL re-seed; optional hide when supabase |
+
+**Keep mock path:** `dataSource === 'mock'` for local dev without cloud — do **not** delete `mockDB` until integration is stable.
+
+---
+
+## Integration pattern (copy in every service PR)
+
+```ts
+// src/services/dataSource.ts — Gugulethu owns this file
+export function getDataSource(): "mock" | "supabase" {
+  const v = process.env.EXPO_PUBLIC_DATA_SOURCE;
+  return v === "supabase" ? "supabase" : "mock";
+}
+
+// Inside any existing service (example)
+import { getDataSource } from "@/services/dataSource";
+import { mockDB } from "@/mockDB/mockDBService";
+import * as moduleRepo from "@/services/supabase/moduleRepository";
+
+export async function listModulesForStudent(studentId: string) {
+  if (getDataSource() === "mock") {
+    return mockDB.list("modules").filter(/* existing logic */);
+  }
+  return moduleRepo.listModulesForStudent(studentId); // you implement
+}
+```
+
+1. Run the screen on **mock** — note current behaviour.  
+2. Implement **Supabase branch** in the **same** service function.  
+3. Set `.env` to `supabase` and walk the **same screen** — must work without UI changes.  
+4. Remove any **dummy** fallback on the supabase branch (no `dashboardChartDummy` when live).
 
 ---
 
@@ -139,8 +278,9 @@ Record the CLI version you used in your PR when you run migrations.
 
 ### Acceptance criteria
 
-- [ ] All three developers can answer: *Where does attendance data live today? Where will it live?*
-- [ ] Team agrees: **M0 = database + docs only**, app stays on mock.
+- [ ] Each developer can name **their** service files from the [workboard](#developer-integration-workboards).
+- [ ] Team agrees: **UI stays in `app/`**; integration is **`src/services/` + Supabase**.
+- [ ] Team lists three dummy sources to remove (mockDB, `dashboardChartDummy`, `mockAuthService`).
 
 ### Files
 
@@ -210,21 +350,21 @@ You will create many tables in STORY-004; the dashboard **Table Editor** can pre
 ### Do not
 
 - Commit `.env` or service role key.
-- Change `src/supabase/client.ts` or any `app/` screen.
+- Rebuild `app/` screens.
 
 ---
 
-## STORY-002 — Local `.env` file + `.env.example` (no app connection test)
+## STORY-002 — `.env`, data-source flag & connectivity check
 
-**Maps to:** **JOB-002** (env half only — **skip** `tryGetSupabaseClient()` verification until M1)  
+**Maps to:** **JOB-002** + **JOB-027** (create `dataSource.ts` first)  
 **Owner:** Gugulethu  
-**Estimate:** 45 minutes  
+**Estimate:** 1–2 hours  
 
 ### Learning objectives
 
 - Know why `.env` is gitignored and `.env.example` is tracked.
-- Set Expo **public** env vars (safe for client bundle; RLS protects data).
-- Understand difference between **mock** dev and **supabase** dev (later).
+- Implement **`getDataSource()`** so every service can branch mock vs Supabase.
+- Verify `tryGetSupabaseClient()` when keys are set (integration smoke test).
 
 ### Prerequisites
 
@@ -247,9 +387,11 @@ You will create many tables in STORY-004; the dashboard **Table Editor** can pre
    EXPO_PUBLIC_DATA_SOURCE=mock
    ```
 
-   Keep `EXPO_PUBLIC_DATA_SOURCE=mock` for the whole foundation sprint.
+   Use `mock` until your first integrated flow is ready; switch to `supabase` to test integration.
 
-4. Update `.env.example` with commented placeholders and short comments (no real keys):
+4. Create **`src/services/dataSource.ts`** (see [Integration pattern](#integration-pattern-copy-in-every-service-pr)).
+
+5. Update `.env.example` with commented placeholders and short comments (no real keys):
 
    ```env
    # Supabase — get from Dashboard → Settings → API (JOB-001 owner shares securely)
@@ -262,24 +404,24 @@ You will create many tables in STORY-004; the dashboard **Table Editor** can pre
 
 5. Add a **“Local environment”** subsection to [README.md](./README.md) (see STORY-010) pointing here.
 
-6. **Optional check (do not fix app if it fails):** run `npx expo start` — app must still work with mock because no screen calls Supabase yet.
+6. Run `npx expo start` with `mock` — app unchanged. With `supabase` + keys, `tryGetSupabaseClient()` must not throw.
 
 ### Acceptance criteria
 
 - [ ] `.env.example` updated and committed.
-- [ ] Each developer has their own `.env` locally (not committed).
-- [ ] README documents copy step and `EXPO_PUBLIC_DATA_SOURCE=mock` default.
-- [ ] No changes to login screens or `authRepository` in this story.
+- [ ] `src/services/dataSource.ts` exists and is imported by at least one service PR.
+- [ ] README documents `mock` vs `supabase` toggle.
+- [ ] Each developer can run Expo with their local `.env`.
 
 ### Files you may touch
 
 - `.env.example`
-- `README.md` (env subsection only — or coordinate with STORY-010)
+- `src/services/dataSource.ts` (new)
+- `README.md` (env subsection — or STORY-010)
 
 ### Do not
 
-- Set `EXPO_PUBLIC_DATA_SOURCE=supabase`.
-- Wire `app/(auth)/login.tsx` to Supabase.
+- Put Supabase calls directly inside `app/` screens.
 
 ---
 
@@ -715,10 +857,10 @@ Supabase stores only the **outcome** (`tapped_index`, `tier_used`, `action_hash`
 
    | Date | Change | Notes |
    |------|--------|-------|
-   | 2026-05-21 | Foundation stories added | M0 sprint |
+   | 2026-05-21 | Integration sprint + workboards | M0 in SUPABASE_INTEGRATION.md |
    | … | Expo SDK 54 | `package.json` |
 
-3. Link **M0 foundation sprint:** [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--foundation-sprint-start-here).
+3. Link **M0 integration sprint:** [Developer workboards](#developer-integration-workboards).
 4. Link env setup to STORY-002.
 
 ### Acceptance criteria
@@ -781,23 +923,35 @@ flowchart TD
 | STORY-009 | M0 gate |
 | STORY-010 | README docs |
 
-**Deferred to M1+ (not in this sprint):** JOB-006 through JOB-034 app wiring, except stubs noted above.
+**After M0 SQL:** each owner continues their [workboard](#developer-integration-workboards) through JOB-006 … JOB-034 — same doc, same lanes.
 
 ---
 
-## What “done” looks like for M0
+## What “done” looks like for integration MVP
+
+**Phase A — Backend ready (M0 SQL stories)**
 
 - [ ] Supabase dev project live (STORY-001)
-- [ ] `.env.example` + per-dev `.env` documented (STORY-002)
-- [ ] Schema signed off in DATABASE_SCHEMA.md (STORY-003)
+- [ ] `.env` + `dataSource.ts` (STORY-002)
+- [ ] Schema signed off (STORY-003)
 - [ ] Migrations `0002`–`0005` applied (STORY-004, STORY-007)
-- [ ] `seed.sql` loads demo institution data (STORY-005)
-- [ ] `challenge-object-library.json` + README (STORY-006)
-- [ ] Edge function stub + SQL helpers documented (STORY-008)
-- [ ] README install/version section (STORY-010)
-- [ ] **Expo app still uses mock** — no Supabase login in production path yet
+- [ ] `seed.sql` + Auth demo users (STORY-005 + JOB-006)
+- [ ] `challenge-object-library.json` (STORY-006)
+
+**Phase B — Works on real data (per developer workboard)**
+
+- [ ] **Brightman:** create session + challenge submit → Postgres; mock attendance writes not used when `supabase`
+- [ ] **Gugulethu:** login + student dashboard/history/enrolment from Postgres; `mockAuthService` not used when `supabase`
+- [ ] **Basil:** admin/dean/HOD analytics + audit logs from SQL; **no** `dashboardChartDummy` / fake chart data when `supabase`
+
+**Phase C — Team demo**
+
+- [ ] One recorded walkthrough: login → module list → live session → check-in → history (web or device)
+- [ ] `EXPO_PUBLIC_DATA_SOURCE=mock` still works for offline local dev
 
 ---
+
+## How to use this guide
 
 1. **Read the tree once** — know the difference between **`src/supabase/`** (SDK wiring + mappers), **`src/services/supabase/`** (one table or concern per file), **`src/pipelines/`** (multi-step flows), and **`src/utils/supabase/`** (helpers).
 2. **Pick a milestone** in order (M0 → M1 → …). Do not skip M0: without env and Supabase project setup, nothing else is verifiable.
@@ -839,7 +993,7 @@ Domain **models** stay in `src/models/`. Profile: `src/types/supabaseUserProfile
 
 | ID | Name | Goal |
 |----|------|------|
-| **M0** | Foundation | Supabase project, env, schema agreement, seed strategy |
+| **M0** | Integration (start here) | Supabase + `dataSource` + service wiring + remove dummy/mock data |
 | **M1** | Authentication | Email/password Auth from the app; session observable |
 | **M2** | Profiles & roles | `user_profiles` maps Auth UID → STARS role + institutional links |
 | **M3** | Read paths | Dashboards/lists/analytics read from Postgres (scoped by role) |
@@ -851,13 +1005,13 @@ Domain **models** stay in `src/models/`. Profile: `src/types/supabaseUserProfile
 
 ## Team roles (who does what)
 
-| Team member | Purpose on this project | System responsibility |
-|-------------|-------------------------|------------------------|
-| **Brightman** | Platform & write-path owner | Supabase project, session creation, challenge record writes, production cutover |
-| **Gugulethu** | Connectivity & data-path owner | Env, auth lifecycle, profiles, student reads, offline sync, data-source flag |
-| **Basil** | Trust & governance owner | Schema contract, auth UX errors, RLS, lecturer reads, observability |
+| Team member | Integration focus | You make it work on the existing UI |
+|-------------|-------------------|-------------------------------------|
+| **Brightman** | Attendance pipeline | Lecturer session + student challenge + registers → Postgres; remove mock session/record writes |
+| **Gugulethu** | Identity & student path | Login, profiles, dashboards, history, enrolment, `dataSource` flag, offline sync |
+| **Basil** | Trust & leadership views | RLS, seed, real analytics (kill dummy charts), audit logs, auth errors, guards |
 
-Everyone reviews everyone’s PRs; each job still has **one primary owner**.
+Everyone reviews PRs; each **JOB** has one owner. See [Developer workboards](#developer-integration-workboards) for ordered tasks.
 
 ---
 
@@ -906,9 +1060,9 @@ Use **JOB-xxx** in commits, PR titles, and stand-up.
 
 ## User stories (detail)
 
-### M0 — Foundation
+### M0 — Integration
 
-> **Full step-by-step stories:** see **[M0 — Foundation sprint (start here)](#m0--foundation-sprint-start-here)** above (STORY-000 through STORY-010). Summaries below map to JOB-001 through JOB-005.
+> **Full step-by-step stories + per-developer workboards:** see **[M0 — Integration sprint (start here)](#m0--integration-sprint-start-here)** above. Summaries below map to JOB-001 through JOB-005; **service wiring** continues in JOB-006+ on the same workboards.
 
 #### JOB-001 — Supabase project
 *As a developer, I want a Supabase project with Auth (email/password) and Postgres enabled so the app has a real backend.*

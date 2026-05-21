@@ -50,15 +50,15 @@ npx expo start -c
 
 1. Copy **[.env.example](./.env.example)** → **`.env`** (never commit `.env`).
 2. Paste **Project URL** and **anon key** from the Supabase dashboard (shared securely by JOB-001 owner).
-3. Keep **`EXPO_PUBLIC_DATA_SOURCE=mock`** during the **foundation sprint** — database setup only, no app login wiring yet.
+3. Use **`EXPO_PUBLIC_DATA_SOURCE=mock`** until your integrated flows work; set to **`supabase`** to test against Postgres (see [integration workboards](./SUPABASE_INTEGRATION.md#developer-integration-workboards)).
 
-See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--foundation-sprint-start-here)** (M0 section at the top) for step-by-step tasks (tables, RLS, seed SQL, challenge JSON).
+See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)** (M0 section at the top) for per-developer integration tasks: Supabase, wire services, remove mock/dummy data on existing screens.
 
 ### Version changelog
 
 | Date | Change |
 |------|--------|
-| 2026-05-21 | M0 foundation stories in **SUPABASE_INTEGRATION.md**; `challenge-object-library.json`; README install table |
+| 2026-05-21 | M0 integration sprint in **SUPABASE_INTEGRATION.md**; `dataSource.ts`; `challenge-object-library.json` |
 | — | **Expo SDK 54**, React 19.1, React Native 0.81.5 — see `package.json` |
 
 When you upgrade Expo, Node, or Supabase CLI, add a row here and note any clean-reset steps from **Clone-and-run** below.
@@ -69,7 +69,7 @@ See **[DOCUMENTATION.md](./DOCUMENTATION.md)** for the full **tech stack**, **en
 
 See **[FILE_STRUCTURE.md](./FILE_STRUCTURE.md)** for a **beginner-friendly map** of every important file and **which file to open for which kind of work**.
 
-See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--foundation-sprint-start-here)** for **M0 foundation sprint** stories (first section) — **no app connection** until M1.
+See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)** for **M0 integration sprint** (first section): Supabase + wire services + remove dummy data on existing screens.
 
 See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md)** for **milestones (M0–M6)**, **JOB register**, and later app wiring (**Brightman**, **Gugulethu**, **Basil**).
 

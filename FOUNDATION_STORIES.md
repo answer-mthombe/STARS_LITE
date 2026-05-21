@@ -1,5 +1,5 @@
 # Foundation stories (moved)
 
-**M0 foundation sprint user stories** now live at the top of **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--foundation-sprint-start-here)**.
+**M0 integration sprint** user stories live at the top of **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)**.
 
-Open that document first — section **M0 — Foundation sprint (start here)** includes STORY-000 through STORY-010 (Supabase project, `.env`, migrations, RLS, seed SQL, challenge JSON).
+That section covers Supabase setup **and** integration: wire `src/services/` to Postgres, remove dummy data, keep existing `app/` screens.

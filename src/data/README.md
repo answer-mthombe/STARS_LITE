@@ -16,7 +16,7 @@ The app **generates** six on-screen objects from the seed using the same logic a
 
 1. Change enums in `attendanceChallengeService.ts` **and** this JSON together.
 2. Bump `"version"` in the JSON when enums change.
-3. Document the change in `README.md` version changelog (foundation sprint STORY-006 / STORY-010).
+3. Document the change in `README.md` version changelog (integration sprint STORY-006 / STORY-010).
 
 ## Related code
 
