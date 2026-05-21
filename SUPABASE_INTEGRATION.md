@@ -110,11 +110,16 @@ One branch per story. One **primary owner** per story. Open PR early (draft) so 
 
 ### Merge order (rebase onto `main` in this sequence)
 
-1. `JOB-003` schema agreement (no SQL yet — doc only)
-2. `JOB-001` + `JOB-002` (project + env example)
-3. Migrations `0002` → `0003` → `0004` (institution → people → attendance)
-4. `JOB-005` seed + challenge JSON
-5. `JOB-023` RLS (policies after tables exist)
+Follow [Story dependencies](#story-dependencies-required-order) — do not merge out of order:
+
+1. **STORY-000** (team read — no PR)
+2. **STORY-003** + **STORY-001** (can be parallel PRs)
+3. **STORY-002** — **after STORY-001** merged
+4. **STORY-004** `0002` → **after STORY-003** → then `0003` → then `0004`
+5. **STORY-005** + **STORY-007** + **STORY-008** — **after STORY-004** applied on dev DB
+6. **STORY-006** / **STORY-010** — anytime after STORY-000 / STORY-002 (parallel OK)
+7. **STORY-009** — **after** STORY-005, STORY-007, STORY-008
+8. **JOB-006+** integration PRs — per [workboard](#developer-integration-workboards) **Start after** column
 
 ### PR checklist (every story)
 
@@ -125,25 +130,26 @@ One branch per story. One **primary owner** per story. Open PR early (draft) so 
 - [ ] No new dummy data introduced; mock path only when flag is `mock`
 - [ ] No secrets in git
 - [ ] Linked story section in PR description
+- [ ] **Start after** stories for this PR are already merged on `main` (see [dependency table](#story-dependencies-required-order))
 
 ---
 
 ## Developer integration workboards
 
-Use this as your **weekly task list**. Database setup is **step 1**; wiring services and **removing dummy data** is the real deliverable.
+Use this as your **weekly task list**. Do not skip rows — **Start after** must be done first.
 
 ### Brightman — platform & attendance integration
 
-| Order | Task | Integration outcome | Remove / stop using (when `supabase`) |
-|-------|------|---------------------|--------------------------------------|
-| 1 | STORY-001 Supabase project | Dev API + Auth enabled | — |
-| 2 | STORY-004 lane A: `0004_attendance*.sql` | Tables for sessions, records, registers | — |
-| 3 | JOB-019: `attendanceSimulationService.createSession` → repository | Lecturer **create session** persists GPS, seed, radius | `mockDB.create("attendanceSessions")` on live path |
-| 4 | JOB-020 + module repo: `active_session_id` | Student **mark attendance** sees live session | `mockDB.update("modules")` for active session |
-| 5 | JOB-021 / 033: `attendanceChallengeService.submit` → repository | Challenge check-in writes **one** `attendance_records` row | In-memory `challenges` Map + `mockDB.create` for records |
-| 6 | JOB-025: `classRegisterService` | End class → `class_registers` | mock register finalisation |
-| 7 | JOB-028: seed alignment | Demo IDs match mock JSON | Rely on Postgres seed, not `src/mockDB/*.json` at runtime |
-| 8 | STORY-008: Edge verify stub | Ready for M6 | — |
+| Order | Task | **Start after** | Integration outcome | Remove / stop using (when `supabase`) |
+|-------|------|-----------------|---------------------|--------------------------------------|
+| 1 | STORY-001 Supabase project | STORY-000 | Dev API + Auth enabled | — |
+| 2 | STORY-004 lane A: `0004_attendance*.sql` | STORY-003 + STORY-001; **`0003` on `main`** | Tables for sessions, records, registers | — |
+| 3 | STORY-008 Edge verify stub | STORY-004 lane A applied | Ready for M6 | — |
+| 4 | JOB-019: create session → repository | STORY-004 A + **STORY-005** + **STORY-002** | Lecturer **create session** in Postgres | `mockDB.create("attendanceSessions")` |
+| 5 | JOB-020: `active_session_id` | **JOB-019** | Student sees live session | `mockDB.update("modules")` |
+| 6 | JOB-021 / 033: challenge submit | **JOB-019** + **JOB-020** + **STORY-006** | One `attendance_records` row | in-memory `challenges` Map |
+| 7 | JOB-025: class register | **JOB-019** | End class → `class_registers` | mock register path |
+| 8 | JOB-028: seed alignment | **STORY-005** | Demo IDs in Postgres | runtime `mockDB` JSON |
 
 **Prove it works:** Lecturer starts session → student enters code → challenge pass → row in Supabase Table Editor → student history screen shows the mark.
 
@@ -151,17 +157,17 @@ Use this as your **weekly task list**. Database setup is **step 1**; wiring serv
 
 ### Gugulethu — auth, connectivity & student integration
 
-| Order | Task | Integration outcome | Remove / stop using (when `supabase`) |
-|-------|------|---------------------|--------------------------------------|
-| 1 | STORY-002 `.env` + STORY-004 lane B: institution SQL | Team can reach one backend | — |
-| 2 | **JOB-027 early:** `src/services/dataSource.ts` + `isSupabaseDataSource()` | Single switch for all services | Copy-pasted `if (env)` in every file |
-| 3 | JOB-006: `login.tsx` → `authRepository.signInWithEmailPassword` | Real login | `mockAuthService` as default |
-| 4 | JOB-007: `subscribeAuthState` in `AppProviders` / pipeline | Session survives restart | Mock-only session fiction |
-| 5 | JOB-009: `userProfileRepository` upsert + load | Role + `linkedPersonId` from Postgres | Hard-coded role from mock login |
-| 6 | JOB-012 / 014: student dashboard + attendance history | Lists from enrolled modules + `attendance_records` | `mockDB.list("modules")` filtered in service |
-| 7 | JOB-024: `moduleEnrollmentService` | Join code + pending requests in Postgres | mock enrolment arrays only |
-| 8 | JOB-022: offline outbox → Supabase | Offline queue still works | Outbox that never leaves device |
-| 9 | STORY-006: `challenge-object-library.json` | Shared challenge vocabulary | — |
+| Order | Task | **Start after** | Integration outcome | Remove / stop using (when `supabase`) |
+|-------|------|-----------------|---------------------|--------------------------------------|
+| 1 | STORY-006: `challenge-object-library.json` | STORY-000 | Shared challenge vocabulary | — |
+| 2 | STORY-002 `.env` + `dataSource.ts` | **STORY-001** | Team can reach backend; mock/supabase switch | — |
+| 3 | STORY-004 lane B: `0002_institution*.sql` | **STORY-003** | Institution tables | — |
+| 4 | JOB-006: login → `authRepository` | **STORY-002** + **STORY-005** + **STORY-007** | Real login | `mockAuthService` default |
+| 5 | JOB-007: auth hydration | **JOB-006** | Session survives restart | mock session only |
+| 6 | JOB-009: `user_profiles` | **JOB-006** + **STORY-005** | Role + links from Postgres | hard-coded mock role |
+| 7 | JOB-012 / 014: student dashboard + history | **JOB-009** + **STORY-005** | Lists from Postgres | `mockDB.list` in services |
+| 8 | JOB-024: enrolment | **JOB-009** + **STORY-005** | Join/pending in Postgres | mock enrolment only |
+| 9 | JOB-022: offline outbox | **STORY-002** + **JOB-019** or **JOB-021** | Offline → Supabase | device-only queue |
 
 **Prove it works:** Student logs in with seeded Auth user → dashboard shows modules from Postgres → join/history screens match DB.
 
@@ -169,17 +175,17 @@ Use this as your **weekly task list**. Database setup is **step 1**; wiring serv
 
 ### Basil — schema, RLS, analytics & trust integration
 
-| Order | Task | Integration outcome | Remove / stop using (when `supabase`) |
-|-------|------|---------------------|--------------------------------------|
-| 1 | STORY-003 schema sign-off | Contract frozen | — |
-| 2 | STORY-004 lane C + STORY-005 `seed.sql` | Real faculties/modules/students in Postgres | Admin **re-seed mock** as primary demo path |
-| 3 | STORY-007 RLS `0005_*` + `policies.md` | Tamper-resistant reads/writes | Client-only “security” |
-| 4 | JOB-008: `mapAuthError` | Login errors human-readable | Raw Supabase error strings |
-| 5 | JOB-011: `useRoleGuard` + live profile | No cross-role URLs with live data | Guard that only knew mock role |
-| 6 | JOB-013: lecturer modules list | Lecturer dashboard from Postgres | `mockDB` lecturer filter |
-| 7 | JOB-016 / 017: `institutionAnalytics` + charts | Admin/dean/HOD numbers from SQL | **`dashboardChartDummy`**, fake chart slopes, `MockTrendChart` placeholder series |
-| 8 | JOB-018: `auditLogService` | Audit screen from `audit_logs` | `mockDB.list("auditLogs")` |
-| 9 | JOB-029: logging policy | Safe production debugging | Logging tokens/passwords |
+| Order | Task | **Start after** | Integration outcome | Remove / stop using (when `supabase`) |
+|-------|------|-----------------|---------------------|--------------------------------------|
+| 1 | STORY-003 schema sign-off | STORY-000 | Contract frozen | — |
+| 2 | STORY-004 lane C: `0003_people*.sql` | STORY-003; **`0002` on `main`** | People + `user_profiles` tables | — |
+| 3 | STORY-005 `seed.sql` | **STORY-004** all lanes applied | Demo rows in Postgres | mock JSON as runtime source |
+| 4 | STORY-007 RLS `0005_*` | **STORY-004** applied | Tamper-resistant data | client-only guards |
+| 5 | JOB-008: `mapAuthError` | **STORY-002**; test after **JOB-006** | Clear login errors | raw API errors |
+| 6 | JOB-011: `useRoleGuard` | **JOB-009** | No cross-role access | mock-only guard |
+| 7 | JOB-013: lecturer modules | **JOB-009** + **STORY-005** | Lecturer hub from Postgres | `mockDB` filter |
+| 8 | JOB-016 / 017 / 018: analytics + audit | **STORY-005** + **STORY-007** + **JOB-009** | Real SQL metrics | **`dashboardChartDummy`**, fake charts |
+| 9 | JOB-029: logging policy | **JOB-006** started | Safe ops logs | token/password logs |
 
 **Prove it works:** Admin analytics cards match SQL counts; dean faculty scope ≠ admin totals; audit log filters return real rows.
 
@@ -254,6 +260,50 @@ Record the CLI version you used in your PR when you run migrations.
 
 ### Foundation user stories (detailed)
 
+> **Rule:** Do not start a story until everything in **Start after** is merged on `main` (or your branch rebased on it). If blocked, help the upstream story or pick a parallel story marked **Can run in parallel**.
+
+---
+
+## Story dependencies (required order)
+
+| Story | **Start after** (must be complete first) | **Blocks** (others wait for you) | Parallel OK? |
+|-------|------------------------------------------|----------------------------------|--------------|
+| **STORY-000** | — (team reads first) | All other stories | — |
+| **STORY-001** | STORY-000 | STORY-002; any work needing API URL/keys | — |
+| **STORY-002** | **STORY-001** (keys from Brightman) | All service integration using `.env` / `dataSource` | — |
+| **STORY-003** | STORY-000 | STORY-004 (all lanes) | Yes — with STORY-001 |
+| **STORY-004** | **STORY-003** + **STORY-001** | STORY-005, STORY-007, STORY-008; all Postgres reads/writes | Lanes parallel **after** merge order below |
+| **STORY-005** | **STORY-004** applied on shared dev DB | JOB-006+; integration tests needing data | — |
+| **STORY-006** | STORY-000 | JOB-021 / JOB-033 (challenge vocabulary) | Yes — with STORY-003 / STORY-004 |
+| **STORY-007** | **STORY-004** applied on shared dev DB | Secure integration (JOB-006+); STORY-009 gate | Yes — with STORY-008 |
+| **STORY-008** | **STORY-004** applied on shared dev DB | M6 Edge verify | Yes — with STORY-007 |
+| **STORY-009** | **STORY-005** + **STORY-007** + **STORY-008** (+ **STORY-002** recommended) | Integration MVP sign-off; JOB-006+ in workboards | — |
+| **STORY-010** | **STORY-002** | — | Yes — with STORY-006 |
+
+**STORY-004 lane merge order (same story, different owners):**
+
+1. **Gugulethu** `0002_institution_core.sql` — **start after** STORY-003  
+2. **Basil** `0003_people_and_profiles.sql` — **start after** `0002` merged to `main`  
+3. **Brightman** `0004_attendance_challenge.sql` — **start after** `0003` merged to `main`  
+
+**Integration jobs (after SQL gate) — start after:**
+
+| Job | Start after |
+|-----|-------------|
+| JOB-006 login | STORY-002 + STORY-005 + STORY-007 (env, seed data, RLS) |
+| JOB-007 auth hydration | JOB-006 |
+| JOB-009 profiles | JOB-006 + STORY-005 (`user_profiles` + person rows) |
+| JOB-011 guards | JOB-009 |
+| JOB-012 / 014 student reads | JOB-009 + STORY-005 |
+| JOB-013 lecturer modules | JOB-009 + STORY-005 |
+| JOB-016 / 017 / 018 analytics | STORY-005 + STORY-007 + JOB-009 |
+| JOB-019 create session | STORY-004 lane A applied + STORY-005 + STORY-002 |
+| JOB-020 active session pointer | JOB-019 |
+| JOB-021 / 033 challenge submit | JOB-019 + JOB-020 + STORY-006 + STORY-004 (`attendance_records`) |
+| JOB-022 offline sync | STORY-002 + at least one write path (JOB-019 or JOB-021) |
+| JOB-024 enrolment | STORY-005 + JOB-009 |
+| JOB-025 class register | JOB-019 |
+
 ---
 
 ## STORY-000 — Team read-through: Supabase’s role (no code)
@@ -261,6 +311,9 @@ Record the CLI version you used in your PR when you run migrations.
 **Maps to:** prerequisite for all JOBs  
 **Owner:** Whole team  
 **Estimate:** 30–45 minutes  
+
+**Start after:** — *(no dependencies — whole team goes first)*  
+**Blocks:** STORY-001, STORY-003, STORY-006, and all integration work  
 
 ### Learning objectives
 
@@ -294,16 +347,19 @@ None (discussion only).
 **Owner:** Brightman  
 **Estimate:** 1–2 hours  
 
+**Start after:** **STORY-000**  
+**Blocks:** **STORY-002** (needs URL + anon key); **STORY-004** (needs live project to apply SQL)  
+
 ### Learning objectives
 
 - Create a Supabase **organization** and **project**.
 - Enable **Email** auth provider.
 - Find **API URL**, **anon key**, and understand **service role** (never commit).
 
-### Prerequisites
+### Start after (checklist)
 
-- STORY-000 complete.
-- Supabase account.
+- [ ] **STORY-000** — team read-through done  
+- [ ] Supabase account ready  
 
 ### Step-by-step tasks
 
@@ -360,15 +416,18 @@ You will create many tables in STORY-004; the dashboard **Table Editor** can pre
 **Owner:** Gugulethu  
 **Estimate:** 1–2 hours  
 
+**Start after:** **STORY-001** *(Brightman shares API URL + anon key securely)*  
+**Blocks:** All **JOB-006+** integration branches; **STORY-010**  
+
 ### Learning objectives
 
 - Know why `.env` is gitignored and `.env.example` is tracked.
 - Implement **`getDataSource()`** so every service can branch mock vs Supabase.
 - Verify `tryGetSupabaseClient()` when keys are set (integration smoke test).
 
-### Prerequisites
+### Start after (checklist)
 
-- STORY-001 keys available from Brightman (secure channel).
+- [ ] **STORY-001** — Supabase project exists; keys received from Brightman (not in git)  
 
 ### Step-by-step tasks
 
@@ -431,15 +490,19 @@ You will create many tables in STORY-004; the dashboard **Table Editor** can pre
 **Owner:** Basil  
 **Estimate:** 2–3 hours  
 
+**Start after:** **STORY-000**  
+**Blocks:** **STORY-004** (all lanes — do not write SQL before sign-off)  
+**Can run in parallel with:** **STORY-001**  
+
 ### Learning objectives
 
 - Map **`TABLES`** keys → Postgres snake_case names.
 - Map **`src/models/*`** fields → SQL columns (see DATABASE_SCHEMA §5).
 - Agree **text** vs **uuid** for primary keys (recommend **text** to keep `stu_*`, `mod_*` demo ids).
 
-### Prerequisites
+### Start after (checklist)
 
-- STORY-000 complete.
+- [ ] **STORY-000** complete  
 
 ### Step-by-step tasks
 
@@ -489,6 +552,17 @@ You will create many tables in STORY-004; the dashboard **Table Editor** can pre
 **Maps to:** **JOB-004**  
 **Owners:** Gugulethu + Basil + Brightman (parallel, merge in order)  
 **Estimate:** 3–4 hours each lane  
+
+**Start after:** **STORY-003** (schema signed off) **and** **STORY-001** (dev project exists)  
+**Blocks:** **STORY-005**, **STORY-007**, **STORY-008**, and every integration job that reads/writes Postgres  
+
+**Lane start after (strict merge order):**
+
+| Lane | Owner | File | **Start after** |
+|------|-------|------|-----------------|
+| B | Gugulethu | `0002_institution_core.sql` | STORY-003 merged |
+| C | Basil | `0003_people_and_profiles.sql` | **`0002` merged to `main`** |
+| A | Brightman | `0004_attendance_challenge.sql` | **`0003` merged to `main`** |
 
 ### Learning objectives
 
@@ -608,7 +682,9 @@ create table attendance_records (
 **Maps to:** **JOB-005**  
 **Owner:** Basil  
 **Estimate:** 3–4 hours  
-**Depends on:** STORY-004 merged and applied  
+
+**Start after:** **STORY-004** — all lanes (`0002` → `0003` → `0004`) **merged and applied** on the shared dev database  
+**Blocks:** **JOB-006+**; **STORY-009**; any integration test that needs faculties/modules/students in Postgres  
 
 ### Learning objectives
 
@@ -648,6 +724,10 @@ create table attendance_records (
 **Maps to:** new foundation deliverable (feeds UI + future Edge verify)  
 **Owner:** Gugulethu  
 **Estimate:** 2–3 hours  
+
+**Start after:** **STORY-000**  
+**Blocks:** **JOB-021 / JOB-033** (challenge submit integration should use this vocabulary)  
+**Can run in parallel with:** **STORY-003**, **STORY-004** *(no SQL dependency)*  
 
 ### Learning objectives
 
@@ -721,7 +801,10 @@ Supabase stores only the **outcome** (`tapped_index`, `tier_used`, `action_hash`
 **Maps to:** **JOB-023** (foundation slice — core tables only)  
 **Owner:** Basil  
 **Estimate:** 3–4 hours  
-**Depends on:** STORY-004 applied  
+
+**Start after:** **STORY-004** applied on shared dev DB *(tables must exist before policies)*  
+**Blocks:** **JOB-006+** live testing with real Auth users; **STORY-009**  
+**Can run in parallel with:** **STORY-008** *(after STORY-004)*  
 
 ### Learning objectives
 
@@ -786,7 +869,10 @@ Supabase stores only the **outcome** (`tapped_index`, `tier_used`, `action_hash`
 **Maps to:** prep for **JOB-032** (M6)  
 **Owner:** Brightman  
 **Estimate:** 2 hours  
-**Depends on:** STORY-004  
+
+**Start after:** **STORY-004** lane A applied (`attendance_records` table exists)  
+**Blocks:** M6 **JOB-032** full verify *(stub only in M0)*  
+**Can run in parallel with:** **STORY-007**  
 
 ### Learning objectives
 
@@ -828,6 +914,9 @@ Supabase stores only the **outcome** (`tapped_index`, `tier_used`, `action_hash`
 **Owner:** Whole team  
 **Estimate:** 1 hour  
 
+**Start after:** **STORY-005** + **STORY-007** + **STORY-008** *(backend contract complete)*; **STORY-002** recommended (env + `dataSource`)  
+**Blocks:** Team-wide **JOB-006+** integration on `supabase` flag — do not declare MVP done until this passes  
+
 ### Tasks
 
 1. Brightman confirms dashboard shows all tables.
@@ -849,6 +938,9 @@ Supabase stores only the **outcome** (`tapped_index`, `tier_used`, `action_hash`
 **Maps to:** documentation requirement  
 **Owner:** Gugulethu (PR) + reviewers Basil & Brightman  
 **Estimate:** 1 hour  
+
+**Start after:** **STORY-002** *(documents `.env` and `EXPO_PUBLIC_DATA_SOURCE`)*  
+**Can run in parallel with:** **STORY-006**  
 
 ### Tasks
 
@@ -880,48 +972,50 @@ Supabase stores only the **outcome** (`tapped_index`, `tier_used`, `action_hash`
 flowchart TD
   S0[STORY-000 Read-through]
   S1[STORY-001 Supabase project]
-  S2[STORY-002 .env file]
+  S2[STORY-002 .env + dataSource]
   S3[STORY-003 Schema agreement]
-  S4[STORY-004 Migrations split]
+  S4[STORY-004 Migrations 0002→0003→0004]
   S5[STORY-005 seed.sql]
   S6[STORY-006 Challenge JSON]
   S7[STORY-007 RLS policies]
   S8[STORY-008 Functions stub]
-  S9[STORY-009 Team review]
-  S10[STORY-010 README versions]
+  S9[STORY-009 Team gate]
+  S10[STORY-010 README]
 
   S0 --> S1
   S0 --> S3
+  S0 --> S6
   S1 --> S2
-  S3 --> S4
   S1 --> S4
+  S3 --> S4
   S4 --> S5
   S4 --> S7
   S4 --> S8
-  S0 --> S6
+  S2 --> S10
   S5 --> S9
   S7 --> S9
   S8 --> S9
-  S2 --> S10
-  S6 --> S10
+  S2 -.->|needed for JOB-006+| S9
 ```
+
+**Legend:** solid arrow = **must finish before starting** the next story; dotted = recommended before integration gate.
 
 ---
 
 ## JOB number cross-reference
 
-| Story | JOB |
-|-------|-----|
-| STORY-001 | JOB-001 |
-| STORY-002 | JOB-002 (env only; defer client test) |
-| STORY-003 | JOB-003 |
-| STORY-004 | JOB-004 |
-| STORY-005 | JOB-005 |
-| STORY-006 | (new) Challenge JSON library |
-| STORY-007 | JOB-023 (foundation slice) |
-| STORY-008 | JOB-032 (stub) |
-| STORY-009 | M0 gate |
-| STORY-010 | README docs |
+| Story | JOB | **Start after** |
+|-------|-----|-----------------|
+| STORY-001 | JOB-001 | STORY-000 |
+| STORY-002 | JOB-002, JOB-027 (`dataSource`) | STORY-001 |
+| STORY-003 | JOB-003 | STORY-000 |
+| STORY-004 | JOB-004 | STORY-003 + STORY-001; lanes: 0002 → 0003 → 0004 |
+| STORY-005 | JOB-005 | STORY-004 applied |
+| STORY-006 | Challenge JSON | STORY-000 |
+| STORY-007 | JOB-023 (slice) | STORY-004 applied |
+| STORY-008 | JOB-032 (stub) | STORY-004 lane A applied |
+| STORY-009 | M0 gate | STORY-005 + STORY-007 + STORY-008 |
+| STORY-010 | README docs | STORY-002 |
 
 **After M0 SQL:** each owner continues their [workboard](#developer-integration-workboards) through JOB-006 … JOB-034 — same doc, same lanes.
 
@@ -1067,6 +1161,8 @@ Use **JOB-xxx** in commits, PR titles, and stand-up.
 #### JOB-001 — Supabase project
 *As a developer, I want a Supabase project with Auth (email/password) and Postgres enabled so the app has a real backend.*
 
+**Start after:** STORY-000 · **Blocks:** STORY-002, STORY-004  
+
 **Detailed steps:** [STORY-001](#story-001--create-supabase-project-auth--postgres)
 
 **Acceptance**
@@ -1080,7 +1176,9 @@ Use **JOB-xxx** in commits, PR titles, and stand-up.
 #### JOB-002 — Local env + client init
 *As a developer, I want `.env` with public Supabase keys so Expo loads config at build time.*
 
-**M0:** [STORY-002](#story-002--local-env-file--envexample-no-app-connection-test) only. **M1:** verify `tryGetSupabaseClient()`.
+**Start after:** STORY-001 · **Blocks:** all JOB-006+ integration  
+
+**M0:** [STORY-002](#story-002--env-data-source-flag--connectivity-check). **M1:** verify `tryGetSupabaseClient()` on `supabase` flag.
 
 **Acceptance (M0)**
 - `.env.example` updated; local `.env` gitignored; `EXPO_PUBLIC_DATA_SOURCE=mock`.
@@ -1095,6 +1193,8 @@ Use **JOB-xxx** in commits, PR titles, and stand-up.
 #### JOB-003 — Schema agreement
 *As a developer, I want table names and field shapes aligned between Postgres, RLS docs, and `TABLES`.*
 
+**Start after:** STORY-000 · **Blocks:** STORY-004 · **Parallel with:** STORY-001  
+
 **Detailed steps:** [STORY-003](#story-003--schema-agreement-contract-before-sql)
 
 **Acceptance**
@@ -1107,6 +1207,8 @@ Use **JOB-xxx** in commits, PR titles, and stand-up.
 #### JOB-004 — Migrations folder
 *As a developer, I want versioned SQL migrations so schema changes are reviewable in git.*
 
+**Start after:** STORY-003 + STORY-001 · merge lanes **0002 → 0003 → 0004** · **Blocks:** STORY-005, STORY-007, STORY-008  
+
 **Detailed steps:** [STORY-004](#story-004--postgres-tables-via-versioned-migrations-split-by-lane)
 
 **Acceptance**
@@ -1118,6 +1220,8 @@ Use **JOB-xxx** in commits, PR titles, and stand-up.
 
 #### JOB-005 — Seed strategy
 *As a developer, I want seed data in Postgres mirroring mock JSON so live and mock demos match.*
+
+**Start after:** STORY-004 applied on dev DB · **Blocks:** JOB-006+, integration reads  
 
 **Detailed steps:** [STORY-005](#story-005--seed-data-from-mock-json--sql) · [STORY-006](#story-006--challenge-object-parameter-library-json)
 
