@@ -35,15 +35,47 @@ npm install
 npx expo start -c
 ```
 
+## Installation & toolchain
+
+| Tool | Version | Notes |
+|------|---------|--------|
+| **Node.js** | **20.19+** | Required by Expo SDK 54 — see `.nvmrc` |
+| **npm** | 10+ (bundled with Node) | `npm install` at repo root |
+| **Expo SDK** | **54** | `package.json` → `expo ~54.0.0` |
+| **TypeScript** | **5.9** | `devDependencies` |
+| **@supabase/supabase-js** | **2.106+** | Client present; app stays on **mock** until M1 |
+| **Supabase CLI** (optional) | 2.x | `supabase db push` — install: `npm i -g supabase` |
+
+### Local environment (Supabase keys — M0)
+
+1. Copy **[.env.example](./.env.example)** → **`.env`** (never commit `.env`).
+2. Paste **Project URL** and **anon key** from the Supabase dashboard (shared securely by JOB-001 owner).
+3. Keep **`EXPO_PUBLIC_DATA_SOURCE=mock`** during the **foundation sprint** — database setup only, no app login wiring yet.
+
+See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--foundation-sprint-start-here)** (M0 section at the top) for step-by-step tasks (tables, RLS, seed SQL, challenge JSON).
+
+### Version changelog
+
+| Date | Change |
+|------|--------|
+| 2026-05-21 | M0 foundation stories in **SUPABASE_INTEGRATION.md**; `challenge-object-library.json`; README install table |
+| — | **Expo SDK 54**, React 19.1, React Native 0.81.5 — see `package.json` |
+
+When you upgrade Expo, Node, or Supabase CLI, add a row here and note any clean-reset steps from **Clone-and-run** below.
+
 ## Documentation
 
 See **[DOCUMENTATION.md](./DOCUMENTATION.md)** for the full **tech stack**, **engineering process**, routing notes, and attendance simulation overview.
 
 See **[FILE_STRUCTURE.md](./FILE_STRUCTURE.md)** for a **beginner-friendly map** of every important file and **which file to open for which kind of work**.
 
-See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md)** for **milestones (M0–M5)**, **user stories**, and team tasks (**Brightman**, **Gugulethu**, **Basil**) to wire **Supabase Auth + Postgres**.
+See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--foundation-sprint-start-here)** for **M0 foundation sprint** stories (first section) — **no app connection** until M1.
+
+See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md)** for **milestones (M0–M6)**, **JOB register**, and later app wiring (**Brightman**, **Gugulethu**, **Basil**).
 
 See **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** for **ER diagrams**, **table columns**, and **relationship connections**.
+
+See **[full-challenge-mechanism.md](./full-challenge-mechanism.md)** for attendance **challenge gates**, tiers, and `attendance_records` fields.
 
 See **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)** for **faculty → department → course** structure, **Admin / Dean / HOD / Lecturer / Student** roles, and **scoped analytics**.
 

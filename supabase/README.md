@@ -38,6 +38,11 @@ EXPO_PUBLIC_DATA_SOURCE=supabase
 
 ## User stories
 
-All backend integration jobs (**JOB-001** … **JOB-034**) are in **[SUPABASE_INTEGRATION.md](../SUPABASE_INTEGRATION.md)**.
+- **M0 foundation sprint (start here):** **[SUPABASE_INTEGRATION.md](../SUPABASE_INTEGRATION.md#m0--foundation-sprint-start-here)** — project setup, env, split migrations, seed, challenge JSON, RLS (no Expo wiring).
+- **Full milestone register:** **[SUPABASE_INTEGRATION.md](../SUPABASE_INTEGRATION.md)** — **JOB-001** … **JOB-034**.
 
 Table definitions, ER diagrams, and FK connections: **[DATABASE_SCHEMA.md](../DATABASE_SCHEMA.md)**.
+
+Challenge mechanism (gates + record shape): **[full-challenge-mechanism.md](../full-challenge-mechanism.md)**.
+
+Challenge parameter JSON (not in Postgres): **`../src/data/challenge-object-library.json`**.

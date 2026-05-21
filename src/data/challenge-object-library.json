@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "description": "Parameter vocabulary for the STARS attendance challenge grid. Objects are rendered from these enums in the app — not stored in Postgres. See full-challenge-mechanism.md and src/data/README.md.",
+  "enums": {
+    "shapes": ["circle", "square", "triangle", "star", "diamond", "hexagon", "cross", "arrow"],
+    "colors": ["red", "blue", "green", "yellow", "purple", "orange", "white", "teal"],
+    "sizes": ["small", "medium", "large"],
+    "patterns": ["solid", "outline", "striped", "dotted", "half"]
+  },
+  "pool": {
+    "size": 960,
+    "formula": "8 shapes × 8 colors × 3 sizes × 5 patterns",
+    "indexMapping": "Same as attendanceChallengeService.objFromIndex — deterministic from pool offset + cell index"
+  },
+  "grid": {
+    "cells": 6,
+    "layout": "2x3",
+    "targetIndex": "seed mod 6",
+    "poolOffset": "(seedInt >> 8) mod 960"
+  },
+  "seedFormula": {
+    "inputs": ["session_id", "device_id", "gps_bucket_hash", "time_bucket"],
+    "hash": "SHA-256 of colon-joined inputs (see src/utils/challengeBuckets.ts computeChallengeSeed)",
+    "targetIndex": "seedToInt32(digest) mod 6",
+    "poolOffset": "(seedToInt32(digest) >> 8) mod 960"
+  },
+  "tiers": {
+    "1": {
+      "label": "Universal",
+      "requires": [],
+      "actions": ["tap_n", "hold_screen", "hold_volume_buttons", "tap_pause_tap", "sequential_taps"]
+    },
+    "2": {
+      "label": "Touch enhanced",
+      "requires": ["responsive_touch"],
+      "actions": ["swipe_through", "rhythm_tap", "long_swipe_path", "draw_outline", "two_finger_tap", "slide_to_confirm"]
+    },
+    "3": {
+      "label": "Motion",
+      "requires": ["accelerometer"],
+      "actions": ["shake_to_select", "tilt_to_confirm", "shake_vertical", "flip_to_lock", "tap_then_shake", "double_shake", "tilt_hold", "combined_axis"]
+    },
+    "4": {
+      "label": "Advanced motion",
+      "requires": ["gyroscope"],
+      "actions": ["rotate_90", "rotate_180", "full_spin", "yaw_then_pitch", "tilt_spiral", "precision_stop", "counter_rotate", "hold_and_rotate"]
+    },
+    "5": {
+      "label": "Audio",
+      "requires": ["microphone"],
+      "actions": ["single_clap", "double_clap", "triple_clap", "sustained_tone", "silence_then_clap", "rhythm_clap", "voice_presence"]
+    }
+  },
+  "supabaseRecord": {
+    "table": "attendance_records",
+    "storedFields": [
+      "session_id",
+      "student_id",
+      "device_id",
+      "time_bucket",
+      "gps_bucket_hash",
+      "tapped_index",
+      "tier_used",
+      "action_hash",
+      "passed"
+    ],
+    "notStored": ["object descriptions", "sensor streams", "grid screenshots"]
+  }
+}

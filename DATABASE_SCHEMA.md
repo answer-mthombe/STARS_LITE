@@ -2,7 +2,7 @@
 
 Postgres schema for **Supabase** (live backend) aligned with the mock DB (`src/mockDB/`) and TypeScript models (`src/models/`).
 
-**Related:** [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md) · [INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md) · [full-challenge-mechanism.md](./full-challenge-mechanism.md) · `src/supabase/tables.ts`
+**Related:** [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--foundation-sprint-start-here) (M0 foundation stories first) · [INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md) · [full-challenge-mechanism.md](./full-challenge-mechanism.md) · `src/supabase/tables.ts`
 
 ---
 
@@ -581,3 +581,15 @@ flowchart TB
 3. Update **`src/models/*`** and **`src/supabase/tables.ts`** if table names change.
 4. Extend repositories in **`src/services/supabase/`**.
 5. Update this file and RLS notes in **`supabase/policies.md`** (when added).
+
+---
+
+## Schema agreement sign-off (JOB-003 / STORY-003)
+
+| Item | Team decision |
+|------|----------------|
+| **Date** | _pending_ |
+| **Primary keys** | _text_ (`stu_*`, `mod_*`) recommended for mock parity |
+| **Enrolment** | _jsonb arrays on `modules` / `students` for M0_ |
+| **Challenge columns** | On `attendance_records` per [full-challenge-mechanism.md](./full-challenge-mechanism.md) |
+| **Signed** | Brightman · Gugulethu · Basil |
