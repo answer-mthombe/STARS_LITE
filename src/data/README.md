@@ -23,3 +23,21 @@ The app **generates** six on-screen objects from the seed using the same logic a
 - `src/utils/challengeBuckets.ts` — `time_bucket`, `gps_bucket_hash`, `computeChallengeSeed`
 - `src/components/attendance/AttendanceChallengeGrid.tsx` — renders primitives from `ChallengeObject`
 - [DATABASE_SCHEMA.md](../../DATABASE_SCHEMA.md) §5.12 — `attendance_records` columns
+
+
+
+
+## Version changelog
+
+- **v1 (STORY-006)** — Initial vocabulary committed:
+  - Shapes: circle, square, triangle, star, diamond, hexagon, cross, arrow
+  - Colors: red, blue, green, yellow, purple, orange, white, teal
+  - Sizes: small, medium, large
+  - Patterns: solid, outline, striped, dotted, half
+  - Tiers 1–5 defined (Universal, Touch enhanced, Motion, Advanced motion, Audio)
+
+- **v2 (future STORY-010)** — Any changes to enums or tier actions must:
+  1. Update `challenge-object-library.json`
+  2. Bump `"version"` field
+  3. Document changes here (added/removed enums, new tier actions, etc.)
+  4. Ensure `attendanceChallengeService.ts` stays in sync
