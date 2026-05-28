@@ -593,3 +593,41 @@ flowchart TB
 | **Enrolment** | _jsonb arrays on `modules` / `students` for M0_ |
 | **Challenge columns** | On `attendance_records` per [full-challenge-mechanism.md](./full-challenge-mechanism.md) |
 | **Signed** | Brightman · Gugulethu · Basil |
+
+## Supabase Integration - Authorizative Table List
+
+ |**TABLES Key** | **Postgres name** | **Model file** | **§ in DATABASESCHEMA** |**Status** |
+ |---| ---| ---| ---| ---|
+ | attendanceRecords | attendanceRecords | attendanceRecords.ts | § 5.1 | [x] |
+ | attendanceSessions | attendanceSessions | attendanceSessions.ts |  § 5.2 | [ ✔] |
+ | auditLogs | auditLogs | auditLogs.ts | § 5.3 | [ ✔] |
+ |classRegisters | classRegisters | classRegisters.ts |  § 5.4 | [ ✔] |
+ | courses | courses | courses.ts | § 5.5 | [ ✔] |
+ | deans | deans | deans.ts | § 5.6 | [ ✔] |
+ | departments | departments | departments.ts | § 5.7 | [ ✔] |
+ | faculties | faculties | faculties.ts | § 5.8 | [ ✔] |
+ | facultySecretaries |  facultySecretaries |  facultySecretaries.ts | § 5.9 | [ ✔] |
+ | hods | hods | hods.ts | § 5.10 | [ ✔] |
+ | lecturers | lecturers | lecturers.ts |  § 5.11 | [ ✔] |
+ | moduleDelegations | moduleDelegations | moduleDelegations.ts | § 5.12 | [ ✔] |
+ | modules | modules | modules.ts | § 5.13 | [ ✔] |
+ | proxyAssignments | proxyAssignments | proxyAssignments.ts | § 5.14 | [ ✔] |
+ | students | students | students.ts | § 5.15 | [ ✔] |
+ | testMarks | testMarks | testMarks.ts | § 5.16 | [x] |
+ | testRegisters | testRegisters | testRegisters.ts | § 5.17 | [x] |
+ | testSessions | testSessions | testSessions.ts |  § 5.18 | [ ✔] |
+ | tutorTimesheets | tutorTimesheets | tutorTimesheets.ts |  § 5.19 | [ ✔] |
+ | tutors | tutors | tutors.ts | § 5.20 | [ ✔] | 
+ | userProfiles | userProfiles | userProfiles.ts | § 5.21 | [x] |
+
+## Schema agreement sign-off
+- Date: 2026-05-28
+- IDs: text PK (demo ids preserved)
+- Enrolment: jsonb arrays on modules/students (M0); junction tables optional later
+- Signed: Brightman / Gugulethu / Basil
+
+
+ 
+
+
+
