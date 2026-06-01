@@ -45,11 +45,17 @@
       "requires": ["gyroscope"],
       "actions": ["rotate_90", "rotate_180", "full_spin", "yaw_then_pitch", "tilt_spiral", "precision_stop", "counter_rotate", "hold_and_rotate"]
     },
-    "5": {
-      "label": "Audio",
-      "requires": ["microphone"],
-      "actions": ["single_clap", "double_clap", "triple_clap", "sustained_tone", "silence_then_clap", "rhythm_clap", "voice_presence"]
-    }
+ "5": {
+  "label": "Security Enhanced",
+  "requires": ["accelerometer", "gyroscope"],
+  "actions": [
+    "multi_motion_combo",
+    "timed_shake",
+    "motion_pattern_match",
+    "precision_rotate",
+    "gyro_sequence"
+  ]
+}
   },
   "supabaseRecord": {
     "table": "attendance_records",
