@@ -12,6 +12,13 @@ import {
   seedToInt32,
 } from "@/utils/challengeBuckets";
 import type { GeoPoint } from "@/models/Attendance";
+import { requireSupabaseClient } from "@/supabase/client";
+import { TABLES } from "@/supabase/tables";
+
+import { isSupabaseEnabled } from "@/supabase/client";
+import { attendanceSessionRepository } from "./supabase";
+import { attendanceRecordRepository } from "./supabase";
+
 
 export type ChallengeObjectShape = "circle" | "square" | "triangle" | "star" | "diamond" | "hexagon" | "cross" | "arrow";
 export type ChallengeObjectColor =
@@ -112,15 +119,29 @@ export const attendanceChallengeService = {
    */
   async begin(args: BeginArgs): Promise<{ ok: true; challengeId: string } | { ok: false; reason: string }> {
     mockDB.touch();
-    const session = mockDB.read("attendanceSessions", args.sessionId);
+   // const session = mockDB.read("attendanceSessions", args.sessionId);
+
+   const session = isSupabaseEnabled() 
+      ? await attendanceSessionRepository.getActiveSession(args.sessionId)
+      : mockDB.read("attendanceSessions", args.sessionId);
+
+
     if (!session || !session.active) return { ok: false, reason: "Session not active or missing." };
     if (new Date(session.expiresAt).getTime() <= Date.now()) return { ok: false, reason: "Session has ended. See your coordinator." };
 
     const deviceId = await getOrCreateDeviceId();
-    const dup = mockDB
-      .query("attendanceRecords", { sessionId: args.sessionId })
-      .some((r) => r.deviceId === deviceId);
-    if (dup) return { ok: false, reason: "Already checked in for this session." };
+    // const dup = mockDB
+    //   .query("attendanceRecords", { sessionId: args.sessionId })
+    //   .some((r) => r.deviceId === deviceId);
+    // if (dup) return { ok: false, reason: "Already checked in for this session." };
+
+    if (isSupabaseEnabled()) {
+       // Optional: You could add a check here via a new repository method 
+       // if you wanted to be strict before showing the challenge.
+    } else {
+      const dup = mockDB.query("attendanceRecords", { sessionId: args.sessionId }).some((r) => r.deviceId === deviceId);
+      if (dup) return { ok: false, reason: "Already checked in for this session." };
+    }
 
     const lk = lockKey(args.sessionId, deviceId);
     const lock = wrongObjectCounts.get(lk);
@@ -193,11 +214,15 @@ export const attendanceChallengeService = {
    * ANY RED   => write nothing
    */
   async submit(args: SubmitArgs): Promise<{ ok: true } | { ok: false; reason: string }> {
-    mockDB.touch();
+    //mockDB.touch();
     const chal = challenges.get(args.challengeId);
     if (!chal) return { ok: false, reason: "Challenge expired. Open the challenge again." };
 
-    const session = mockDB.read("attendanceSessions", chal.sessionId);
+   // const session = mockDB.read("attendanceSessions", chal.sessionId);
+const session = isSupabaseEnabled() 
+      ? await attendanceSessionRepository.getActiveSession(chal.sessionId)
+      : mockDB.read("attendanceSessions", chal.sessionId);
+
     if (!session || !session.active) return { ok: false, reason: "Session has ended. See your coordinator." };
     if (new Date(session.expiresAt).getTime() <= Date.now()) return { ok: false, reason: "Session has ended. See your coordinator." };
 
@@ -205,10 +230,18 @@ export const attendanceChallengeService = {
     if (currentBucket !== chal.openedTimeBucket) return { ok: false, reason: "Time expired. Open the challenge again." };
 
     // Duplicate protection (session, device)
-    const dup = mockDB
-      .query("attendanceRecords", { sessionId: chal.sessionId })
-      .some((r) => r.deviceId === chal.deviceId);
-    if (dup) return { ok: false, reason: "Already checked in for this session." };
+    // const dup = mockDB
+    //   .query("attendanceRecords", { sessionId: chal.sessionId })
+    //   .some((r) => r.deviceId === chal.deviceId);
+    // if (dup) return { ok: false, reason: "Already checked in for this session." };
+
+    if (isSupabaseEnabled()) {
+      // Logic for Supabase check would ideally be in a repository
+      // For now, assume if the DB save fails, we handle it in step 3.
+    } else {
+      const dup = mockDB.query("attendanceRecords", { sessionId: chal.sessionId }).some((r) => r.deviceId === chal.deviceId);
+      if (dup) return { ok: false, reason: "Already checked in." };
+    }
 
     // GPS continuous: require at least 3 polls (0s, 2s, 4s...; UI collects them),
     // all inside radius, and polls not stale.
@@ -245,13 +278,28 @@ export const attendanceChallengeService = {
       session.lecturerLocation
     );
 
-    mockDB.create("attendanceRecords", {
+    // mockDB.create("attendanceRecords", {
+    //   sessionId: chal.sessionId,
+    //   studentId: chal.studentId,
+    //   timestamp: new Date().toISOString(),
+    //   distance,
+    //   verified: true,
+    //   // Challenge mechanism fields (optional in model)
+    //   deviceId: chal.deviceId,
+    //   timeBucket: chal.openedTimeBucket,
+    //   gpsBucketHash: chal.gpsBucketHash,
+    //   tappedIndex: args.tappedIndex,
+    //   tierUsed: chal.tierUsed,
+    //   actionHash: `taps:${args.tapCount}`,
+    //   passed: true,
+    // } as any);
+
+    const recordData = {
       sessionId: chal.sessionId,
       studentId: chal.studentId,
       timestamp: new Date().toISOString(),
       distance,
       verified: true,
-      // Challenge mechanism fields (optional in model)
       deviceId: chal.deviceId,
       timeBucket: chal.openedTimeBucket,
       gpsBucketHash: chal.gpsBucketHash,
@@ -259,7 +307,17 @@ export const attendanceChallengeService = {
       tierUsed: chal.tierUsed,
       actionHash: `taps:${args.tapCount}`,
       passed: true,
-    } as any);
+    } as any;
+
+if (isSupabaseEnabled()) {
+      // CALL YOUR REPOSITORY HERE
+      const result = await attendanceRecordRepository.saveRecord(recordData);
+      if (!result.ok) return result; // This returns the "Already checked in" error if the DB constraint triggers
+    } else {
+      // FALLBACK TO MOCK
+      mockDB.create("attendanceRecords", recordData);
+    }
+
 
     challenges.delete(chal.id);
     return { ok: true };
