@@ -598,7 +598,7 @@ flowchart TB
 
  |**TABLES Key** | **Postgres name** | **Model file** | **§ in DATABASESCHEMA** |**Status** |
  |---| ---| ---| ---| ---|
- | attendanceRecords | attendanceRecords | attendanceRecords.ts | § 5.1 | [x] |
+ | attendanceRecords | attendanceRecords | attendanceRecords.ts | § 5.1 | [❌] |
  | attendanceSessions | attendanceSessions | attendanceSessions.ts |  § 5.2 | [ ✔] |
  | auditLogs | auditLogs | auditLogs.ts | § 5.3 | [ ✔] |
  |classRegisters | classRegisters | classRegisters.ts |  § 5.4 | [ ✔] |
@@ -613,12 +613,12 @@ flowchart TB
  | modules | modules | modules.ts | § 5.13 | [ ✔] |
  | proxyAssignments | proxyAssignments | proxyAssignments.ts | § 5.14 | [ ✔] |
  | students | students | students.ts | § 5.15 | [ ✔] |
- | testMarks | testMarks | testMarks.ts | § 5.16 | [x] |
- | testRegisters | testRegisters | testRegisters.ts | § 5.17 | [x] |
+ | testMarks | testMarks | testMarks.ts | § 5.16 | [❌] |
+ | testRegisters | testRegisters | testRegisters.ts | § 5.17 | [❌] |
  | testSessions | testSessions | testSessions.ts |  § 5.18 | [ ✔] |
- | tutorTimesheets | tutorTimesheets | tutorTimesheets.ts |  § 5.19 | [ ✔] |
- | tutors | tutors | tutors.ts | § 5.20 | [ ✔] | 
- | userProfiles | userProfiles | userProfiles.ts | § 5.21 | [x] |
+ | tutorTimesheets | tutorTimesheets | tutorTimesheets.ts |  § 5.19 | [ ❌] |
+ | tutors | tutors | tutors.ts | § 5.20 | [ ❌] | 
+ | userProfiles | userProfiles | userProfiles.ts | § 5.21 | [❌] |
 
 ## Schema agreement sign-off
 - Date: 2026-05-28
