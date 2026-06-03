@@ -40,6 +40,7 @@ export interface TestMarkModel {
   markedByRole: InstitutionRole;
   method: "barcode" | "manual";
   timestamp: ISODateString;
+  mark: number;
 }
 
 export interface TestRegisterStudentRow {
