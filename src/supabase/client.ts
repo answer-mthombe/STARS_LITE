@@ -11,6 +11,10 @@ const dataSource = process.env.EXPO_PUBLIC_DATA_SOURCE;
 //   return Boolean(supabaseUrl && supabaseAnonKey);
 // }
 
+console.log("Supabase URL:", supabaseUrl);
+console.log("Anon Key Exists:", Boolean(supabaseAnonKey));
+
+
 function hasMinimumConfig(): boolean {
   return dataSource === 'supabase' && Boolean(supabaseUrl && supabaseAnonKey);
 }
