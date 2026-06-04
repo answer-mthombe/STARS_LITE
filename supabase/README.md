@@ -2,6 +2,12 @@
 
 SQL migrations, RLS policies, Edge Functions, and seed data for the live backend.
 
+## Project Refs (STORY-001)
+* **Project Name:** STARS-MUT-Innovation Lab 
+* **Region:** South Africa (af-south-1)
+* **Ref ID:** [xwobsbanrcafjgxjjnxd]
+* ⚠️ **Keys live in: The lead developers' WhatsApp direct messages. (Do not commit secrets!)
+
 ## Layout
 
 ```
