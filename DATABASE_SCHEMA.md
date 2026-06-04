@@ -598,7 +598,7 @@ flowchart TB
 
  |**TABLES Key** | **Postgres name** | **Model file** | **§ in DATABASESCHEMA** |**Status** |
  |---| ---| ---| ---| ---|
- | attendanceRecords | attendanceRecords | attendanceRecords.ts | § 5.1 | [❌] |
+ | attendanceRecords | attendanceRecords | attendanceRecords.ts | § 5.1 | [ ✔]|
  | attendanceSessions | attendanceSessions | attendanceSessions.ts |  § 5.2 | [ ✔] |
  | auditLogs | auditLogs | auditLogs.ts | § 5.3 | [ ✔] |
  |classRegisters | classRegisters | classRegisters.ts |  § 5.4 | [ ✔] |
