@@ -1,5 +1,6 @@
 import * as Device from "expo-device";
 
+import { getDataSource } from "@/services/dataSource";
 import { mockDB } from "@/mockDB/mockDBService";
 import { useMockDbVersionStore } from "@/store/mockDbVersionStore";
 import type { AuthUser } from "@/store/authStore";
@@ -25,34 +26,74 @@ function deviceIdFallback() {
 export const mockAuthService = {
   async login(args: { role: UserRole; email: string; password: string }): Promise<AuthUser> {
     const email = args.email.trim().toLowerCase();
+
+    // STORY-002 / JOB-027 datasource switch
+    const dataSource = getDataSource();
+
+    console.log("[Auth] Current data source:", dataSource);
+
+    if (dataSource === "supabase") {
+      console.log("[Auth] Supabase authentication will be implemented in JOB-006");
+    }
+
     if (args.password !== "password") throw new Error("Invalid credentials.");
 
     if (args.role === "admin") {
       if (email !== "admin@mut.ac.za") throw new Error("Admin account not found.");
-      return { role: "admin", id: "admin_1", email, fullName: "MUT System Administrator" };
+      return {
+        role: "admin",
+        id: "admin_1",
+        email,
+        fullName: "MUT System Administrator",
+      };
     }
 
     if (args.role === "dean") {
       const dean = mockDB.query("deans", { email })[0];
       if (!dean) throw new Error("Dean account not found.");
-      return { role: "dean", id: dean.id, email: dean.email, fullName: dean.fullName, facultyId: dean.facultyId };
+
+      return {
+        role: "dean",
+        id: dean.id,
+        email: dean.email,
+        fullName: dean.fullName,
+        facultyId: dean.facultyId,
+      };
     }
 
     if (args.role === "hod") {
       const hod = mockDB.query("hods", { email })[0];
       if (!hod) throw new Error("HOD account not found.");
-      return { role: "hod", id: hod.id, email: hod.email, fullName: hod.fullName, departmentId: hod.departmentId };
+
+      return {
+        role: "hod",
+        id: hod.id,
+        email: hod.email,
+        fullName: hod.fullName,
+        departmentId: hod.departmentId,
+      };
     }
 
     if (args.role === "lecturer") {
       const lecturer = mockDB.query("lecturers", { email })[0];
       if (!lecturer) throw new Error("Lecturer not found.");
-      return { role: "lecturer", id: lecturer.id, email: lecturer.email, fullName: lecturer.fullName };
+
+      return {
+        role: "lecturer",
+        id: lecturer.id,
+        email: lecturer.email,
+        fullName: lecturer.fullName,
+      };
     }
 
     if (args.role === "tutor") {
       const tutor = mockDB.query("tutors", { email })[0];
-      if (!tutor) throw new Error("Tutor account not found. A lecturer must grant tutor privileges first.");
+      if (!tutor) {
+        throw new Error(
+          "Tutor account not found. A lecturer must grant tutor privileges first."
+        );
+      }
+
       return {
         role: "tutor",
         id: tutor.id,
@@ -64,8 +105,15 @@ export const mockAuthService = {
     }
 
     const student = mockDB.query("students", { email })[0];
+
     if (!student) throw new Error("Student not found.");
-    return { role: "student", id: student.id, email: student.email, fullName: student.fullName };
+
+    return {
+      role: "student",
+      id: student.id,
+      email: student.email,
+      fullName: student.fullName,
+    };
   },
 
   async registerStudent(args: {
@@ -76,12 +124,17 @@ export const mockAuthService = {
     courseId: string;
     password: string;
   }): Promise<AuthUser> {
-    if (args.password.length < 6) throw new Error("Password must be at least 6 characters.");
+    if (args.password.length < 6) {
+      throw new Error("Password must be at least 6 characters.");
+    }
 
     const studentNumber = args.studentNumber.trim();
     const email = buildStudentEmail(studentNumber);
 
-    const existing = mockDB.query("students", { studentNumber })[0] ?? mockDB.query("students", { email })[0];
+    const existing =
+      mockDB.query("students", { studentNumber })[0] ??
+      mockDB.query("students", { email })[0];
+
     if (existing) throw new Error("Student already exists.");
 
     const course = mockDB.read("courses", args.courseId);
@@ -96,13 +149,24 @@ export const mockAuthService = {
       courseId: args.courseId,
       ...(departmentId ? { departmentId } : {}),
       registeredModules: [],
-      attendanceStats: { totalSessions: 0, attended: 0, absent: 0, attendanceRate: 0 },
+      attendanceStats: {
+        totalSessions: 0,
+        attended: 0,
+        absent: 0,
+        attendanceRate: 0,
+      },
       profileImage: null,
       deviceId: deviceIdFallback(),
       createdAt: new Date().toISOString(),
     });
 
     useMockDbVersionStore.getState().bump();
-    return { role: "student", id: student.id, email: student.email, fullName: student.fullName };
+
+    return {
+      role: "student",
+      id: student.id,
+      email: student.email,
+      fullName: student.fullName,
+    };
   },
 };
