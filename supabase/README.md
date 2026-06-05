@@ -52,3 +52,11 @@ Table definitions, ER diagrams, and FK connections: **[DATABASE_SCHEMA.md](../DA
 Challenge mechanism (gates + record shape): **[full-challenge-mechanism.md](../full-challenge-mechanism.md)**.
 
 Challenge parameter JSON (not in Postgres): **`../src/data/challenge-object-library.json`**.
+
+## Database Setup
+
+### Run Order
+1. **Migrations first**  
+   Apply all SQL migrations to ensure the schema is up to date:
+   ```bash
+   supabase db push
