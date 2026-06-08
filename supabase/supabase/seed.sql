@@ -1,3 +1,13 @@
+
+
+-- ============================================================
+-- Demo logins (M1)
+-- Reference: src/constants/demoLogins.ts
+-- Actual Auth users are created in JOB-006 (not M0).
+-- Ensure seeded records align with demo login accounts.
+-- ============================================================
+
+
 -- Seed data for faculties
 INSERT INTO public.faculties (
     id,
