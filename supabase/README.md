@@ -32,6 +32,19 @@ supabase db push
 
 Run scripts from `migrations/` in order in the Supabase Dashboard → SQL.
 
+## Edge Functions
+
+### `verify-attendance-record` (STORY-008 / JOB-032)
+This function acts as the server-side gatekeeper for attendance submissions, recomputing the challenge math and verifying GPS/Time constraints before writing to the database.
+
+**Status:** Stub only (M0). Full implementation scheduled for M6.
+
+**To deploy (when ready):**
+```bash
+supabase functions deploy verify-attendance-record
+```
+*Note: This is not wired to the app in M0.*
+
 ## Env (Expo app)
 
 Copy repo `.env.example` → `.env`:
@@ -60,3 +73,9 @@ Challenge parameter JSON (not in Postgres): **`../src/data/challenge-object-libr
    Apply all SQL migrations to ensure the schema is up to date:
    ```bash
    supabase db push
+   ```
+2. **Push the seed data**
+   Wipe the database and rebuild it from scratch, including your `seed.sql` data:
+   ```bash
+   supabase db reset
+   ```   
