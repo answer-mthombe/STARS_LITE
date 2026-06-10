@@ -67,6 +67,36 @@ When you upgrade Expo, Node, or Supabase CLI, add a row here and note any clean-
 
 See **[DOCUMENTATION.md](./DOCUMENTATION.md)** for the full **tech stack**, **engineering process**, routing notes, and attendance simulation overview.
 
+## Integration Sprint (M0)
+
+The M0 integration sprint introduces Supabase into STARS while preserving existing service boundaries.
+
+### Developer workboards
+
+- See [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)
+- Follow the assigned developer workboards for:
+  - Supabase setup
+  - Service wiring
+  - Removal of mock data
+  - Attendance integration
+  - Authentication integration
+
+### Environment setup
+
+Before testing Supabase integration:
+
+1. Copy `.env.example` to `.env`
+2. Configure:
+   - `EXPO_PUBLIC_SUPABASE_URL`
+   - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+   - `EXPO_PUBLIC_DATA_SOURCE`
+3. Keep `EXPO_PUBLIC_DATA_SOURCE=mock` during development until integration tasks are complete.
+
+For detailed setup instructions, see:
+- [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)
+
+
+
 See **[FILE_STRUCTURE.md](./FILE_STRUCTURE.md)** for a **beginner-friendly map** of every important file and **which file to open for which kind of work**.
 
 See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)** for **M0 integration sprint** (first section): Supabase + wire services + remove dummy data on existing screens.
