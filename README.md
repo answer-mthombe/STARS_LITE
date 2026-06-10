@@ -46,7 +46,7 @@ npx expo start -c
 | **@supabase/supabase-js** | **2.106+** | Client present; app stays on **mock** until M1 |
 | **Supabase CLI** (optional) | 2.x | `supabase db push` — install: `npm i -g supabase` |
 
-### Local environment (Supabase keys — M0)
+### Local environment & Env Setup (STORY-002)
 
 1. Copy **[.env.example](./.env.example)** → **`.env`** (never commit `.env`).
 2. Paste **Project URL** and **anon key** from the Supabase dashboard (shared securely by JOB-001 owner).
@@ -56,10 +56,10 @@ See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--integration-sprint
 
 ### Version changelog
 
-| Date | Change |
-|------|--------|
-| 2026-05-21 | M0 integration sprint in **SUPABASE_INTEGRATION.md**; `dataSource.ts`; `challenge-object-library.json` |
-| — | **Expo SDK 54**, React 19.1, React Native 0.81.5 — see `package.json` |
+| Date | Change | Notes |
+| :--- | :--- | :--- |
+| **2026-05-21** | Integration sprint + workboards | M0 in **SUPABASE_INTEGRATION.md**; `dataSource.ts`; `challenge-object-library.json` |
+| **2026-05-21** | Expo SDK 54 | React 19.1, React Native 0.81.5 — see `package.json` |
 
 When you upgrade Expo, Node, or Supabase CLI, add a row here and note any clean-reset steps from **Clone-and-run** below.
 
