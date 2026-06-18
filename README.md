@@ -1,6 +1,18 @@
 <div align="center">
 
-<img src="./pilot-countdown.svg" alt="STARS pilot countdown — module attendance goes live Friday 10 July 2026" width="100%" />
+# ⏱ STARS · PILOT COUNTDOWN ⏱
+
+# 🔴 `17` WORKING DAYS TO PILOT
+
+### 🎯 Module attendance goes **LIVE** — Friday, 10 July 2026
+
+```
+┌──────────┬──────────┬──────────┬──────────┐
+│    17    │    08    │    00    │    SS     │
+│   DAYS   │  HOURS   │   MIN    │   SEC     │
+└──────────┴──────────┴──────────┴──────────┘
+   18 JUN  ──────────────────────────►  10 JUL
+```
 
 `M1 Auth → M2 Profiles → M3 Reads → M4 ATTENDANCE → M5 / M6 Trust → 🚀`
 
@@ -10,7 +22,9 @@
 &nbsp;
 ![Sprint start](https://img.shields.io/badge/SPRINT%20START-THU%2018%20JUNE%202026-444444?style=for-the-badge)
 
-▶ **[Open the LIVE second-by-second clock → `PILOT_COUNTDOWN.html`](./PILOT_COUNTDOWN.html)** &nbsp;·&nbsp; **[Full dated plan](./SUPABASE_INTEGRATION.md#pilot-sprint-plan--schedule-m1--pilot-10-jul-2026)**
+**Mon–Fri only · ≈ 3.5 working weeks · the date is fixed, scope flexes**
+
+▶ **[Open the LIVE ticking clock → `PILOT_COUNTDOWN.html`](./PILOT_COUNTDOWN.html)** &nbsp;·&nbsp; **[Full dated plan](./SUPABASE_INTEGRATION.md#pilot-sprint-plan--schedule-m1--pilot-10-jul-2026)**
 
 </div>
 
