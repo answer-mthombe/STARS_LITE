@@ -1,21 +1,24 @@
-```text
-╔════════════════════════════════════════════════════════════════════════╗
-║                                                                          ║
-║                  ⏱   S T A R S   P I L O T   C O U N T D O W N   ⏱        ║
-║                                                                          ║
-║      FIRST PILOT  (module attendance LIVE)  ▶   FRI  10  JULY  2026      ║
-║      Sprint start (anchor / today)          ▶   THU  18  JUNE  2026      ║
-║                                                                          ║
-║            ███████████████   17  WORKING  DAYS  LEFT   ███████████████   ║
-║                     Mon–Fri only  ·  ≈ 3.5 working weeks                 ║
-║                                                                          ║
-║   M1 Auth → M2 Profiles → M3 Reads → M4 ATTENDANCE → M5/M6 Trust → 🚀    ║
-║                                                                          ║
-╚════════════════════════════════════════════════════════════════════════╝
-```
+<div align="center">
 
-> ⏱ **Static snapshot anchored to Thu 18 Jun 2026.** Recompute "days left" at each stand-up using the [Sprint calendar](#sprint-calendar-17-working-days). The pilot date (**Fri 10 Jul 2026**) is fixed — scope flexes, the date does not.
-> ▶ For a **big LIVE ticking clock** (days/hours/minutes/seconds), open **[`PILOT_COUNTDOWN.html`](./PILOT_COUNTDOWN.html)** in a browser.
+# ⏱ STARS — PILOT COUNTDOWN ⏱
+
+![Pilot date](https://img.shields.io/badge/PILOT-FRI%2010%20JULY%202026-e4002b?style=for-the-badge)
+&nbsp;
+![Working days left](https://img.shields.io/badge/WORKING%20DAYS%20LEFT-17-1f6feb?style=for-the-badge)
+&nbsp;
+![Sprint start](https://img.shields.io/badge/SPRINT%20START-THU%2018%20JUNE%202026-444444?style=for-the-badge)
+
+### 🔴 First pilot: **module attendance LIVE** on Postgres
+
+`M1 Auth → M2 Profiles → M3 Reads → M4 ATTENDANCE → M5 / M6 Trust → 🚀`
+
+**Mon–Fri only · ≈ 3.5 working weeks · the date is fixed, scope flexes**
+
+▶ **[Open the LIVE ticking clock → `PILOT_COUNTDOWN.html`](./PILOT_COUNTDOWN.html)** &nbsp;·&nbsp; **[Sprint calendar](#sprint-calendar-17-working-days)**
+
+</div>
+
+---
 
 # STARS — Supabase (Auth + Postgres) integration
 

@@ -1,29 +1,24 @@
-```text
-╔════════════════════════════════════════════════════════════════════════╗
-║                                                                          ║
-║                  ⏱   S T A R S   P I L O T   C O U N T D O W N   ⏱        ║
-║                                                                          ║
-║          ┌──────────────────────────────────────────────────┐          ║
-║          │   ████   ████      ████   ████      ████   ████    │          ║
-║          │   █  █   █  █  ::  █  █   █  █  ::  █  █   █  █    │          ║
-║          │   ████   ████      ████   ████      ████   ████    │          ║
-║          │    DD     DD        HH     HH        MM     MM      │          ║
-║          └──────────────────────────────────────────────────┘          ║
-║                                                                          ║
-║      FIRST PILOT  (module attendance LIVE)  ▶   FRI  10  JULY  2026      ║
-║      Sprint start (anchor / today)          ▶   THU  18  JUNE  2026      ║
-║                                                                          ║
-║            ███████████████   17  WORKING  DAYS  LEFT   ███████████████   ║
-║                     Mon–Fri only  ·  ≈ 3.5 working weeks                 ║
-║                                                                          ║
-║   M1 Auth → M2 Profiles → M3 Reads → M4 ATTENDANCE → M5/M6 Trust → 🚀    ║
-║                                                                          ║
-╚════════════════════════════════════════════════════════════════════════╝
-```
+<div align="center">
 
-> ⏱ **Pilot countdown — static snapshot anchored to Thu 18 Jun 2026.** The pilot date (**Fri 10 Jul 2026**) is fixed.
-> ▶ **Open the [LIVE ticking countdown clock → `PILOT_COUNTDOWN.html`](./PILOT_COUNTDOWN.html)** in a browser for a big real-time days/hours/minutes/seconds clock.
-> Full dated plan in **[SUPABASE_INTEGRATION.md → Pilot sprint plan](./SUPABASE_INTEGRATION.md#pilot-sprint-plan--schedule-m1--pilot-10-jul-2026)**.
+# ⏱ STARS — PILOT COUNTDOWN ⏱
+
+![Pilot date](https://img.shields.io/badge/PILOT-FRI%2010%20JULY%202026-e4002b?style=for-the-badge)
+&nbsp;
+![Working days left](https://img.shields.io/badge/WORKING%20DAYS%20LEFT-17-1f6feb?style=for-the-badge)
+&nbsp;
+![Sprint start](https://img.shields.io/badge/SPRINT%20START-THU%2018%20JUNE%202026-444444?style=for-the-badge)
+
+### 🔴 First pilot: **module attendance LIVE** on Postgres
+
+`M1 Auth → M2 Profiles → M3 Reads → M4 ATTENDANCE → M5 / M6 Trust → 🚀`
+
+**Mon–Fri only · ≈ 3.5 working weeks · the date is fixed, scope flexes**
+
+▶ **[Open the LIVE ticking clock → `PILOT_COUNTDOWN.html`](./PILOT_COUNTDOWN.html)** &nbsp;·&nbsp; **[Full dated plan](./SUPABASE_INTEGRATION.md#pilot-sprint-plan--schedule-m1--pilot-10-jul-2026)**
+
+</div>
+
+---
 
 # STARS
 
