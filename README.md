@@ -1,3 +1,30 @@
+```text
+╔════════════════════════════════════════════════════════════════════════╗
+║                                                                          ║
+║                  ⏱   S T A R S   P I L O T   C O U N T D O W N   ⏱        ║
+║                                                                          ║
+║          ┌──────────────────────────────────────────────────┐          ║
+║          │   ████   ████      ████   ████      ████   ████    │          ║
+║          │   █  █   █  █  ::  █  █   █  █  ::  █  █   █  █    │          ║
+║          │   ████   ████      ████   ████      ████   ████    │          ║
+║          │    DD     DD        HH     HH        MM     MM      │          ║
+║          └──────────────────────────────────────────────────┘          ║
+║                                                                          ║
+║      FIRST PILOT  (module attendance LIVE)  ▶   FRI  10  JULY  2026      ║
+║      Sprint start (anchor / today)          ▶   THU  18  JUNE  2026      ║
+║                                                                          ║
+║            ███████████████   17  WORKING  DAYS  LEFT   ███████████████   ║
+║                     Mon–Fri only  ·  ≈ 3.5 working weeks                 ║
+║                                                                          ║
+║   M1 Auth → M2 Profiles → M3 Reads → M4 ATTENDANCE → M5/M6 Trust → 🚀    ║
+║                                                                          ║
+╚════════════════════════════════════════════════════════════════════════╝
+```
+
+> ⏱ **Pilot countdown — static snapshot anchored to Thu 18 Jun 2026.** The pilot date (**Fri 10 Jul 2026**) is fixed.
+> ▶ **Open the [LIVE ticking countdown clock → `PILOT_COUNTDOWN.html`](./PILOT_COUNTDOWN.html)** in a browser for a big real-time days/hours/minutes/seconds clock.
+> Full dated plan in **[SUPABASE_INTEGRATION.md → Pilot sprint plan](./SUPABASE_INTEGRATION.md#pilot-sprint-plan--schedule-m1--pilot-10-jul-2026)**.
+
 # STARS
 
 **STARS** — Smart attendance for **Mangosuthu University of Technology**, built with Expo, TypeScript, and Expo Router. The app ships with a **mock JSON / in-memory database** so flows work offline-first; Supabase can replace the same service boundaries later.

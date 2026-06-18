@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STARS — Pilot Countdown · 10 Jul 2026</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --bg2: #131a33;
+      --ink: #eaf0ff;
+      --muted: #8ea0c9;
+      --accent: #4f7cff;
+      --accent2: #00e0b8;
+      --danger: #ff5d73;
+      --card: rgba(255, 255, 255, 0.04);
+      --border: rgba(255, 255, 255, 0.10);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { height: 100%; margin: 0; }
+
+    body {
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+      background:
+        radial-gradient(1200px 600px at 50% -10%, #1d2a5a 0%, transparent 60%),
+        linear-gradient(160deg, var(--bg) 0%, var(--bg2) 100%);
+      color: var(--ink);
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      overflow-x: hidden;
+    }
+
+    .wordmark {
+      font-weight: 900;
+      letter-spacing: 0.5em;
+      font-size: clamp(18px, 3vw, 28px);
+      color: var(--accent2);
+      margin-bottom: 6px;
+      text-shadow: 0 0 24px rgba(0, 224, 184, 0.35);
+    }
+
+    .title {
+      font-size: clamp(14px, 2.2vw, 20px);
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 28px;
+    }
+
+    .title strong { color: var(--ink); }
+
+    .clock {
+      display: flex;
+      gap: clamp(10px, 2.5vw, 28px);
+      align-items: stretch;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .unit {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: clamp(14px, 2.5vw, 28px) clamp(16px, 3vw, 36px);
+      min-width: clamp(96px, 18vw, 200px);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    .num {
+      font-variant-numeric: tabular-nums;
+      font-weight: 900;
+      font-size: clamp(48px, 12vw, 132px);
+      line-height: 1;
+      background: linear-gradient(180deg, #ffffff 0%, var(--accent) 120%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.02em;
+    }
+
+    .unit.seconds .num {
+      background: linear-gradient(180deg, #ffffff 0%, var(--accent2) 130%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .label {
+      margin-top: 10px;
+      font-size: clamp(10px, 1.4vw, 14px);
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .working {
+      margin-top: 8px;
+      font-size: clamp(16px, 2.6vw, 26px);
+      font-weight: 800;
+    }
+    .working b { color: var(--accent2); }
+
+    .dates {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: clamp(12px, 1.8vw, 16px);
+      line-height: 1.7;
+    }
+    .dates .pilot { color: var(--danger); font-weight: 800; }
+
+    .path {
+      margin-top: 22px;
+      font-size: clamp(11px, 1.7vw, 15px);
+      color: var(--ink);
+      opacity: 0.9;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .progress-wrap {
+      margin: 26px auto 0;
+      width: min(720px, 90vw);
+    }
+    .progress-track {
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 100%);
+      transition: width 0.6s ease;
+    }
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .done {
+      font-size: clamp(28px, 7vw, 64px);
+      font-weight: 900;
+      color: var(--accent2);
+      text-shadow: 0 0 40px rgba(0, 224, 184, 0.5);
+    }
+
+    .footnote {
+      margin-top: 26px;
+      font-size: 12px;
+      color: var(--muted);
+      max-width: 640px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wordmark">S T A R S</div>
+  <div class="title">First pilot — <strong>module attendance LIVE</strong></div>
+
+  <div id="clock" class="clock">
+    <div class="unit"><div class="num" id="days">--</div><div class="label">Days</div></div>
+    <div class="unit"><div class="num" id="hours">--</div><div class="label">Hours</div></div>
+    <div class="unit"><div class="num" id="minutes">--</div><div class="label">Minutes</div></div>
+    <div class="unit seconds"><div class="num" id="seconds">--</div><div class="label">Seconds</div></div>
+  </div>
+
+  <div id="done" class="done" style="display:none;">🚀 PILOT DAY — GO LIVE</div>
+
+  <div class="working">
+    <span id="workingDays">--</span> working days left <span style="color:var(--muted);font-weight:600;">(Mon–Fri)</span>
+  </div>
+
+  <div class="dates">
+    <div>🎯 Pilot: <span class="pilot">Friday, 10 July 2026</span></div>
+    <div>🏁 Sprint start: Thursday, 18 June 2026</div>
+  </div>
+
+  <div class="path">M1 Auth → M2 Profiles → M3 Reads → M4 ATTENDANCE → M5/M6 Trust → 🚀</div>
+
+  <div class="progress-wrap">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-meta">
+      <span>18 Jun</span>
+      <span id="progressPct">0%</span>
+      <span>10 Jul</span>
+    </div>
+  </div>
+
+  <div class="footnote">
+    Live countdown to the STARS attendance pilot. Full dated plan, milestone gates, and per-developer
+    workboards are in <strong>SUPABASE_INTEGRATION.md → Pilot sprint plan</strong>.
+  </div>
+
+  <script>
+    // Pilot target: Fri 10 July 2026, 09:00 local time (start of pilot day).
+    const PILOT = new Date(2026, 6, 10, 9, 0, 0);   // month is 0-indexed: 6 = July
+    const SPRINT_START = new Date(2026, 5, 18, 0, 0, 0); // 18 June 2026
+
+    function countWorkingDays(from, to) {
+      if (to <= from) return 0;
+      let count = 0;
+      const d = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+      const end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+      while (d <= end) {
+        const day = d.getDay(); // 0 = Sun, 6 = Sat
+        if (day !== 0 && day !== 6) count++;
+        d.setDate(d.getDate() + 1);
+      }
+      return count;
+    }
+
+    function pad(n) { return String(n).padStart(2, "0"); }
+
+    function tick() {
+      const now = new Date();
+      const diff = PILOT - now;
+
+      if (diff <= 0) {
+        document.getElementById("clock").style.display = "none";
+        document.getElementById("done").style.display = "block";
+        document.getElementById("progressFill").style.width = "100%";
+        document.getElementById("progressPct").textContent = "100%";
+        document.getElementById("workingDays").textContent = "0";
+        return;
+      }
+
+      const totalSeconds = Math.floor(diff / 1000);
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      document.getElementById("days").textContent = pad(days);
+      document.getElementById("hours").textContent = pad(hours);
+      document.getElementById("minutes").textContent = pad(minutes);
+      document.getElementById("seconds").textContent = pad(seconds);
+
+      // Working days left (counts today if a weekday, through pilot day).
+      const wd = countWorkingDays(now, PILOT);
+      document.getElementById("workingDays").textContent = wd;
+
+      // Progress across the whole sprint window.
+      const span = PILOT - SPRINT_START;
+      const elapsed = now - SPRINT_START;
+      const pct = Math.max(0, Math.min(100, (elapsed / span) * 100));
+      document.getElementById("progressFill").style.width = pct.toFixed(1) + "%";
+      document.getElementById("progressPct").textContent = pct.toFixed(0) + "%";
+    }
+
+    tick();
+    setInterval(tick, 1000);
+  </script>
+</body>
+</html>
