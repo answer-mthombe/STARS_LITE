@@ -1,6 +1,8 @@
 <div align="center">
 
-# ⏱ STARS — PILOT COUNTDOWN ⏱
+<img src="./pilot-countdown.svg" alt="STARS pilot countdown — module attendance goes live Friday 10 July 2026" width="100%" />
+
+`M1 Auth → M2 Profiles → M3 Reads → M4 ATTENDANCE → M5 / M6 Trust → 🚀`
 
 ![Pilot date](https://img.shields.io/badge/PILOT-FRI%2010%20JULY%202026-e4002b?style=for-the-badge)
 &nbsp;
@@ -8,13 +10,7 @@
 &nbsp;
 ![Sprint start](https://img.shields.io/badge/SPRINT%20START-THU%2018%20JUNE%202026-444444?style=for-the-badge)
 
-### 🔴 First pilot: **module attendance LIVE** on Postgres
-
-`M1 Auth → M2 Profiles → M3 Reads → M4 ATTENDANCE → M5 / M6 Trust → 🚀`
-
-**Mon–Fri only · ≈ 3.5 working weeks · the date is fixed, scope flexes**
-
-▶ **[Open the LIVE ticking clock → `PILOT_COUNTDOWN.html`](./PILOT_COUNTDOWN.html)** &nbsp;·&nbsp; **[Full dated plan](./SUPABASE_INTEGRATION.md#pilot-sprint-plan--schedule-m1--pilot-10-jul-2026)**
+▶ **[Open the LIVE second-by-second clock → `PILOT_COUNTDOWN.html`](./PILOT_COUNTDOWN.html)** &nbsp;·&nbsp; **[Full dated plan](./SUPABASE_INTEGRATION.md#pilot-sprint-plan--schedule-m1--pilot-10-jul-2026)**
 
 </div>
 

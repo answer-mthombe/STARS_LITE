@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="960" height="480" font-family="'Consolas','SF Mono','DejaVu Sans Mono',monospace">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1020"/>
+      <stop offset="1" stop-color="#141c38"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="50%" cy="0%" r="80%">
+      <stop offset="0" stop-color="#2a3d7a" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#0b1020" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="num" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#5b8bff"/>
+    </linearGradient>
+    <linearGradient id="numSec" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#00e0b8"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4f7cff"/>
+      <stop offset="1" stop-color="#00e0b8"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="clipTens"><rect x="690" y="150" width="78" height="168"/></clipPath>
+    <clipPath id="clipUnits"><rect x="772" y="150" width="78" height="168"/></clipPath>
+    <clipPath id="clipBar"><rect x="140" y="416" width="680" height="22" rx="11"/></clipPath>
+  </defs>
+
+  <!-- background -->
+  <rect x="0" y="0" width="960" height="480" rx="26" fill="url(#bg)"/>
+  <rect x="0" y="0" width="960" height="480" rx="26" fill="url(#halo)">
+    <animate attributeName="opacity" values="0.7;1;0.7" dur="4s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="3" y="3" width="954" height="474" rx="24" fill="none" stroke="#2a3566" stroke-width="2"/>
+
+  <!-- title -->
+  <text x="480" y="62" text-anchor="middle" fill="#00e0b8" font-size="26" font-weight="800" letter-spacing="10" filter="url(#glow)">
+    STARS &#8226; PILOT COUNTDOWN
+    <animate attributeName="opacity" values="0.85;1;0.85" dur="2.4s" repeatCount="indefinite"/>
+  </text>
+  <text x="480" y="92" text-anchor="middle" fill="#8ea0c9" font-size="15" font-weight="700" letter-spacing="3">
+    MODULE ATTENDANCE GOES LIVE
+  </text>
+
+  <!-- big clock row: DD : HH : MM : SS -->
+  <g font-weight="800" font-size="150">
+    <!-- DAYS (hero, breathing) -->
+    <text x="170" y="282" text-anchor="middle" fill="url(#num)" filter="url(#glow)">17
+      <animate attributeName="font-size" values="150;164;150" dur="2.6s" repeatCount="indefinite"/>
+    </text>
+
+    <!-- colon -->
+    <text x="278" y="270" text-anchor="middle" fill="#5b8bff">:
+      <animate attributeName="opacity" values="1;0.12;1" dur="1s" repeatCount="indefinite"/>
+    </text>
+
+    <!-- HOURS -->
+    <text x="388" y="282" text-anchor="middle" fill="url(#num)">08</text>
+
+    <!-- colon -->
+    <text x="496" y="270" text-anchor="middle" fill="#5b8bff">:
+      <animate attributeName="opacity" values="1;0.12;1" dur="1s" begin="0.33s" repeatCount="indefinite"/>
+    </text>
+
+    <!-- MINUTES -->
+    <text x="606" y="282" text-anchor="middle" fill="url(#num)">00</text>
+
+    <!-- colon -->
+    <text x="714" y="270" text-anchor="middle" fill="#00e0b8">:
+      <animate attributeName="opacity" values="1;0.12;1" dur="1s" begin="0.66s" repeatCount="indefinite"/>
+    </text>
+
+    <!-- SECONDS  genuinely ticking digits via slot-machine filmstrip -->
+    <!-- tens of seconds: 5 -> 0, steps every 10s -->
+    <g clip-path="url(#clipTens)">
+      <g fill="url(#numSec)">
+        <text x="729" y="282" text-anchor="middle">5</text>
+        <text x="729" y="442" text-anchor="middle">4</text>
+        <text x="729" y="602" text-anchor="middle">3</text>
+        <text x="729" y="762" text-anchor="middle">2</text>
+        <text x="729" y="922" text-anchor="middle">1</text>
+        <text x="729" y="1082" text-anchor="middle">0</text>
+        <animateTransform attributeName="transform" type="translate" calcMode="discrete"
+          values="0 0;0 -160;0 -320;0 -480;0 -640;0 -800"
+          keyTimes="0;0.16667;0.33333;0.5;0.66667;0.83333"
+          dur="60s" repeatCount="indefinite"/>
+      </g>
+    </g>
+    <!-- units of seconds: 9 -> 0, steps every 1s -->
+    <g clip-path="url(#clipUnits)">
+      <g fill="url(#numSec)">
+        <text x="811" y="282" text-anchor="middle">9</text>
+        <text x="811" y="442" text-anchor="middle">8</text>
+        <text x="811" y="602" text-anchor="middle">7</text>
+        <text x="811" y="762" text-anchor="middle">6</text>
+        <text x="811" y="922" text-anchor="middle">5</text>
+        <text x="811" y="1082" text-anchor="middle">4</text>
+        <text x="811" y="1242" text-anchor="middle">3</text>
+        <text x="811" y="1402" text-anchor="middle">2</text>
+        <text x="811" y="1562" text-anchor="middle">1</text>
+        <text x="811" y="1722" text-anchor="middle">0</text>
+        <animateTransform attributeName="transform" type="translate" calcMode="discrete"
+          values="0 0;0 -160;0 -320;0 -480;0 -640;0 -800;0 -960;0 -1120;0 -1280;0 -1440"
+          keyTimes="0;0.1;0.2;0.3;0.4;0.5;0.6;0.7;0.8;0.9"
+          dur="10s" repeatCount="indefinite"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- labels -->
+  <g fill="#8ea0c9" font-size="16" font-weight="700" letter-spacing="3" text-anchor="middle">
+    <text x="170" y="330">WORKING DAYS</text>
+    <text x="388" y="330">HOURS</text>
+    <text x="606" y="330">MINUTES</text>
+    <text x="770" y="330">SECONDS</text>
+  </g>
+
+  <!-- pilot date (pulsing red) -->
+  <text x="480" y="382" text-anchor="middle" fill="#ff5d73" font-size="24" font-weight="800" letter-spacing="4" filter="url(#glow)">
+    &#9654; FRIDAY &#8226; 10 JULY 2026 &#9664;
+    <animate attributeName="opacity" values="1;0.55;1" dur="1.8s" repeatCount="indefinite"/>
+  </text>
+
+  <!-- progress bar -->
+  <rect x="140" y="416" width="680" height="22" rx="11" fill="#ffffff" fill-opacity="0.08" stroke="#2a3566" stroke-width="1.5"/>
+  <rect x="140" y="416" height="22" rx="11" fill="url(#bar)">
+    <animate attributeName="width" values="0;60" dur="1.4s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.2 0.8 0.2 1"/>
+    <animate attributeName="opacity" values="0.85;1;0.85" dur="2.2s" repeatCount="indefinite"/>
+  </rect>
+  <!-- moving shimmer sweeping across the track -->
+  <g clip-path="url(#clipBar)">
+    <rect x="-160" y="416" width="160" height="22" fill="url(#shine)">
+      <animate attributeName="x" values="-160;820" dur="2.6s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+  <g fill="#8ea0c9" font-size="13" font-weight="700" letter-spacing="2">
+    <text x="140" y="462">18 JUN</text>
+    <text x="820" y="462" text-anchor="end">10 JUL</text>
+    <text x="480" y="462" text-anchor="middle" fill="#00e0b8">SPRINTING &#8594; M1 &#8594; M6</text>
+  </g>
+</svg>
