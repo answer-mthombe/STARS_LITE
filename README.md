@@ -1,3 +1,35 @@
+<div align="center">
+
+# ⏱ STARS · PILOT COUNTDOWN ⏱
+
+# 🔴 `17` WORKING DAYS TO PILOT
+
+### 🎯 Module attendance goes **LIVE** — Friday, 10 July 2026
+
+```
+┌──────────┬──────────┬──────────┬──────────┐
+│    17    │    08    │    00    │    SS     │
+│   DAYS   │  HOURS   │   MIN    │   SEC     │
+└──────────┴──────────┴──────────┴──────────┘
+   18 JUN  ──────────────────────────►  10 JUL
+```
+
+`M1 Auth → M2 Profiles → M3 Reads → M4 ATTENDANCE → M5 / M6 Trust → 🚀`
+
+![Pilot date](https://img.shields.io/badge/PILOT-FRI%2010%20JULY%202026-e4002b?style=for-the-badge)
+&nbsp;
+![Working days left](https://img.shields.io/badge/WORKING%20DAYS%20LEFT-17-1f6feb?style=for-the-badge)
+&nbsp;
+![Sprint start](https://img.shields.io/badge/SPRINT%20START-THU%2018%20JUNE%202026-444444?style=for-the-badge)
+
+**Mon–Fri only · ≈ 3.5 working weeks · the date is fixed, scope flexes**
+
+▶ **[Open the LIVE ticking clock → `PILOT_COUNTDOWN.html`](./PILOT_COUNTDOWN.html)** &nbsp;·&nbsp; **[Full dated plan](./SUPABASE_INTEGRATION.md#pilot-sprint-plan--schedule-m1--pilot-10-jul-2026)**
+
+</div>
+
+---
+
 # STARS
 
 **STARS** — Smart attendance for **Mangosuthu University of Technology**, built with Expo, TypeScript, and Expo Router. The app ships with a **mock JSON / in-memory database** so flows work offline-first; Supabase can replace the same service boundaries later.
