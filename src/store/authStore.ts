@@ -10,6 +10,19 @@ import { getUserProfileByUid } from "@/services/supabase";
 
 type AuthStatus = "loading" | "ready";
 
+const mapAuthError = (error: any): string => {
+  if (error.message?.includes("Invalid login credentials")) {
+    return "Invalid email or password";
+  }
+  if (error.message?.includes("Email not confirmed")) {
+    return "Please confirm your email before signing in";
+  }
+  if (error.message?.includes("User not found")) {
+    return "User account not found";
+  }
+  return error.message || "Authentication failed";
+};
+
 export type AuthUser =
   | { role: "student"; id: string; email: string; fullName: string }
   | { role: "lecturer"; id: string; email: string; fullName: string }
@@ -89,43 +102,46 @@ export const useAuthStore = create<AuthState>((set) => ({
   //   set({ user });
   // },
 
-  login: async ({ role, email, password }) => {
-    // ==========================================
-    // 1. LIVE SUPABASE LOGIN
-    // ==========================================
-    if (isSupabaseEnabled()) {
+ login: async ({ role, email, password }) => {
+  if (isSupabaseEnabled()) {
+    try {
       const authUser = await signInWithEmailPassword(email, password);
       const profile = await getUserProfileByUid(authUser.id);
-      
+
       if (!profile) {
         await signOutSupabase();
         throw new Error("Account authenticated, but no user profile exists in the system.");
       }
 
       const mappedUser: AuthUser = {
-        role: profile.role ,
-        id: profile.linkedPersonId || profile.id, 
-        email: authUser.email || authUser.email || email,
+        role: profile.role,
+        id: profile.linkedPersonId || profile.id,
+        email: authUser.email || email,
         fullName: "Authenticated User",
-        ...(profile.role === "tutor" ? { 
-        studentId: profile.linkedStudentId || profile.linkedPersonId || profile.id, 
-            moduleIds: profile.delegatedModuleIds || []
-        
-        } : {}),
-      } as AuthUser;
+        ...(profile.role === "tutor"
+          ? {
+              studentId: profile.linkedStudentId || profile.linkedPersonId || profile.id,
+              moduleIds: profile.delegatedModuleIds || [],
+            }
+          : {}),
+      };
 
       await authStorage.setItem(JSON.stringify(mappedUser));
       set({ user: mappedUser });
       return;
+    } catch (err: any) {
+      // 👇 NEW: use mapAuthError here
+      const friendly = (err);
+      throw new Error(friendly); // bubble up friendly message
     }
+  }
 
-    // ==========================================
-    // 2. LEGACY MOCK LOGIN
-    // ==========================================
-    const user = await mockAuthService.login({ role, email, password });
-    await authStorage.setItem(JSON.stringify(user));
-    set({ user });
-  },
+  // legacy mock login unchanged
+  const user = await mockAuthService.login({ role, email, password });
+  await authStorage.setItem(JSON.stringify(user));
+  set({ user });
+},
+
 
 
   // logout: async () => {

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-
+import { mapAuthError } from "@/utils/supabase/mapAuthError";
 import {
   AppButton,
   AppInput,
