@@ -4,7 +4,10 @@ import { authStorage } from "@/utils/authStorage";
 import type { UserRole } from "@/types/roles";
 import { mockAuthService } from "@/services/mockAuthService";
 
-import { isSupabaseEnabled} from "../supabase/client";
+import {
+  isSupabaseEnabled,
+  requireSupabaseClient,
+} from "../supabase/client";
 import { registerStudentSupabase, signInWithEmailPassword, signOutSupabase } from "../services/supabase/authRepository";
 import { getUserProfileByUid } from "@/services/supabase";
 
@@ -69,19 +72,101 @@ export const useAuthStore = create<AuthState>((set) => ({
   status: "loading",
   user: null,
 
-  bootstrap: async () => {
-    try {
-      const raw = await authStorage.getItem();
-      if (raw) {
-        const parsed = JSON.parse(raw) as AuthUser;
-        set({ user: parsed, status: "ready" });
+
+bootstrap: async () => {
+  try {
+    // ==============================
+    // SUPABASE MODE
+    // ==============================
+    if (isSupabaseEnabled()) {
+      const supabase = requireSupabaseClient();
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        set({
+          user: null,
+          status: "ready",
+        });
         return;
       }
-      set({ status: "ready" });
-    } catch {
-      set({ status: "ready" });
+
+      const profile = await getUserProfileByUid(
+        session.user.id
+      );
+
+      if (!profile) {
+        set({
+          user: null,
+          status: "ready",
+        });
+        return;
+      }
+
+      const mappedUser: AuthUser = {
+        role: profile.role,
+        id: profile.linkedPersonId || profile.id,
+        email: session.user.email || "",
+        fullName: "Authenticated User",
+
+        ...(profile.role === "tutor"
+          ? {
+              studentId:
+                profile.linkedStudentId ||
+                profile.linkedPersonId ||
+                profile.id,
+              moduleIds:
+                profile.delegatedModuleIds || [],
+            }
+          : {}),
+      } as AuthUser;
+
+      await authStorage.setItem(
+        JSON.stringify(mappedUser)
+      );
+
+      set({
+        user: mappedUser,
+        status: "ready",
+      });
+
+      return;
     }
-  },
+
+    // ==============================
+    // MOCK MODE
+    // ==============================
+    const raw = await authStorage.getItem();
+
+    if (raw) {
+      const parsed = JSON.parse(raw) as AuthUser;
+
+      set({
+        user: parsed,
+        status: "ready",
+      });
+
+      return;
+    }
+
+    set({
+      status: "ready",
+    });
+  } catch (error) {
+    console.error(
+      "Auth bootstrap failed:",
+      error
+    );
+
+    set({
+      user: null,
+      status: "ready",
+    });
+  }
+},
+
 
   // login: async ({ role, email, password }) => {
   //   const user = await mockAuthService.login({ role, email, password });
