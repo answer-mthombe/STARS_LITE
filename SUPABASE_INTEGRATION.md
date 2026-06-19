@@ -1,8 +1,137 @@
+<div align="center">
+
+# ⏱ STARS · PILOT COUNTDOWN ⏱
+
+# 🔴 `17` WORKING DAYS TO PILOT
+
+### 🎯 Module attendance goes **LIVE** — Friday, 10 July 2026
+
+```
+┌──────────┬──────────┬──────────┬──────────┐
+│    17    │    08    │    00    │    SS     │
+│   DAYS   │  HOURS   │   MIN    │   SEC     │
+└──────────┴──────────┴──────────┴──────────┘
+   18 JUN  ──────────────────────────►  10 JUL
+```
+
+`M1 Auth → M2 Profiles → M3 Reads → M4 ATTENDANCE → M5 / M6 Trust → 🚀`
+
+![Pilot date](https://img.shields.io/badge/PILOT-FRI%2010%20JULY%202026-e4002b?style=for-the-badge)
+&nbsp;
+![Working days left](https://img.shields.io/badge/WORKING%20DAYS%20LEFT-17-1f6feb?style=for-the-badge)
+&nbsp;
+![Sprint start](https://img.shields.io/badge/SPRINT%20START-THU%2018%20JUNE%202026-444444?style=for-the-badge)
+
+**Mon–Fri only · ≈ 3.5 working weeks · the date is fixed, scope flexes**
+
+▶ **[Open the LIVE ticking clock → `PILOT_COUNTDOWN.html`](./PILOT_COUNTDOWN.html)** &nbsp;·&nbsp; **[Sprint calendar](#sprint-calendar-17-working-days)**
+
+</div>
+
+---
+
 # STARS — Supabase (Auth + Postgres) integration
 
 **Audience:** Brightman, Gugulethu, Basil — and anyone new to the codebase.
 
-This document ties **milestones**, **user stories**, and **file ownership** together. **Start with [M0 — Integration sprint](#m0--integration-sprint-start-here)** — your job is **integration**, not rebuilding the UI. Later sections list every **JOB-xxx** in order.
+This document ties **milestones**, **user stories**, **file ownership**, and now a **dated pilot sprint** together. **M0 is done.** We are now sprinting **M1 → M6** so that **module attendance works end-to-end for the first pilot on Fri 10 July 2026**. Start with the **[Pilot sprint plan & schedule](#pilot-sprint-plan--schedule-m1--pilot-10-jul-2026)**, then work your milestone in order. Your job is **integration**, not rebuilding the UI.
+
+---
+
+## Pilot sprint plan & schedule (M1 → pilot 10 Jul 2026)
+
+**Goal of the sprint:** by **Fri 10 July 2026**, a lecturer can start a session, a student can pass the attendance challenge, and a verified row lands in Postgres with a finalised class register — on `EXPO_PUBLIC_DATA_SOURCE=supabase`. That is the **pilot definition of done**.
+
+**Working rules**
+
+- The team works **Monday–Friday** (no weekends counted). That is **17 working days** from Thu 18 Jun to Fri 10 Jul 2026 (no SA public holidays fall in this window).
+- **The date is fixed.** If we slip, we drop **non-pilot-critical** scope first (leadership analytics, delegation/proxy, web+native parity) — never the attendance core.
+- Three developers run **in parallel lanes** (Brightman / Gugulethu / Basil). One owner per story; open draft PRs early.
+- Each milestone ends with a **gate** (team sync). Do not start the next milestone's pilot-critical work until the previous gate passes.
+
+### Pilot-critical path (must work on 10 Jul)
+
+```
+login (M1) → role profile (M2) → see module + active session (M3)
+   → lecturer starts session (M4) → student passes challenge → row written (M4)
+   → server verifies the row (M6) → class register finalised (M4)
+```
+
+Everything **not** on this line — leadership analytics (JOB-016/017/018), delegation/proxy (JOB-026), observability (JOB-029), web+native parity (JOB-030) — is **parallel / stretch** and must not block the path above.
+
+### Milestone windows
+
+| Milestone | Sprint window | Working days | Pilot-critical? | Owners (lead) |
+|-----------|---------------|:------------:|:---------------:|---------------|
+| **M1 — Authentication** | Thu 18 – Fri 19 Jun | 2 | ✅ | Brightman / Gugulethu / Basil |
+| **M2 — Profiles & roles** | Mon 22 – Wed 24 Jun | 3 | ✅ | Gugulethu (lead) |
+| **M3 — Read paths** | Thu 25 – Tue 30 Jun | 4 | ✅ (session/module/history) | Gugulethu + Brightman + Basil |
+| **M4 — Write paths / attendance** | Wed 1 – Tue 7 Jul | 5 | 🔴 **CORE** | Brightman (lead) |
+| **M6 — Challenge backend (trust)** | Wed 8 – Thu 9 Jul | 2 | ✅ | Basil (lead) |
+| **M5 — Cutover & hardening** | Wed 8 – Thu 9 Jul (parallel) | 2 | ⛅ partial | Basil + Brightman |
+| **🚀 Pilot — dry run → go-live** | **Fri 10 Jul** | 1 | — | Whole team |
+
+### Sprint schedule (Gantt)
+
+```mermaid
+gantt
+    title STARS Supabase integration — sprint to pilot (Fri 10 Jul 2026)
+    dateFormat YYYY-MM-DD
+    axisFormat %d %b
+    excludes weekends
+
+    section Auth
+    M1 Authentication              :active, m1, 2026-06-18, 2d
+
+    section Profiles
+    M2 Profiles & roles            :m2, after m1, 3d
+
+    section Reads
+    M3 Read paths                  :m3, after m2, 4d
+
+    section Attendance (pilot core)
+    M4 Write paths / attendance    :crit, m4, after m3, 5d
+
+    section Trust & hardening
+    M6 Challenge backend           :crit, m6, after m4, 2d
+    M5 Cutover & hardening         :m5, after m4, 2d
+
+    section Pilot
+    Pilot dry run + go-live        :milestone, pilot, 2026-07-10, 1d
+```
+
+### Sprint calendar (17 working days)
+
+Tick a day when its focus story passes review. If a day slips, pull from the **next** day, not from the pilot date.
+
+| # | Date | Day | Milestone | Focus stories |
+|--:|------|-----|-----------|---------------|
+| 1 | 18 Jun | Thu | M1 | STORY-100 read-through · STORY-101 Auth users · STORY-102 sign-in |
+| 2 | 19 Jun | Fri | M1 | STORY-103 hydration · STORY-104 error map · **STORY-105 gate** |
+| 3 | 22 Jun | Mon | M2 | STORY-201 `user_profiles` CRUD |
+| 4 | 23 Jun | Tue | M2 | STORY-202 student registration pipeline |
+| 5 | 24 Jun | Wed | M2 | STORY-203 live profile guards · **STORY-204 gate** |
+| 6 | 25 Jun | Thu | M3 | STORY-301 student dashboard modules |
+| 7 | 26 Jun | Fri | M3 | STORY-302 lecturer modules |
+| 8 | 29 Jun | Mon | M3 | STORY-303 attendance history · STORY-304 active session reads |
+| 9 | 30 Jun | Tue | M3 | STORY-304 finish · **STORY-308 gate** *(analytics 305–307 parallel)* |
+| 10 | 1 Jul | Wed | M4 | STORY-401 create attendance session |
+| 11 | 2 Jul | Thu | M4 | STORY-402 active-session pointer · STORY-406 enrolment |
+| 12 | 3 Jul | Fri | M4 | STORY-403 challenge submit → `attendance_records` |
+| 13 | 6 Jul | Mon | M4 | STORY-404 offline outbox · STORY-405 RLS v1 |
+| 14 | 7 Jul | Tue | M4 | STORY-407 class register · **STORY-409 gate (attendance E2E)** |
+| 15 | 8 Jul | Wed | M6 + M5 | STORY-602 Edge verify · STORY-603 wire challenge UI · STORY-502 migration |
+| 16 | 9 Jul | Thu | M6 + M5 | STORY-604 RLS/tests · **STORY-605 gate** · STORY-503/504 · **STORY-505 gate** |
+| 17 | **10 Jul** | **Fri** | **🚀 PILOT** | AM dry run → fix blockers → **go-live: module attendance** |
+
+### Slip plan (if we fall behind)
+
+Drop in this order — never the attendance core:
+
+1. JOB-016 / 017 / 018 leadership analytics & audit (M3) → defer to post-pilot.
+2. JOB-026 delegation & proxy writes (M4) → defer.
+3. JOB-030 web + native parity (M5) → pilot on **one** target (Expo web) only.
+4. JOB-029 observability (M5) → minimal console logging for pilot.
 
 ---
 
@@ -1085,15 +1214,16 @@ Domain **models** stay in `src/models/`. Profile: `src/types/supabaseUserProfile
 
 ## Milestone map
 
-| ID | Name | Goal |
-|----|------|------|
-| **M0** | Integration (start here) | Supabase + `dataSource` + service wiring + remove dummy/mock data |
-| **M1** | Authentication | Email/password Auth from the app; session observable |
-| **M2** | Profiles & roles | `user_profiles` maps Auth UID → STARS role + institutional links |
-| **M3** | Read paths | Dashboards/lists/analytics read from Postgres (scoped by role) |
-| **M4** | Write paths | Sessions, challenge attendance, enrolment, registers + RLS |
-| **M5** | Cutover & hardening | `mock` \| `supabase` flag, migration, observability, parity |
-| **M6** | Challenge backend | Edge verification, uniqueness, zero failed-row writes |
+| ID | Name | Goal | Sprint window (2026) |
+|----|------|------|----------------------|
+| **M0** | Integration | Supabase + `dataSource` + service wiring + remove dummy/mock data | ✅ Done |
+| **M1** | Authentication | Email/password Auth from the app; session observable | Thu 18 – Fri 19 Jun |
+| **M2** | Profiles & roles | `user_profiles` maps Auth UID → STARS role + institutional links | Mon 22 – Wed 24 Jun |
+| **M3** | Read paths | Dashboards/lists/analytics read from Postgres (scoped by role) | Thu 25 – Tue 30 Jun |
+| **M4** | Write paths 🔴 | Sessions, challenge attendance, enrolment, registers + RLS | Wed 1 – Tue 7 Jul |
+| **M6** | Challenge backend | Edge verification, uniqueness, zero failed-row writes | Wed 8 – Thu 9 Jul |
+| **M5** | Cutover & hardening | `mock` \| `supabase` flag, migration, observability, parity | Wed 8 – Thu 9 Jul (parallel) |
+| **🚀** | **Pilot** | **Module attendance live on Postgres** | **Fri 10 Jul** |
 
 ---
 
@@ -1149,6 +1279,829 @@ Use **JOB-xxx** in commits, PR titles, and stand-up.
 | **JOB-032** | Basil | M6 | Edge Function: verify seed + `tapped_index` | Server recomputes answer; client cannot forge pass |
 | **JOB-033** | Gugulethu | M6 | Wire `attendanceChallengeService` to live submit | Mock challenge UI calls Supabase path when flag on |
 | **JOB-034** | Basil | M6 | RLS + Edge tests for challenge inserts | Failed attempts never persist; duplicate device rejected |
+
+---
+
+## M1 — Authentication sprint (next milestone)
+
+**🗓 Sprint window: Thu 18 – Fri 19 Jun 2026 (days 1–2 of 17) · pilot-critical.**
+
+**Audience:** Brightman, Gugulethu, Basil — read after M0 is signed off (STORY-009 passed).
+
+**What this milestone is:** M0 built the **backend** (project, tables, seed, RLS, `dataSource` flag). M1 makes **real people log in**. The goal is: with `EXPO_PUBLIC_DATA_SOURCE=supabase`, a seeded user types email + password on the **existing** `login.tsx`, Supabase Auth authenticates them, the app loads their `user_profiles` row, and they land on the right role dashboard — and the session **survives an app restart**.
+
+**What you do *not* do:** Rebuild the login UI, add new screens, or build profile/role logic beyond what login needs. Deep profile + role scoping is **M2**. Reading dashboards from Postgres is **M3**.
+
+```mermaid
+flowchart TB
+  subgraph app["app/ (unchanged UI)"]
+    LOGIN["(auth)/login.tsx\nemail + password"]
+    INDEX["app/index.tsx\nrole redirect"]
+  end
+
+  subgraph store["src/store + pipelines (you wire)"]
+    AUTHSTORE["authStore.login / logout / bootstrap"]
+    HYDRATE["pipelines/authHydration.ts\nsubscribeAuthState"]
+  end
+
+  subgraph repo["src/services/supabase (mostly built)"]
+    AUTHREPO["authRepository\nsignIn / signOut / subscribe"]
+    PROFILE["getUserProfileByUid"]
+  end
+
+  subgraph live["Supabase"]
+    SBAUTH["Auth (auth.users)"]
+    PROFILES["user_profiles row"]
+  end
+
+  LOGIN --> AUTHSTORE
+  AUTHSTORE --> AUTHREPO
+  AUTHREPO --> SBAUTH
+  AUTHSTORE --> PROFILE
+  PROFILE --> PROFILES
+  HYDRATE --> AUTHREPO
+  HYDRATE --> AUTHSTORE
+  AUTHSTORE --> INDEX
+```
+
+### M1 goal (one sentence)
+
+**Real identity, same screen:** keep `login.tsx`; a seeded Auth user signs in with email + password, the app maps their `user_profiles` row to an `AuthUser`, routing sends them to their role dashboard, and the session persists across restarts.
+
+---
+
+### What is already wired vs what you build (read before claiming a story)
+
+The team did some wiring during M0. **Do not rewrite it** — verify it and fill the gaps.
+
+| Piece | File | State today | M1 work |
+|-------|------|-------------|---------|
+| Sign-in / sign-out / subscribe API | `src/services/supabase/authRepository.ts` | **Built** (`signInWithEmailPassword`, `signOutSupabase`, `subscribeAuthState`) | Verify against real users; no rewrite |
+| Login branch | `src/store/authStore.ts` `login()` | **Built** — branches on `isSupabaseEnabled()`, calls sign-in + `getUserProfileByUid` | Test E2E; fix `fullName` placeholder |
+| Sign-out branch | `authStore.logout()` | **Built** — calls `signOutSupabase` | Verify it clears local session |
+| Client + session storage | `src/supabase/client.ts` | **Built** — `persistSession` via AsyncStorage; `isSupabaseEnabled()` needs `DATA_SOURCE=supabase` **and** url+key | Confirm `.env` set to `supabase` |
+| Profile read | `userProfileRepository.getUserProfileByUid` | **Built** | Verify rows exist |
+| **Auth users + profile rows** | Supabase dashboard / `user_profiles` | **Missing** — `seed.sql` made person rows, **not** `auth.users` | **STORY-101 builds this** |
+| Auth state hydration on launch | `AppProviders.tsx` / `src/pipelines/` | **Missing** — only `bootstrap()` reads AsyncStorage; `subscribeAuthState` not wired; `src/pipelines/` does not exist | **STORY-103 builds this** |
+| Friendly error copy | `src/utils/supabase/mapAuthError.ts` | **Missing** — `login.tsx` shows raw `e.message` | **STORY-104 builds this** |
+
+---
+
+### M1 story dependencies (required order)
+
+| Story | **Start after** | **Blocks** | Parallel OK? |
+|-------|-----------------|-----------|--------------|
+| **STORY-100** Auth read-through | M0 signed off (STORY-009) | All M1 stories | — |
+| **STORY-101** Create Auth users + profiles | STORY-100; **STORY-005 + STORY-007 on dev DB** | STORY-102, STORY-103 (nothing logs in without users) | — |
+| **STORY-102** Wire & verify sign-in (JOB-006) | **STORY-101** | STORY-103 | Yes — with STORY-104 |
+| **STORY-103** Auth hydration + session routing (JOB-007) | **STORY-102** | M1 gate | — |
+| **STORY-104** Auth error mapping (JOB-008) | STORY-100 *(test after STORY-102)* | M1 gate (polish) | Yes — with STORY-102 |
+| **STORY-105** M1 sync check (team gate) | STORY-102 + STORY-103 + STORY-104 | M2 (profiles & roles) | — |
+
+### M1 file ownership (avoid merge conflicts)
+
+| Lane | Owner | Files |
+|------|-------|-------|
+| **A — Auth wiring** | **Brightman** | `app/(auth)/login.tsx` (only if fixing import), `src/services/supabase/authRepository.ts`, `src/store/authStore.ts` |
+| **B — Hydration & routing** | **Gugulethu** | `src/pipelines/authHydration.ts` (new), `src/providers/AppProviders.tsx`, `src/store/authStore.ts` (coordinate with Brightman) |
+| **C — Identities & error UX** | **Basil** | `scripts/seed-auth-users.mjs` (new) / `supabase/seed_auth.md` (new), `user_profiles` rows, `src/utils/supabase/mapAuthError.ts` (new) |
+
+**Shared file:** `src/store/authStore.ts` is touched by lanes A and B — Brightman owns `login/logout`, Gugulethu owns `bootstrap`. Split commits; review together.
+
+---
+
+## STORY-100 — Team read-through: how Supabase Auth works (no code)
+
+**Maps to:** prerequisite for all M1 JOBs  
+**Owner:** Whole team  
+**Estimate:** 30 minutes  
+
+**Start after:** M0 signed off (**STORY-009**)  
+**Blocks:** STORY-101, STORY-102, STORY-103, STORY-104  
+
+### Learning objectives
+
+- Explain the difference between **`auth.users`** (Supabase-managed identity) and **`user_profiles`** (your STARS role + links).
+- Explain why **`user_profiles.id` must equal `auth.users.id`** (a uuid), while the **person row** (`students`, `lecturers`, …) keeps its **text** id (`stud-…`) and is reached via `linked_person_id`.
+- Describe what a **session** is and how the client persists it (AsyncStorage) so login survives restarts.
+
+### Tasks
+
+1. Read [What is already wired vs what you build](#what-is-already-wired-vs-what-you-build-read-before-claiming-a-story) above.
+2. Open `src/store/authStore.ts` `login()` — trace: `signInWithEmailPassword` → `getUserProfileByUid(authUser.id)` → mapped `AuthUser`.
+3. Open `src/supabase/client.ts` — note `isSupabaseEnabled()` returns true **only** when `EXPO_PUBLIC_DATA_SOURCE=supabase` **and** url + anon key are set.
+4. Open `app/index.tsx` — note routing reads `useAuthStore` `status` / `user.role` to redirect.
+5. In stand-up, each person states: *“For login to work, a row must exist in **both** `auth.users` and `user_profiles` with the same id.”*
+
+### Acceptance criteria
+
+- [ ] Team can explain `auth.users.id` = `user_profiles.id`, and `linked_person_id` → person row.
+- [ ] Team agrees M1 = **authentication only** (profiles/roles deep work is M2).
+- [ ] Everyone has `EXPO_PUBLIC_DATA_SOURCE` and keys ready in their local `.env`.
+
+### Files
+
+None (discussion only).
+
+---
+
+## STORY-101 — Create Auth users + matching profiles for demo logins
+
+**Maps to:** **JOB-006** (prerequisite — identities must exist before sign-in works)  
+**Owner:** Basil *(seed/identity lane; coordinate with Brightman)*  
+**Estimate:** 2–3 hours  
+
+**Start after:** **STORY-100**; **STORY-005** (person rows seeded) **and** **STORY-007** (RLS) applied on the shared dev DB  
+**Blocks:** **STORY-102**, **STORY-103** — *nothing can log in until this exists*  
+
+### Why this story exists
+
+`seed.sql` inserted **person rows** (`students`, `lecturers`, `deans`, …) but **not** `auth.users`. Supabase Auth owns identities separately. To sign in, every demo account in `src/constants/demoLogins.ts` needs:
+
+1. an **`auth.users`** entry (email + password `password`, **email confirmed**), and
+2. a **`user_profiles`** row whose `id` = that auth user’s uuid, with `role`, `email`, and `linked_person_id` pointing at the seeded person row.
+
+### Learning objectives
+
+- Create Auth users (dashboard or service-role script) with confirmed email.
+- Insert a `user_profiles` row linking the auth uuid to the correct role + person id.
+- Keep the demo password (`password`) consistent with `login.tsx` and `demoLogins.ts`.
+
+### Mini-lesson: three ids, one user
+
+| Layer | Id | Example |
+|-------|----|---------|
+| `auth.users` | uuid (generated) | `7c9e…-a1b2` |
+| `user_profiles.id` | **same uuid** | `7c9e…-a1b2` |
+| `user_profiles.linked_person_id` | **text** person id | `stud-22001234`, lecturer/dean/hod id from seed |
+
+### Step-by-step tasks
+
+1. Confirm **Authentication → Providers → Email** is enabled and **“Confirm email” is OFF** (or you will confirm users manually) so password login works immediately.
+2. Build a mapping from `src/constants/demoLogins.ts` (each `email` + `role`) to its seeded **person id** (query `students` / `lecturers` / `deans` / `hods` / `tutors` by `email`).
+3. Create the Auth users — choose one:
+   - **Option A (dashboard, small sets):** Authentication → **Users → Add user** → set email + password `password` + auto-confirm. Copy the generated **UUID**.
+   - **Option B (script, recommended):** add `scripts/seed-auth-users.mjs` using the **service-role key** (run locally only, never commit the key):
+
+     ```js
+     // scripts/seed-auth-users.mjs — run with: node scripts/seed-auth-users.mjs
+     import { createClient } from "@supabase/supabase-js";
+     const admin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+     // email → { role, linkedPersonId } from demoLogins + seeded person rows
+     const accounts = [
+       { email: "22001234@live.mut.ac.za", role: "student", linkedPersonId: "stud-22001234" },
+       { email: "mkhize@mut.ac.za",        role: "lecturer", linkedPersonId: "lec-mkhize" },
+       // …one per demoLogins entry
+     ];
+
+     for (const a of accounts) {
+       const { data, error } = await admin.auth.admin.createUser({
+         email: a.email,
+         password: "password",
+         email_confirm: true,
+       });
+       if (error) { console.error(a.email, error.message); continue; }
+       await admin.from("user_profiles").upsert({
+         id: data.user.id,
+         role: a.role,
+         email: a.email,
+         linked_person_id: a.linkedPersonId,
+         linked_student_id: a.role === "student" || a.role === "tutor" ? a.linkedPersonId : null,
+       });
+     }
+     ```
+
+4. For **tutors**, set both `linked_person_id` and `linked_student_id` (tutor is also a student — see `demoLogins.ts`).
+5. Document the process in `supabase/seed_auth.md`: how to run, that the service-role key comes from the team vault (STORY-001), and that the password is `password` for all demo accounts.
+
+### Acceptance criteria
+
+- [ ] Every `DEMO_LOGIN_PRESETS` entry has an `auth.users` user (email confirmed).
+- [ ] Each has a matching `user_profiles` row: `id` = auth uuid, correct `role`, `linked_person_id` set (+ `linked_student_id` for student/tutor).
+- [ ] `supabase/seed_auth.md` documents the steps; **no service-role key committed**.
+- [ ] Signing in as one student in the dashboard returns a session (manual test).
+
+### Files you may touch
+
+- `scripts/seed-auth-users.mjs` (new, optional)
+- `supabase/seed_auth.md` (new)
+- `user_profiles` rows (data, via script/SQL — not a tracked file)
+
+### Do not
+
+- Commit the service-role key or `.env`.
+- Put auth users in `seed.sql` (Auth is managed separately, not via plain SQL inserts).
+
+---
+
+## STORY-102 — Wire & verify sign-in to Supabase Auth
+
+**Maps to:** **JOB-006**  
+**Owner:** Brightman  
+**Estimate:** 2–3 hours  
+
+**Start after:** **STORY-101** (Auth users + profiles exist)  
+**Blocks:** **STORY-103**  
+**Can run in parallel with:** **STORY-104**  
+
+### Learning objectives
+
+- Confirm the existing `authStore.login()` Supabase branch works end-to-end against real users.
+- Map a `user_profiles` row to the app’s `AuthUser` shape correctly (role + ids).
+- Keep the **mock** path working when `EXPO_PUBLIC_DATA_SOURCE=mock` (regression).
+
+### Start after (checklist)
+
+- [ ] **STORY-101** — at least one Auth user + profile per role exists  
+- [ ] Local `.env` has `EXPO_PUBLIC_DATA_SOURCE=supabase` + url + anon key  
+
+### Step-by-step tasks
+
+1. Set `.env` to `supabase` and run `npx expo start -c`.
+2. On `login.tsx`, sign in with a seeded account (e.g. `22001234@live.mut.ac.za` / `password`). Confirm:
+   - `signInWithEmailPassword` returns a Supabase `User` (visible in **Authentication → Users → last sign-in**).
+   - `getUserProfileByUid` returns the profile; routing in `app/index.tsx` lands on the correct dashboard.
+3. **Fix the `fullName` placeholder:** `authStore.login()` currently sets `fullName: "Authenticated User"`. Replace with the real name from the linked person row (read the person by `linked_person_id`), or document it as a known M2 follow-up if profile names are deferred. Pick one and note it in the PR.
+4. Verify each role maps correctly: dean → `facultyId`, hod → `departmentId`, tutor → `studentId` + `moduleIds` (already branched in `login()`).
+5. Flip `.env` back to `mock` and confirm `mockAuthService` login still works unchanged (regression).
+
+### Acceptance criteria
+
+- [ ] With `supabase`, login returns a Supabase `User` and lands on the right role dashboard.
+- [ ] `AuthUser` carries correct role + scope ids; no `"Authenticated User"` placeholder left unaddressed.
+- [ ] With `mock`, login still works (regression screenshot/steps in PR).
+- [ ] No Supabase client imported inside `app/` screens (branch stays in store/services).
+
+### Files you may touch
+
+- `src/store/authStore.ts` (`login`)
+- `src/services/supabase/authRepository.ts` (only if a fix is needed)
+- `app/(auth)/login.tsx` (only if fixing a broken import)
+
+### Do not
+
+- Rebuild the login screen or add a second login screen.
+- Delete the mock login branch.
+
+---
+
+## STORY-103 — Auth state subscription + hydration on launch
+
+**Maps to:** **JOB-007**  
+**Owner:** Gugulethu  
+**Estimate:** 2–3 hours  
+
+**Start after:** **STORY-102** (login works on `supabase`)  
+**Blocks:** **STORY-105** (M1 gate)  
+
+### Learning objectives
+
+- Use `subscribeAuthState` so the app reacts to sign-in / sign-out / token refresh.
+- Hydrate the auth store on launch from the **live session** (not only AsyncStorage).
+- Ensure signed-out users cannot reach role dashboards, and token refresh does not blank the UI.
+
+### Mini-lesson: bootstrap vs subscribe
+
+| Mechanism | Today | M1 target |
+|-----------|-------|-----------|
+| `authStore.bootstrap()` | Reads cached `AuthUser` from AsyncStorage only | Also reconcile with live Supabase session when `supabase` |
+| `subscribeAuthState` | Exists in `authRepository`, **not wired** | Registered once at app start; updates store on auth changes |
+
+### Step-by-step tasks
+
+1. Create `src/pipelines/authHydration.ts` exporting a function that, when `isSupabaseEnabled()`:
+   - registers `subscribeAuthState((user) => …)`,
+   - on `user` present, loads `getUserProfileByUid` → maps to `AuthUser` → `set` in store (reuse the mapping from `login()`; extract a shared helper to avoid duplication),
+   - on `null`, clears the store user (sign-out / expired).
+2. Wire it in `src/providers/AppProviders.tsx`: call it in a `useEffect` alongside the existing `bootstrap()`, and return the unsubscribe in cleanup.
+3. Keep `bootstrap()` for the `mock` path and as the fast first paint; ensure no double-set race (set `status: "ready"` once).
+4. Verify **restart persistence:** sign in (`supabase`), kill and relaunch the app → user is still signed in and on their dashboard (session restored via AsyncStorage + subscription).
+5. Verify **sign-out:** `logout()` → `app/index.tsx` redirects to `/onboarding`; protected dashboards are unreachable.
+6. Verify **token refresh** does not flash the UI to signed-out (don’t clear the user on a benign `TOKEN_REFRESHED` event).
+
+### Acceptance criteria
+
+- [ ] `subscribeAuthState` registered in `AppProviders` (or `src/pipelines/authHydration.ts`) and unsubscribed on unmount.
+- [ ] Session survives an app restart on `supabase`.
+- [ ] Signed-out users cannot reach role dashboards (redirected from `index.tsx`).
+- [ ] Token refresh does not blank or sign the user out unexpectedly.
+- [ ] Mock path unaffected.
+
+### Files you may touch
+
+- `src/pipelines/authHydration.ts` (new)
+- `src/providers/AppProviders.tsx`
+- `src/store/authStore.ts` (`bootstrap` only; coordinate with Brightman on shared file)
+
+### Do not
+
+- Duplicate the profile→`AuthUser` mapping; share one helper with `login()`.
+- Put subscription logic inside a screen component.
+
+---
+
+## STORY-104 — Map Auth errors to user-facing copy
+
+**Maps to:** **JOB-008**  
+**Owner:** Basil  
+**Estimate:** 1–2 hours  
+
+**Start after:** **STORY-100** *(test after **STORY-102** so real errors can be triggered)*  
+**Blocks:** **STORY-105** (polish gate)  
+**Can run in parallel with:** **STORY-102**  
+
+### Learning objectives
+
+- Translate raw Supabase Auth errors into clear, friendly messages.
+- Avoid leaking raw API text (or secrets) to users.
+
+### Step-by-step tasks
+
+1. Create `src/utils/supabase/mapAuthError.ts` exporting `mapAuthError(error: unknown): string` covering common cases:
+   - invalid credentials (wrong email/password),
+   - email not confirmed,
+   - network / offline,
+   - rate limited,
+   - unknown fallback (“Something went wrong. Please try again.”).
+2. Use Supabase error `code` / `message` to branch; keep messages short and non-technical.
+3. Apply in `app/(auth)/login.tsx`: replace the raw `e instanceof Error ? e.message` in the catch with `mapAuthError(e)`.
+4. (Optional) reuse in `register-student.tsx` for consistency.
+5. Test with: wrong password, an unconfirmed user, and airplane mode.
+
+### Acceptance criteria
+
+- [ ] `mapAuthError` covers wrong-password, unconfirmed-email, network, and fallback.
+- [ ] `login.tsx` shows mapped copy, not raw API errors.
+- [ ] No raw tokens/passwords surfaced in UI or logs.
+
+### Files you may touch
+
+- `src/utils/supabase/mapAuthError.ts` (new)
+- `app/(auth)/login.tsx` (catch block only)
+
+### Do not
+
+- Log full tokens or passwords.
+
+---
+
+## STORY-105 — M1 sync check: authentication works end-to-end (team gate)
+
+**Maps to:** M1 gate before M2  
+**Owner:** Whole team  
+**Estimate:** 1 hour  
+
+**Start after:** **STORY-102** + **STORY-103** + **STORY-104**  
+**Blocks:** **M2 — Profiles & roles** (JOB-009+)  
+
+### Tasks
+
+1. Brightman: demo sign-in for **each role** (student, tutor, lecturer, hod, dean, admin) on `supabase` → correct dashboard.
+2. Gugulethu: kill + relaunch app → still signed in; sign out → back to onboarding; no dashboard reachable when signed out.
+3. Basil: trigger wrong-password + unconfirmed-email → friendly messages; confirm no auth users/keys leaked in git.
+4. Flip `.env` to `mock` → full mock login still works (regression).
+5. Tick the [M1 “done” checklist](#what-done-looks-like-for-m1) and note any deferrals (e.g. `fullName` to M2).
+
+### Acceptance criteria
+
+- [ ] All six roles log in on `supabase` and route correctly.
+- [ ] Session persists across restart; sign-out blocks dashboards.
+- [ ] Friendly auth errors; mock path still works.
+- [ ] Ready to schedule **JOB-009** (`user_profiles` CRUD) in M2.
+
+---
+
+### Developer workboards — M1
+
+| Order | Owner | Task | **Start after** | Outcome |
+|-------|-------|------|-----------------|---------|
+| 1 | Whole team | STORY-100 read-through | M0 gate (STORY-009) | Shared mental model of Auth vs profiles |
+| 2 | Basil | STORY-101 Auth users + profiles | STORY-100 + STORY-005 + STORY-007 | Seeded identities can sign in |
+| 3 | Brightman | STORY-102 verify sign-in (JOB-006) | STORY-101 | Real login → role dashboard |
+| 4 | Gugulethu | STORY-103 hydration + routing (JOB-007) | STORY-102 | Session survives restart; sign-out guarded |
+| 5 | Basil | STORY-104 error mapping (JOB-008) | STORY-100 (test after 102) | Friendly login failures |
+| 6 | Whole team | STORY-105 M1 gate | 102 + 103 + 104 | M1 signed off → start M2 |
+
+### M1 dependency graph
+
+```mermaid
+flowchart TD
+  M0[M0 gate · STORY-009]
+  S100[STORY-100 Auth read-through]
+  S101[STORY-101 Auth users + profiles]
+  S102[STORY-102 Wire/verify sign-in · JOB-006]
+  S103[STORY-103 Hydration + routing · JOB-007]
+  S104[STORY-104 Error mapping · JOB-008]
+  S105[STORY-105 M1 gate]
+  M2[M2 · Profiles & roles]
+
+  M0 --> S100
+  S100 --> S101
+  S100 --> S104
+  S101 --> S102
+  S102 --> S103
+  S102 --> S105
+  S103 --> S105
+  S104 --> S105
+  S105 --> M2
+```
+
+### What "done" looks like for M1
+
+- [ ] **STORY-101:** every demo login has an `auth.users` + `user_profiles` row (Basil)
+- [ ] **STORY-102 (JOB-006):** sign-in on `supabase` returns a Supabase `User` and routes by role; mock still works (Brightman)
+- [ ] **STORY-103 (JOB-007):** `subscribeAuthState` wired; session persists across restart; sign-out blocks dashboards (Gugulethu)
+- [ ] **STORY-104 (JOB-008):** `mapAuthError` shows friendly copy in `login.tsx` (Basil)
+- [ ] **STORY-105:** all six roles verified; `.env=mock` regression passes; ready for M2
+
+---
+
+## M2 — Profiles & roles sprint
+
+**🗓 Sprint window: Mon 22 – Wed 24 Jun 2026 (days 3–5 of 17) · pilot-critical.**
+
+**What this milestone is:** turn the authenticated UID into a **STARS role + institutional links** read from Postgres, and make route guards trust the live profile. After M2, the app no longer guesses roles — it reads them from `user_profiles`.
+
+**M2 goal (one sentence):** signed-in users get their `role`, `linkedPersonId`, and scope ids (`facultyId` / `departmentId` / `moduleIds`) from `user_profiles`, and guards block cross-role access using that live data.
+
+### What is already wired vs what you build
+
+| Piece | File | State | M2 work |
+|-------|------|-------|---------|
+| Profile read | `userProfileRepository.getUserProfileByUid` | **Built** | Add `upsertUserProfile` |
+| Profile type | `src/types/supabaseUserProfile.ts` | **Built** (`SupabaseUserProfileDoc`) | Match upsert payload to it |
+| Registration pipeline | `authRepository.registerStudentSupabase` | **Built** — Auth → `students` → `user_profiles` with rollback | Verify + harden; reuse shared mapping |
+| Register screen live data | `app/(auth)/register-student.tsx` | **Built** — loads faculties/courses live | Verify only |
+| Role guard | `src/hooks/useRoleGuard.ts` | Mock-era | Read live profile when `supabase` |
+
+### Stories
+
+#### STORY-201 — `user_profiles` CRUD repository (read + upsert) · JOB-009
+**Owner:** Gugulethu · **Estimate:** ½ day · **Window:** Mon 22 Jun · **Start after:** STORY-105 (M1 gate) · **Blocks:** STORY-203, M3 reads
+
+- **Tasks:** add `upsertUserProfile(doc)` to `userProfileRepository.ts` writing `role`, `email`, `linked_person_id`, scope ids, and jsonb arrays (`granted_capabilities`, `active_proxy_ids`, `delegated_module_ids`); extract the profile→`AuthUser` mapping into one shared helper (reused by `authStore.login` and `authHydration`).
+- **Acceptance:** `getUserProfileByUid` + `upsertUserProfile` work against the live table; row shape matches `SupabaseUserProfileDoc`; mapping helper is single-sourced.
+- **Files:** `src/services/supabase/userProfileRepository.ts` · `src/types/supabaseUserProfile.ts`
+- **Do not:** duplicate the mapping logic across store/pipeline.
+
+#### STORY-202 — Student registration pipeline (verify + harden) · JOB-010
+**Owner:** Brightman · **Estimate:** 1 day · **Window:** Tue 23 Jun · **Start after:** STORY-201 · **Blocks:** M2 gate
+
+- **Tasks:** verify `registerStudentSupabase` end-to-end on `supabase` (Auth user + `students` + `user_profiles`, rollback on failure); confirm generated `@live.mut.ac.za` email is preserved; surface a single actionable error via `mapAuthError`; confirm mock registration still works.
+- **Acceptance:** new student appears in Auth + `students` + `user_profiles`; mid-pipeline failure rolls back (no orphan student row); mock path unchanged.
+- **Files:** `src/services/supabase/authRepository.ts` (`registerStudentSupabase`) · `src/store/authStore.ts` (`registerStudent`) · `app/(auth)/register-student.tsx` (only if fixing import).
+
+#### STORY-203 — Live profile in route guards · JOB-011
+**Owner:** Basil · **Estimate:** 1 day · **Window:** Wed 24 Jun · **Start after:** STORY-201 · **Blocks:** M2 gate
+
+- **Tasks:** make `useRoleGuard` read the live `user_profiles.role` when `isSupabaseDataSource()`; enforce dean/HOD/tutor scope ids (`facultyId`, `departmentId`, `moduleIds`) on navigation; keep mock guard behaviour when `mock`.
+- **Acceptance:** no cross-role URL access on `supabase`; dean ≠ HOD ≠ student scope verified; mock guard unaffected.
+- **Files:** `src/hooks/useRoleGuard.ts` · `src/store/authStore.ts`.
+
+#### STORY-204 — M2 gate (team sync)
+**Owner:** Whole team · **Window:** Wed 24 Jun (EOD) · **Start after:** STORY-201/202/203
+
+- **Acceptance:** profiles load for all six roles; registration creates consistent Auth+profile+person rows; guards block cross-role access; mock regression passes; ready for M3.
+
+### What "done" looks like for M2
+
+- [ ] STORY-201 `upsertUserProfile` + shared mapping (Gugulethu)
+- [ ] STORY-202 registration verified with rollback (Brightman)
+- [ ] STORY-203 guards use live profile + scope ids (Basil)
+- [ ] STORY-204 gate passed → start M3
+
+---
+
+## M3 — Read paths sprint
+
+**🗓 Sprint window: Thu 25 – Tue 30 Jun 2026 (days 6–9 of 17). Pilot-critical: module + active-session + history reads. Analytics/audit are parallel/stretch.**
+
+**What this milestone is:** dashboards, lists, and the live-session screens read from Postgres (scoped by role) instead of `mockDB` / dummy charts.
+
+**M3 goal (one sentence):** a student sees their modules and attendance history from Postgres, a lecturer sees their teaching modules, and both can read the **active session** for a module — all behind the `supabase` flag.
+
+### What is already wired vs what you build
+
+| Piece | File | State | M3 work |
+|-------|------|-------|---------|
+| Read-by-id repos | `*Repository.getXById` | **Built** | Add **list** queries |
+| Active session | `attendanceSessionRepository.getActiveSession` | **Built (partial)** | Wire student + lecturer reads |
+| Module repo | `moduleRepository.ts` | Only `getModuleById` | Add `listModulesForStudent` / `listModulesForLecturer` |
+| Attendance records | `attendanceRecordRepository.ts` | `getById` + `saveRecord` | Add `listForStudent` (history) |
+| Analytics | `institutionAnalytics.ts` | Mock only | Add scoped SQL aggregates (parallel) |
+| Audit logs | `auditLogService.ts` | Mock only | Add scoped list query (parallel) |
+| Dummy charts | `dashboardChartDummy.ts` | Mock series | Replace with live series (parallel) |
+
+### Stories
+
+#### STORY-301 — Student dashboard modules query · JOB-012
+**Owner:** Gugulethu · **Estimate:** 1 day · **Window:** Thu 25 Jun · **Start after:** STORY-204 · **Pilot-critical**
+
+- **Tasks:** add `listModulesForStudent(studentId)` to `moduleRepository.ts`; branch the dashboard's service on `getDataSource()`; empty state when not enrolled (join flow still works).
+- **Acceptance:** dashboard modules match enrolment; empty state correct; mock unchanged.
+- **Files:** `src/services/supabase/moduleRepository.ts` · student dashboard service (`app/student/(tabs)/dashboard.tsx` reads via service only).
+
+#### STORY-302 — Lecturer modules list query · JOB-013
+**Owner:** Basil · **Estimate:** 1 day · **Window:** Fri 26 Jun · **Start after:** STORY-204 · **Pilot-critical**
+
+- **Tasks:** add `listModulesForLecturer(lecturerId)` returning modules where `lecturer_id` or `co_lecturer_ids` contains the user; tutor path deferred to JOB-026 (document limitation).
+- **Acceptance:** lecturer hub shows owned/co-taught modules from Postgres.
+- **Files:** `src/services/supabase/moduleRepository.ts` · lecturer dashboard service.
+
+#### STORY-303 — Student attendance history query · JOB-014
+**Owner:** Gugulethu · **Estimate:** ½ day · **Window:** Mon 29 Jun · **Start after:** STORY-204 · **Pilot-critical**
+
+- **Tasks:** add `listForStudent(studentId)` to `attendanceRecordRepository.ts`, joined to sessions/modules; scope by `student_id` from profile link.
+- **Acceptance:** history shows timestamps, module names, verified/passed status, scoped to the student.
+- **Files:** `src/services/supabase/attendanceRecordRepository.ts` · history screen service.
+
+#### STORY-304 — Active session reads (student + lecturer) · JOB-015
+**Owner:** Brightman · **Estimate:** 1 day · **Window:** Mon 29 – Tue 30 Jun · **Start after:** STORY-204 · **Pilot-critical**
+
+- **Tasks:** read `modules.active_session_id` + the session row for the student mark-attendance screen and lecturer active-session screen, reusing `attendanceSessionRepository.getActiveSession`; keep rotating-code UI unchanged.
+- **Acceptance:** student sees a live session when `active_session_id` set; lecturer active-session screen loads session.
+- **Files:** `src/services/supabase/attendanceSessionRepository.ts` · `src/services/supabase/moduleRepository.ts`.
+
+#### STORY-305 — Leadership analytics reads (admin/dean/HOD) · JOB-016 · *parallel/stretch*
+**Owner:** Basil · **Estimate:** 1–2 days · **Window:** Thu 25 – Tue 30 Jun (parallel) · **Start after:** STORY-204 + STORY-405 (RLS) recommended
+
+- **Tasks:** add scoped SQL aggregates/views (admin = university; dean = faculty; HOD = department) behind a `getDataSource()` branch in `institutionAnalytics.ts`; index `faculty_id`, `department_id`, `session_id`.
+- **Acceptance:** cards match SQL counts; dean/HOD scope ≠ admin totals. **Not pilot-blocking.**
+- **Files:** `src/services/institutionAnalytics.ts` · migration for views/indexes.
+
+#### STORY-306 — Attendance trend rollups · JOB-017 · *parallel/stretch*
+**Owner:** Brightman · **Estimate:** 1 day · **Window:** parallel · **Start after:** STORY-304
+
+- **Tasks:** switch `StatsLineChart` / `MockTrendChart` data source with the flag; document a rollup table/view; **no fake slopes** when `supabase` (empty state if no data).
+- **Acceptance:** chart series from Postgres; `dashboardChartDummy` not used when `supabase`. **Not pilot-blocking.**
+- **Files:** `src/services/dashboardChartDummy.ts` · chart components · rollup migration.
+
+#### STORY-307 — Audit log reads (scoped) · JOB-018 · *parallel/stretch*
+**Owner:** Basil · **Estimate:** ½ day · **Window:** parallel · **Start after:** STORY-204
+
+- **Tasks:** add a scoped list query to `auditLogService.ts` matching the mock screen's filters; document pagination/limit.
+- **Acceptance:** audit list returns real scoped rows. **Not pilot-blocking.**
+- **Files:** `src/services/auditLogService.ts` · `src/components/navigation/AuditLogScreen.tsx`.
+
+#### STORY-308 — M3 gate (team sync)
+**Owner:** Whole team · **Window:** Tue 30 Jun (EOD) · **Start after:** STORY-301/302/303/304
+
+- **Acceptance:** student modules + history, lecturer modules, and active-session reads all come from Postgres; mock regression passes. (Analytics/audit may still be in progress.) Ready for M4.
+
+### What "done" looks like for M3
+
+- [ ] STORY-301 student dashboard modules (Gugulethu)
+- [ ] STORY-302 lecturer modules (Basil)
+- [ ] STORY-303 attendance history (Gugulethu)
+- [ ] STORY-304 active session reads (Brightman)
+- [ ] STORY-308 gate passed → start M4 *(305–307 may continue in parallel)*
+
+---
+
+## M4 — Write paths / attendance sprint
+
+**🔴 PILOT CORE · 🗓 Sprint window: Wed 1 – Tue 7 Jul 2026 (days 10–14 of 17). This is the heart of the pilot — module attendance must work end-to-end.**
+
+**What this milestone is:** the lecturer **starts** a session, the student **submits** a passed challenge that writes one `attendance_records` row, and the lecturer **finalises** a class register — all in Postgres, protected by RLS.
+
+**M4 goal (one sentence):** lecturer create-session → student challenge pass → exactly one `attendance_records` row → class register finalised, on `supabase`, with failed attempts writing nothing.
+
+### What is already wired vs what you build
+
+| Piece | File | State | M4 work |
+|-------|------|-------|---------|
+| Save attendance row | `attendanceRecordRepository.saveRecord` | **Built** — insert + unique `(session_id, device_id)` handling | Wire from challenge service |
+| Challenge service | `attendanceChallengeService.ts` | **Built (partial)** — imports session/record repos + `isSupabaseEnabled` | Finish submit branch |
+| Class register service | `classRegisterService.ts` | **Built (partial)** — has `isSupabaseEnabled` branches | Finish finalisation write |
+| Class register repo | `classRegisterRepository.ts` | **Built** — list/get | Add create/finalise |
+| Create session | `attendanceSimulationService.createSession` | Mock only | Add Supabase branch |
+| Enrolment | `moduleEnrollmentService.ts` | Mock only | Add Supabase writes |
+| Offline outbox | `offline/offlineSync.ts` | Push built | Enqueue from write services |
+| RLS | `supabase/migrations/0005_rls_policies_v1.sql` | v1 exists | Extend for write paths |
+
+### Stories
+
+#### STORY-401 — Persist "create attendance session" · JOB-019
+**Owner:** Brightman · **Estimate:** 1 day · **Window:** Wed 1 Jul · **Start after:** STORY-304 · **Pilot-critical**
+
+- **Tasks:** add `createSession(...)` to `attendanceSessionRepository.ts` (row: `module_id`, host role/id, GPS anchor, `algorithm_seed`, `radius`, `expires_at`, `active`); branch `attendanceSimulationService.createSession` to call it when `supabase`.
+- **Acceptance:** starting a session inserts a row visible in Table Editor; mock unchanged.
+- **Files:** `src/services/attendanceSimulationService.ts` · `src/services/supabase/attendanceSessionRepository.ts` · `app/lecturer/create-session/[moduleId].tsx` (via service).
+
+#### STORY-402 — Module `active_session_id` pointer · JOB-020
+**Owner:** Gugulethu · **Estimate:** ½ day · **Window:** Thu 2 Jul · **Start after:** STORY-401 · **Pilot-critical**
+
+- **Tasks:** set `modules.active_session_id` on start, clear on end; enforce one active session per module.
+- **Acceptance:** start sets id, end clears it; only one active session at a time.
+- **Files:** `src/services/supabase/moduleRepository.ts` · `src/services/classRegisterService.ts`.
+
+#### STORY-403 — Challenge attendance submit → `attendance_records` · JOB-021
+**Owner:** Brightman · **Estimate:** 1 day · **Window:** Fri 3 Jul · **Start after:** STORY-401 + STORY-402 + STORY-006 (challenge vocab) · **Pilot-critical**
+
+- **Tasks:** finish the `supabase` branch in `attendanceChallengeService` to build the record (`session_id`, `student_id`, `device_id`, `time_bucket`, `gps_bucket_hash`, `tapped_index`, `tier_used`, `action_hash`, `passed`) and call `attendanceRecordRepository.saveRecord`; **failed gates write nothing**.
+- **Acceptance:** one passed challenge → exactly one row; failures write no rows; duplicate device handled (`"Already checked in."`).
+- **Files:** `src/services/attendanceChallengeService.ts` · `src/services/supabase/attendanceRecordRepository.ts` · `app/student/challenge/[challengeId].tsx` (via service).
+
+#### STORY-404 — Offline outbox for writes · JOB-022
+**Owner:** Gugulethu · **Estimate:** 1 day · **Window:** Mon 6 Jul · **Start after:** STORY-401 or STORY-403
+
+- **Tasks:** call `enqueueMutation` from session/record write services; `processOutboxOnce` (already looping in `AppProviders`) marks acked/failed and retries.
+- **Acceptance:** enqueue offline → process → row in Supabase.
+- **Files:** `src/services/offline/offlineSync.ts` · write services.
+
+#### STORY-405 — RLS policies v1 for write paths · JOB-023
+**Owner:** Basil · **Estimate:** 1 day · **Window:** Mon 6 Jul · **Start after:** STORY-401/403 (tables in use) · **Pilot-critical**
+
+- **Tasks:** extend `0005_rls_policies_v1.sql` (or a `0007_*`) so students insert/select only their own records, lecturers read their module sessions, admin via service role only; update `supabase/policies.md`.
+- **Acceptance:** student cannot read others' records; duplicate `(session_id, device_id)` rejected; lecturer sees own module sessions.
+- **Files:** `supabase/migrations/0007_rls_write_paths.sql` (new) · `supabase/policies.md`.
+
+#### STORY-406 — Enrolment writes · JOB-024
+**Owner:** Gugulethu · **Estimate:** 1 day · **Window:** Thu 2 Jul · **Start after:** STORY-301 · **Pilot-critical (students must be enrolled to attend)**
+
+- **Tasks:** add Supabase branch to `moduleEnrollmentService` for join-by-code + accept/reject pending; update module enrolment + student `registered_modules`.
+- **Acceptance:** join updates enrolment in Postgres; lecturer accept/reject updates pending state.
+- **Files:** `src/services/moduleEnrollmentService.ts` · relevant migration.
+
+#### STORY-407 — Class register finalisation write · JOB-025
+**Owner:** Brightman · **Estimate:** 1 day · **Window:** Tue 7 Jul · **Start after:** STORY-401 · **Pilot-critical**
+
+- **Tasks:** finish `classRegisterService` finalisation to insert a `class_registers` row (via `classRegisterRepository`) and set session `ended_at` + `class_register_id`; document PDF/HTML snapshot approach.
+- **Acceptance:** ending class creates a register linked to the session; `ended_at` set.
+- **Files:** `src/services/classRegisterService.ts` · `src/services/supabase/classRegisterRepository.ts` · `app/lecturer/active-session/[sessionId].tsx` (via service).
+
+#### STORY-408 — Delegation & proxy writes · JOB-026 · *parallel/stretch*
+**Owner:** Gugulethu · **Estimate:** 1 day · **Window:** parallel · **Start after:** STORY-201
+
+- **Tasks:** `module_delegations` + `proxy_assignments` CRUD; keep profile `delegated_module_ids` / `active_proxy_ids` in sync.
+- **Acceptance:** tutor/registrar grants + acting proxies persist. **Not pilot-blocking** (drop first if behind).
+- **Files:** `src/services/delegationService.ts` · new repositories · migration.
+
+#### STORY-409 — M4 gate: attendance end-to-end (team sync)
+**Owner:** Whole team · **Window:** Tue 7 Jul (EOD) · **Start after:** STORY-401→403, 405, 406, 407
+
+- **Acceptance:** on `supabase`, lecturer starts session → student (enrolled) passes challenge → one verified row → register finalised; failed attempts write nothing; mock regression passes. **This is the pilot dress rehearsal of the write path.**
+
+### What "done" looks like for M4
+
+- [ ] STORY-401 create session (Brightman)
+- [ ] STORY-402 active-session pointer (Gugulethu)
+- [ ] STORY-403 challenge submit → row (Brightman)
+- [ ] STORY-405 RLS write-path policies (Basil)
+- [ ] STORY-406 enrolment writes (Gugulethu)
+- [ ] STORY-407 class register finalisation (Brightman)
+- [ ] STORY-404 offline outbox · STORY-408 delegation *(stretch)*
+- [ ] STORY-409 gate passed → attendance works end-to-end
+
+---
+
+## M6 — Challenge backend (trust) sprint
+
+**🗓 Sprint window: Wed 8 – Thu 9 Jul 2026 (days 15–16 of 17) · pilot-critical for trust. See `full-challenge-mechanism.md`.**
+
+**What this milestone is:** the server recomputes the challenge answer so a client cannot forge a pass, duplicate devices are rejected, and failed attempts never persist.
+
+**M6 goal (one sentence):** every `attendance_records` insert is server-verified (seed + `tapped_index` + GPS), `passed=true` only when the server agrees, and `(session_id, device_id)` is unique.
+
+### What is already wired vs what you build
+
+| Piece | File | State | M6 work |
+|-------|------|-------|---------|
+| Records schema + uniqueness | `0004_attendance_challenge.sql` | **Built** — `UNIQUE (session_id, device_id)` | Verify only (JOB-031) |
+| Edge function stub | `supabase/functions/verify-attendance-record/index.ts` | **Stub** (`NOT_IMPLEMENTED`) | Implement verification |
+| Challenge submit | `attendanceChallengeService.ts` | M4 wires insert | Route through verify when `supabase` |
+
+### Stories
+
+#### STORY-601 — Verify `attendance_records` schema + uniqueness · JOB-031
+**Owner:** Brightman · **Estimate:** ½ day · **Window:** Wed 8 Jul · **Start after:** STORY-409
+
+- **Tasks:** confirm columns + `UNIQUE (session_id, device_id)` from `0004`; align `src/models/Attendance.ts`.
+- **Acceptance:** schema matches challenge doc; second insert for same `(session_id, device_id)` rejected.
+- **Files:** `supabase/migrations/0004_attendance_challenge.sql` (verify) · `src/models/Attendance.ts`.
+
+#### STORY-602 — Edge Function: verify seed + `tapped_index` · JOB-032
+**Owner:** Basil · **Estimate:** 1 day · **Window:** Wed 8 Jul · **Start after:** STORY-601 + STORY-006 · **Pilot-critical**
+
+- **Tasks:** implement `verify-attendance-record` (Deno): recompute seed from `session_id` + `device_id` + `gps_bucket_hash` + `time_bucket`; check `tapped_index`/object; GPS within radius; plausibility per tier; set `passed=false` / reject on mismatch; deploy `supabase functions deploy verify-attendance-record`.
+- **Acceptance:** wrong object / GPS mismatch → `passed=false` or rejected insert; server, not client, decides pass.
+- **Files:** `supabase/functions/verify-attendance-record/index.ts`.
+
+#### STORY-603 — Wire challenge UI to live verified submit · JOB-033
+**Owner:** Gugulethu · **Estimate:** ½ day · **Window:** Wed 8 Jul · **Start after:** STORY-602 · **Pilot-critical**
+
+- **Tasks:** `attendanceChallengeService.submit` calls the verify path (RPC/`functions.invoke` or insert-then-verify) when `supabase`; success → history; failure → gate message, no row.
+- **Acceptance:** live submit goes through server verification; failures show gate message and write nothing.
+- **Files:** `src/services/attendanceChallengeService.ts` · `src/services/supabase/attendanceRecordRepository.ts`.
+
+#### STORY-604 — RLS + tests for challenge inserts · JOB-034
+**Owner:** Basil · **Estimate:** ½ day · **Window:** Thu 9 Jul · **Start after:** STORY-602/603
+
+- **Tasks:** ensure duplicate-device + cross-student inserts blocked; add SQL/function test notes in `supabase/tests/`.
+- **Acceptance:** second `(session_id, device_id)` rejected; student cannot insert for another `student_id`; failed attempts never persist.
+- **Files:** `supabase/policies.md` · `supabase/tests/` (optional).
+
+#### STORY-605 — M6 gate (team sync)
+**Owner:** Whole team · **Window:** Thu 9 Jul (EOD) · **Start after:** STORY-601→604
+
+- **Acceptance:** forged passes rejected; duplicate device blocked; only verified rows persist. Challenge is trustworthy for the pilot.
+
+### What "done" looks like for M6
+
+- [ ] STORY-601 schema + uniqueness verified (Brightman)
+- [ ] STORY-602 Edge verify implemented + deployed (Basil)
+- [ ] STORY-603 challenge UI on verified path (Gugulethu)
+- [ ] STORY-604 RLS + tests (Basil)
+- [ ] STORY-605 gate passed → trustworthy attendance
+
+---
+
+## M5 — Cutover & hardening sprint (parallel)
+
+**🗓 Sprint window: Wed 8 – Thu 9 Jul 2026 (days 15–16, parallel with M6). Partly pilot-critical: the `mock|supabase` flag and a clean cutover matter; parity/observability can flex.**
+
+**What this milestone is:** make the `EXPO_PUBLIC_DATA_SOURCE` switch clean for the demo, document the data cutover, add safe logging, and confirm the pilot platform.
+
+### What is already wired vs what you build
+
+| Piece | File | State | M5 work |
+|-------|------|-------|---------|
+| Data-source flag | `src/services/dataSource.ts` | **Built** (JOB-027) | Verify all services branch through it |
+| Seed/import | `supabase/seed.sql` | **Built** | Document wipe-and-reload for pilot |
+| Observability | `src/utils/supabase/` | — | Add safe logging (parallel) |
+| Parity | docs | — | Pilot-platform checklist |
+
+### Stories
+
+#### STORY-501 — Data-source flag audit · JOB-027 *(verify)*
+**Owner:** Gugulethu · **Estimate:** ½ day · **Window:** Wed 8 Jul · **Start after:** M4 gate
+
+- **Tasks:** confirm no screen reads the flag directly and every integrated service branches via `getDataSource()`; default `mock` for local dev.
+- **Acceptance:** single branch point per service; both modes documented.
+- **Files:** `src/services/dataSource.ts` · service entry points.
+
+#### STORY-502 — Mock → Supabase data cutover · JOB-028
+**Owner:** Brightman · **Estimate:** ½ day · **Window:** Wed 8 Jul · **Start after:** STORY-005
+
+- **Tasks:** document idempotent wipe-and-reload (seed re-run); keep ids stable for demo URLs.
+- **Acceptance:** documented, repeatable reload for the pilot DB.
+- **Files:** `supabase/seed.sql` · optional Node import script.
+
+#### STORY-503 — Observability policy · JOB-029 · *parallel/stretch*
+**Owner:** Basil · **Estimate:** ½ day · **Window:** Thu 9 Jul · **Start after:** STORY-105
+
+- **Tasks:** ensure no passwords/full tokens in logs; log error codes + request ids; add a short runbook.
+- **Acceptance:** safe ops logs; runbook snippet in repo. **Drop to minimal logging if behind.**
+- **Files:** `src/utils/supabase/` · `DOCUMENTATION.md`.
+
+#### STORY-504 — Pilot platform parity checklist · JOB-030 · *parallel/stretch*
+**Owner:** Basil · **Estimate:** ½ day · **Window:** Thu 9 Jul · **Start after:** M4 gate
+
+- **Tasks:** run the auth + attendance flow on the **pilot target** (Expo web first); note known gaps (e.g. QR/GPS on web).
+- **Acceptance:** checklist complete for the pilot platform. **If behind, pilot on one target only.**
+- **Files:** `SUPABASE_INTEGRATION.md` test appendix or `docs/SUPABASE_TEST_PLAN.md`.
+
+#### STORY-505 — M5 gate (team sync)
+**Owner:** Whole team · **Window:** Thu 9 Jul (EOD) · **Start after:** STORY-501/502 (+503/504 if done)
+
+- **Acceptance:** flag verified; cutover documented; safe logging in place; pilot platform confirmed.
+
+### What "done" looks like for M5
+
+- [ ] STORY-501 flag audit (Gugulethu)
+- [ ] STORY-502 cutover doc (Brightman)
+- [ ] STORY-503 observability *(stretch)* · STORY-504 parity *(stretch)*
+- [ ] STORY-505 gate passed
+
+---
+
+## 🚀 Pilot day — Fri 10 Jul 2026
+
+**Owner:** Whole team. **Goal:** module attendance live on Postgres.
+
+### Morning — dry run (on `supabase`)
+
+1. Reset/seed the pilot DB (STORY-502) and confirm demo Auth users (STORY-101).
+2. Lecturer logs in → opens a module → **starts a session** (STORY-401, GPS anchor + seed + radius + expiry).
+3. Enrolled student logs in → sees the **active session** (STORY-304) → opens the **challenge** → passes.
+4. Server **verifies** the submission (STORY-602) → **one** `attendance_records` row written (STORY-403); a second attempt on the same device is rejected.
+5. Lecturer **ends class** → **class register finalised** (STORY-407); student **history** shows the mark (STORY-303).
+6. Flip `.env=mock` → confirm the demo still runs offline (regression).
+
+### Pilot go-live checklist
+
+- [ ] All six roles log in (M1) and route by live profile (M2).
+- [ ] Student sees enrolled module + active session (M3).
+- [ ] Lecturer starts session; student passes challenge; verified row written (M4 + M6).
+- [ ] Duplicate device rejected; failed attempts write nothing (M6).
+- [ ] Class register finalised; history reflects the mark (M4).
+- [ ] RLS blocks cross-student/role data access (M2 + M4 + M6).
+- [ ] `mock` path still works for offline local demo (M5).
+
+### Out of scope for pilot (post-pilot backlog)
+
+Leadership analytics (JOB-016/017/018), delegation/proxy (JOB-026), full observability (JOB-029), and multi-platform parity (JOB-030) — finish after a successful attendance pilot.
 
 ---
 
@@ -1234,12 +2187,18 @@ Use **JOB-xxx** in commits, PR titles, and stand-up.
 
 ### M1 — Authentication
 
+> **Full step-by-step stories + per-developer workboard:** see **[M1 — Authentication sprint (next milestone)](#m1--authentication-sprint-next-milestone)** above. Summaries below map to JOB-006 through JOB-008; identities are created first in **STORY-101**.
+
 #### JOB-006 — Wire sign-in to Supabase Auth
 *As a student/lecturer, I want to sign in with email and password against Supabase Auth.*
 
+**Start after:** STORY-101 (Auth users + profiles exist) · **Blocks:** JOB-007  
+
+**Detailed steps:** [STORY-102](#story-102--wire--verify-sign-in-to-supabase-auth) *(prerequisite: [STORY-101](#story-101--create-auth-users--matching-profiles-for-demo-logins))*
+
 **Acceptance**
 - Login screen calls `signInWithEmailPassword` when `EXPO_PUBLIC_DATA_SOURCE=supabase`.
-- Successful sign-in returns a Supabase `User` (visible in dashboard/session).
+- Successful sign-in returns a Supabase `User` (visible in dashboard/session) and routes by role.
 - Mock path still works when flag is `mock`.
 
 **Files:** `app/(auth)/login.tsx` · `src/services/supabase/authRepository.ts` · `src/store/authStore.ts`
@@ -1249,17 +2208,25 @@ Use **JOB-xxx** in commits, PR titles, and stand-up.
 #### JOB-007 — Auth state subscription
 *As the app, I want to observe auth state so routing and stores stay in sync after restart.*
 
+**Start after:** JOB-006 · **Blocks:** M1 gate (STORY-105)  
+
+**Detailed steps:** [STORY-103](#story-103--auth-state-subscription--hydration-on-launch)
+
 **Acceptance**
 - `subscribeAuthState` registered in `AppProviders` or `src/pipelines/authHydration.ts`.
-- Signed-out users cannot reach role dashboards.
+- Session survives an app restart; signed-out users cannot reach role dashboards.
 - Token refresh does not blank the UI unexpectedly.
 
-**Files:** `src/providers/AppProviders.tsx` · `src/pipelines/` (new)
+**Files:** `src/providers/AppProviders.tsx` · `src/pipelines/authHydration.ts` (new) · `src/store/authStore.ts`
 
 ---
 
 #### JOB-008 — Auth error mapping
 *As a user, I want clear messages when login fails (wrong password, unconfirmed email, network).*
+
+**Start after:** STORY-100 (test after JOB-006) · **Parallel with:** JOB-006  
+
+**Detailed steps:** [STORY-104](#story-104--map-auth-errors-to-user-facing-copy)
 
 **Acceptance**
 - `mapAuthError` in `src/utils/supabase/` covers common Supabase Auth codes.
@@ -1270,6 +2237,8 @@ Use **JOB-xxx** in commits, PR titles, and stand-up.
 ---
 
 ### M2 — Profiles & roles
+
+> **🗓 Mon 22 – Wed 24 Jun 2026.** Full timed stories + workboard: see **[M2 — Profiles & roles sprint](#m2--profiles--roles-sprint)**.
 
 #### JOB-009 — User profile repository (CRUD)
 *As the app, I want to load and update `user_profiles` for the signed-in UID.*
@@ -1307,6 +2276,8 @@ Use **JOB-xxx** in commits, PR titles, and stand-up.
 ---
 
 ### M3 — Read paths
+
+> **🗓 Thu 25 – Tue 30 Jun 2026.** Full timed stories + workboard: see **[M3 — Read paths sprint](#m3--read-paths-sprint)**.
 
 #### JOB-012 — Student dashboard modules
 *As a student, I want my dashboard modules loaded from Postgres.*
@@ -1387,6 +2358,8 @@ Use **JOB-xxx** in commits, PR titles, and stand-up.
 ---
 
 ### M4 — Write paths
+
+> **🗓 Wed 1 – Tue 7 Jul 2026 · 🔴 pilot core.** Full timed stories + workboard: see **[M4 — Write paths / attendance sprint](#m4--write-paths--attendance-sprint)**.
 
 #### JOB-019 — Create attendance session
 *As a lecturer/tutor/registrar, I want starting a session persisted to `attendance_sessions`.*
@@ -1482,6 +2455,8 @@ Use **JOB-xxx** in commits, PR titles, and stand-up.
 
 ### M5 — Cutover & hardening
 
+> **🗓 Wed 8 – Thu 9 Jul 2026 (parallel with M6).** Full timed stories + workboard: see **[M5 — Cutover & hardening sprint](#m5--cutover--hardening-sprint-parallel)**.
+
 #### JOB-027 — Data source flag
 *As the team, I want `EXPO_PUBLIC_DATA_SOURCE=mock|supabase` to switch backends without duplicate screens.*
 
@@ -1528,6 +2503,8 @@ Use **JOB-xxx** in commits, PR titles, and stand-up.
 ---
 
 ### M6 — Challenge backend (see `full-challenge-mechanism.md`)
+
+> **🗓 Wed 8 – Thu 9 Jul 2026.** Full timed stories + workboard: see **[M6 — Challenge backend (trust) sprint](#m6--challenge-backend-trust-sprint)**.
 
 #### JOB-031 — Attendance records schema
 *As the backend, I want `attendance_records` columns and uniqueness for challenge check-ins.*
