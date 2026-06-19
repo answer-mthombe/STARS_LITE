@@ -4,14 +4,31 @@ import { authStorage } from "@/utils/authStorage";
 import type { UserRole } from "@/types/roles";
 import { mockAuthService } from "@/services/mockAuthService";
 
+
 import {
   isSupabaseEnabled,
   requireSupabaseClient,
+  tryGetSupabaseClient,
 } from "../supabase/client";
+
+
 import { registerStudentSupabase, signInWithEmailPassword, signOutSupabase } from "../services/supabase/authRepository";
 import { getUserProfileByUid } from "@/services/supabase";
 
 type AuthStatus = "loading" | "ready";
+
+const mapAuthError = (error: any): string => {
+  if (error.message?.includes("Invalid login credentials")) {
+    return "Invalid email or password";
+  }
+  if (error.message?.includes("Email not confirmed")) {
+    return "Please confirm your email before signing in";
+  }
+  if (error.message?.includes("User not found")) {
+    return "User account not found";
+  }
+  return error.message || "Authentication failed";
+};
 
 export type AuthUser =
   | { role: "student"; id: string; email: string; fullName: string }
@@ -67,6 +84,46 @@ type AuthState = {
 //     password: string;
 //   }) => Promise<void>;
 // };
+
+
+// --- NEW HELPER: Fetch the actual name from the correct database table ---
+
+async function fetchPersonFullName(role: string, personId: string): Promise<string> {
+  if (!personId) return "System Admin"; // Fallback for root users
+
+  const supabase = tryGetSupabaseClient();
+  if (!supabase) return "Authenticated User";
+
+  // Map the role to the exact table name in your Postgres database
+  const tableMap: Record<string, string> = {
+    student: "students",
+    lecturer: "lecturers",
+    dean: "deans",
+    hod: "hods",
+    tutor: "tutors",
+    admin: "admins" // Adjust if your admin table is named differently
+  };
+
+  const tableName = tableMap[role];
+  if (!tableName) return "Authenticated User";
+
+  try {
+    const { data, error } = await supabase
+      .from(tableName)
+      .select("full_name")
+      .eq("id", personId)
+      .maybeSingle();
+      console.log(`[AUTH DEBUG] Role: ${role} | ID: ${personId} | Data:`, data, `| Error:`, error);
+
+    if (!error && data && data.full_name) {
+      return data.full_name;
+    }
+  } catch (error) {
+    console.warn(`Could not fetch full name for ${role} ${personId}`, error);
+  }
+
+  return "Authenticated User"; // Safe fallback if the query fails
+}
 
 export const useAuthStore = create<AuthState>((set) => ({
   status: "loading",
@@ -174,43 +231,56 @@ bootstrap: async () => {
   //   set({ user });
   // },
 
-  login: async ({ role, email, password }) => {
-    // ==========================================
-    // 1. LIVE SUPABASE LOGIN
-    // ==========================================
-    if (isSupabaseEnabled()) {
+ login: async ({ role, email, password }) => {
+  if (isSupabaseEnabled()) {
+    try {
       const authUser = await signInWithEmailPassword(email, password);
       const profile = await getUserProfileByUid(authUser.id);
-      
+
       if (!profile) {
         await signOutSupabase();
         throw new Error("Account authenticated, but no user profile exists in the system.");
       }
 
+      const personId = profile.linkedPersonId || profile.id;
+      const actualFullName = await fetchPersonFullName(profile.role, personId);
+
       const mappedUser: AuthUser = {
         role: profile.role ,
         id: profile.linkedPersonId || profile.id, 
-        email: authUser.email || authUser.email || email,
-        fullName: "Authenticated User",
+        email:  authUser.email || email,
+        fullName: actualFullName,
+
+
         ...(profile.role === "tutor" ? { 
         studentId: profile.linkedStudentId || profile.linkedPersonId || profile.id, 
             moduleIds: profile.delegatedModuleIds || []
         
         } : {}),
+        ...(profile.role === "dean" ? { facultyId: profile.facultyId || "" } : {}),
+
+        ...(profile.role === "hod" ? { departmentId: profile.departmentId || "" } : {}),
+
+
+
       } as AuthUser;
 
       await authStorage.setItem(JSON.stringify(mappedUser));
       set({ user: mappedUser });
       return;
+    } catch (err: any) {
+      // 👇 NEW: use mapAuthError here
+      const friendly = (err);
+      throw new Error(friendly); // bubble up friendly message
     }
+  }
 
-    // ==========================================
-    // 2. LEGACY MOCK LOGIN
-    // ==========================================
-    const user = await mockAuthService.login({ role, email, password });
-    await authStorage.setItem(JSON.stringify(user));
-    set({ user });
-  },
+  // legacy mock login unchanged
+  const user = await mockAuthService.login({ role, email, password });
+  await authStorage.setItem(JSON.stringify(user));
+  set({ user });
+},
+
 
 
   // logout: async () => {

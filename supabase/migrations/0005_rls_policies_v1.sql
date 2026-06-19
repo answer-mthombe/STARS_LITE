@@ -18,7 +18,7 @@ $$;
 -- ==========================================
 
 -- USER PROFILES
--- Matrix: Read self
+-- Matrix: Read self (No ::text here, because id is a UUID)
 create policy "Users can view own profile"
   on public.user_profiles for select to authenticated using ( id = auth.uid() );
 
@@ -36,8 +36,9 @@ create policy "M0 Placeholder: Authenticated users can view modules"
 
 -- ATTENDANCE RECORDS
 -- Matrix: Insert/Select own | Read module session | All access
+-- (Keep ::text here, because student_id is text)
 create policy "Users can insert own attendance"
-  on public.attendance_records for insert to authenticated with check ( student_id = auth.uid() );
+  on public.attendance_records for insert to authenticated with check ( student_id = auth.uid()::text );
 
 -- TODO for M2: Implement strict profile joins for lecturer module session visibility.
 create policy "M0 Placeholder: Authenticated users can view attendance records"
