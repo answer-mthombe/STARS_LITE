@@ -101,3 +101,4 @@ CREATE TABLE proxy_assignments (
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+

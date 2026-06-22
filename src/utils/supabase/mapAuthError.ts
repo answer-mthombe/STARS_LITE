@@ -1,34 +1,46 @@
 // src/utils/supabase/mapAuthError.ts
-// JOB-008: Clear login error mapping
 
-export type AuthErrorCode =
-  | "invalid_login_credentials"
-  | "email_not_confirmed"
-  | "network_error"
-  | "unknown_error";
+export interface AuthErrorLike {
+  message?: string;
+  status?: number;
+  code?: string;
+}
 
-export function mapAuthError(error: unknown): string {
-  if (!error || typeof error !== "object") {
-    return "An unexpected error occurred. Please try again.";
+/**
+ * Translates Supabase / GoTrue error codes into user-friendly messages.
+ * Prevents exposing raw API/database exceptions to end-users.
+ */
+export function mapAuthError(error: AuthErrorLike | null | undefined): string {
+  if (!error) return "";
+
+  // Check common Supabase error codes or message snippets
+  const errorCode = error.code || "";
+  const errorMessage = error.message?.toLowerCase() || "";
+
+  switch (errorCode) {
+    case "invalid_credentials":
+      return "Incorrect email or password. Please verify your credentials and try again.";
+    case "email_not_confirmed":
+      return "Your institutional email address has not been verified yet. Please check your inbox for the activation link.";
+    case "user_not_found":
+      return "No account exists with this email address.";
+    case "invalid_grant":
+      return "Invalid login credentials provided.";
+    default:
+      break;
   }
 
-  const err = error as { message?: string; status?: number };
-
-  // Supabase returns "Invalid login credentials" for wrong password/email
-  if (err.message?.toLowerCase().includes("invalid login credentials")) {
-    return "Wrong email or password. Please try again.";
+  // Fallback checks using message strings if error code is missing
+  if (errorMessage.includes("invalid claim") || errorMessage.includes("login details")) {
+    return "The login credentials provided are invalid.";
+  }
+  if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
+    return "Network error. Please check your internet connection and try again.";
+  }
+  if (errorMessage.includes("rate limit") || error.status === 429) {
+    return "Too many attempts. Please wait a few minutes before trying to sign in again.";
   }
 
-  // Email not confirmed
-  if (err.message?.toLowerCase().includes("email not confirmed")) {
-    return "Your email is not confirmed. Please check your inbox.";
-  }
-
-  // Network issues
-  if (err.message?.toLowerCase().includes("fetch") || err.status === 0) {
-    return "Network error. Please check your internet connection.";
-  }
-
-  // Default fallback
-  return "Login failed. Please try again later.";
+  // Final fallback safe error
+  return error.message || "An unexpected error occurred during authentication. Please contact support.";
 }
