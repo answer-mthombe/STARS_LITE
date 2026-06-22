@@ -1,0 +1,137 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - app/**
+      - src/**
+      - scripts/**
+      - supabase/**
+      - assets/**
+      - public/**
+      - package.json
+      - package-lock.json
+      - tsconfig.json
+      - babel.config.js
+      - metro.config.js
+      - tailwind.config.js
+      - app.json
+      - .nvmrc
+      - .github/workflows/**
+  push:
+    branches:
+      - main
+    paths:
+      - app/**
+      - src/**
+      - scripts/**
+      - supabase/**
+      - assets/**
+      - public/**
+      - package.json
+      - package-lock.json
+      - tsconfig.json
+      - babel.config.js
+      - metro.config.js
+      - tailwind.config.js
+      - app.json
+      - .nvmrc
+      - .github/workflows/**
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Check out pull request
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@v4
+
+  verify:
+    name: Verify ${{ matrix.check }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - check: TypeScript
+            command: npm run typecheck
+          - check: Challenge library
+            command: npm run validate:challenge-library
+          - check: Expo doctor
+            command: npm run doctor
+          - check: Web export
+            command: npm run build:web
+    env:
+      CI: true
+      EXPO_PUBLIC_DATA_SOURCE: mock
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run ${{ matrix.check }}
+        run: ${{ matrix.command }}
+
+  package:
+    name: Package web artifact
+    runs-on: ubuntu-latest
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      CI: true
+      EXPO_PUBLIC_DATA_SOURCE: mock
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build web bundle
+        run: npm run build:web
+
+      - name: Upload web export
+        uses: actions/upload-artifact@v4
+        with:
+          name: stars-web-export
+          path: dist
+          if-no-files-found: error

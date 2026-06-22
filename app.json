@@ -18,7 +18,7 @@
     "web": {
       "bundler": "metro",
       "lang": "en-ZA",
-      "favicon": "./assets/favicon.svg"
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
