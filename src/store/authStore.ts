@@ -131,11 +131,13 @@ export const useAuthStore = create<AuthState>((set) => ({
 
 
 bootstrap: async () => {
+  console.log("[AUTH DEBUG] Bootstrap function triggered!");
   try {
     // ==============================
     // SUPABASE MODE
     // ==============================
     if (isSupabaseEnabled()) {
+      console.log("[AUTH DEBUG] Supabase is enabled, fetching session..."); // <--- ADD THIS
       const supabase = requireSupabaseClient();
 
       const {
