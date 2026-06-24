@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import { authStorage } from "@/utils/authStorage";
 import type { UserRole } from "@/types/roles";
+import { INSTITUTION_ROLES } from "@/types/roles";
 import { mockAuthService } from "@/services/mockAuthService";
 
 
@@ -16,6 +17,19 @@ import { registerStudentSupabase, signInWithEmailPassword, signOutSupabase } fro
 import { getUserProfileByUid } from "@/services/supabase";
 
 type AuthStatus = "loading" | "ready";
+
+const KNOWN_ROLES = INSTITUTION_ROLES as readonly string[];
+
+/**
+ * Validate + normalise the role coming from `user_profiles`. A missing or
+ * unexpected role must NOT become an `AuthUser`, otherwise route guards bounce
+ * the user between screens forever ("Maximum update depth exceeded").
+ */
+function normalizeRole(role: unknown): UserRole | null {
+  if (typeof role !== "string") return null;
+  const r = role.trim().toLowerCase();
+  return KNOWN_ROLES.includes(r) ? (r as UserRole) : null;
+}
 
 const mapAuthError = (error: any): string => {
   if (error.message?.includes("Invalid login credentials")) {
@@ -164,13 +178,24 @@ bootstrap: async () => {
         return;
       }
 
+      const role = normalizeRole(profile.role);
+      if (!role) {
+        try {
+          await signOutSupabase();
+        } catch {
+          // ignore — we only care about clearing local state
+        }
+        set({ user: null, status: "ready" });
+        return;
+      }
+
       const mappedUser: AuthUser = {
-        role: profile.role,
+        role,
         id: profile.linkedPersonId || profile.id,
         email: session.user.email || "",
         fullName: "Authenticated User",
 
-        ...(profile.role === "tutor"
+        ...(role === "tutor"
           ? {
               studentId:
                 profile.linkedStudentId ||
@@ -180,6 +205,8 @@ bootstrap: async () => {
                 profile.delegatedModuleIds || [],
             }
           : {}),
+        ...(role === "dean" ? { facultyId: profile.facultyId || "" } : {}),
+        ...(role === "hod" ? { departmentId: profile.departmentId || "" } : {}),
       } as AuthUser;
 
       await authStorage.setItem(
@@ -244,36 +271,36 @@ bootstrap: async () => {
         throw new Error("Account authenticated, but no user profile exists in the system.");
       }
 
+      const role = normalizeRole(profile.role);
+      if (!role) {
+        await signOutSupabase();
+        throw new Error("Your account has no valid role assigned. Please contact an administrator.");
+      }
+
       const personId = profile.linkedPersonId || profile.id;
-      const actualFullName = await fetchPersonFullName(profile.role, personId);
+      const actualFullName = await fetchPersonFullName(role, personId);
 
       const mappedUser: AuthUser = {
-        role: profile.role ,
-        id: profile.linkedPersonId || profile.id, 
-        email:  authUser.email || email,
+        role,
+        id: profile.linkedPersonId || profile.id,
+        email: authUser.email || email,
         fullName: actualFullName,
 
-
-        ...(profile.role === "tutor" ? { 
-        studentId: profile.linkedStudentId || profile.linkedPersonId || profile.id, 
-            moduleIds: profile.delegatedModuleIds || []
-        
-        } : {}),
-        ...(profile.role === "dean" ? { facultyId: profile.facultyId || "" } : {}),
-
-        ...(profile.role === "hod" ? { departmentId: profile.departmentId || "" } : {}),
-
-
-
+        ...(role === "tutor"
+          ? {
+              studentId: profile.linkedStudentId || profile.linkedPersonId || profile.id,
+              moduleIds: profile.delegatedModuleIds || [],
+            }
+          : {}),
+        ...(role === "dean" ? { facultyId: profile.facultyId || "" } : {}),
+        ...(role === "hod" ? { departmentId: profile.departmentId || "" } : {}),
       } as AuthUser;
 
       await authStorage.setItem(JSON.stringify(mappedUser));
       set({ user: mappedUser });
       return;
     } catch (err: any) {
-      // 👇 NEW: use mapAuthError here
-      const friendly = (err);
-      throw new Error(friendly); // bubble up friendly message
+      throw new Error(mapAuthError(err));
     }
   }
 
