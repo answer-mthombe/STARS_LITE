@@ -20,6 +20,12 @@ type AuthStatus = "loading" | "ready";
 
 const KNOWN_ROLES = INSTITUTION_ROLES as readonly string[];
 
+function normalizeDisplayName(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
 /**
  * Validate + normalise the role coming from `user_profiles`. A missing or
  * unexpected role must NOT become an `AuthUser`, otherwise route guards bounce
@@ -102,41 +108,127 @@ type AuthState = {
 
 // --- NEW HELPER: Fetch the actual name from the correct database table ---
 
-async function fetchPersonFullName(role: string, personId: string): Promise<string> {
-  if (!personId) return "System Admin"; // Fallback for root users
-
-  const supabase = tryGetSupabaseClient();
-  if (!supabase) return "Authenticated User";
-
-  // Map the role to the exact table name in your Postgres database
-  const tableMap: Record<string, string> = {
-    student: "students",
-    lecturer: "lecturers",
-    dean: "deans",
-    hod: "hods",
-    tutor: "tutors",
-    admin: "admins" // Adjust if your admin table is named differently
+function buildStudentLookupIds(personId: string, email?: string | null): string[] {
+  const ids = new Set<string>();
+  const add = (value?: string | null) => {
+    const trimmed = value?.trim();
+    if (trimmed) ids.add(trimmed);
   };
 
-  const tableName = tableMap[role];
-  if (!tableName) return "Authenticated User";
+  add(personId);
 
-  try {
-    const { data, error } = await supabase
-      .from(tableName)
-      .select("full_name")
-      .eq("id", personId)
-      .maybeSingle();
-      console.log(`[AUTH DEBUG] Role: ${role} | ID: ${personId} | Data:`, data, `| Error:`, error);
-
-    if (!error && data && data.full_name) {
-      return data.full_name;
-    }
-  } catch (error) {
-    console.warn(`Could not fetch full name for ${role} ${personId}`, error);
+  const studentNumber = email?.trim().split("@")[0];
+  if (studentNumber) {
+    add(`stu_${studentNumber}`);
+    add(`stud-${studentNumber}`);
   }
 
-  return "Authenticated User"; // Safe fallback if the query fails
+  if (personId) {
+    add(personId.replace(/^stud-/, "stu_"));
+    add(personId.replace(/^stu_/, "stud-"));
+  }
+
+  return [...ids];
+}
+
+async function fetchPersonFullName(
+  role: string,
+  personId: string,
+  email?: string | null,
+  authFallbackName?: string | null,
+): Promise<string> {
+  console.log(`[AUTH DEBUG] resolve full name -> role=${role}, personId=${personId}, email=${email}`);
+
+  if (!personId && !email) {
+    console.log("[AUTH DEBUG] No personId or email available for name lookup");
+    return authFallbackName ?? "Student";
+  }
+
+  const supabase = tryGetSupabaseClient();
+  if (!supabase) {
+    console.log("[AUTH DEBUG] No Supabase client available for name lookup");
+    return "Student";
+  }
+
+  if (role === "student") {
+    const candidateIds = buildStudentLookupIds(personId, email);
+
+    for (const id of candidateIds) {
+      try {
+        const { data, error } = await supabase
+          .from("students")
+          .select("full_name, email")
+          .eq("id", id)
+          .maybeSingle();
+
+        console.log(`[AUTH DEBUG] student lookup by id ${id}:`, { data, error, code: error?.code });
+
+        if (!error && data?.full_name) {
+          console.log(`[AUTH DEBUG] resolved student name by id: ${data.full_name}`);
+          return data.full_name;
+        }
+
+        if (error?.code === "42501") {
+          console.log("[AUTH DEBUG] student lookup blocked by RLS; this needs the student self-read policy to allow the profile to read students");
+        }
+      } catch (error) {
+        console.warn(`Could not fetch student full name by id for ${id}`, error);
+      }
+    }
+
+    if (email) {
+      try {
+        const { data, error } = await supabase
+          .from("students")
+          .select("full_name, email")
+          .eq("email", email)
+          .maybeSingle();
+
+        console.log(`[AUTH DEBUG] student lookup by email ${email}:`, { data, error, code: error?.code });
+
+        if (!error && data?.full_name) {
+          console.log(`[AUTH DEBUG] resolved student name by email: ${data.full_name}`);
+          return data.full_name;
+        }
+
+        if (error?.code === "42501") {
+          console.log("[AUTH DEBUG] email-based student lookup blocked by RLS; the student self-read policy must include linked_student_id");
+        }
+      } catch (error) {
+        console.warn(`Could not fetch student full name by email for ${email}`, error);
+      }
+    }
+
+    const studentNumber = email?.split("@")[0];
+    if (studentNumber) {
+      try {
+        const { data, error } = await supabase
+          .from("students")
+          .select("full_name, student_number")
+          .eq("student_number", studentNumber)
+          .maybeSingle();
+
+        console.log(`[AUTH DEBUG] student lookup by student_number ${studentNumber}:`, { data, error, code: error?.code });
+
+        if (!error && data?.full_name) {
+          console.log(`[AUTH DEBUG] resolved student name by student_number: ${data.full_name}`);
+          return data.full_name;
+        }
+
+        if (error?.code === "42501") {
+          console.log("[AUTH DEBUG] student-number lookup blocked by RLS; the student policy must allow the authenticated user to read their own record");
+        }
+      } catch (error) {
+        console.warn(`Could not fetch student full name by student number for ${studentNumber}`, error);
+      }
+    }
+
+    console.log("[AUTH DEBUG] student name lookup failed, falling back to auth metadata or Student");
+    return authFallbackName ?? "Student";
+  }
+
+  console.log(`[AUTH DEBUG] role ${role} is not handled by student name lookup`);
+  return authFallbackName ?? "Student";
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -189,11 +281,18 @@ bootstrap: async () => {
         return;
       }
 
+      const personId =
+        role === "student"
+          ? profile.linkedStudentId || profile.linkedPersonId || profile.id
+          : profile.linkedPersonId || profile.id;
+      const authFullName = normalizeDisplayName(session.user.user_metadata?.full_name ?? session.user.user_metadata?.name);
+      const actualFullName = await fetchPersonFullName(role, personId, profile.email, authFullName);
+
       const mappedUser: AuthUser = {
         role,
-        id: profile.linkedPersonId || profile.id,
+        id: personId,
         email: session.user.email || "",
-        fullName: "Authenticated User",
+        fullName: actualFullName,
 
         ...(role === "tutor"
           ? {
@@ -277,12 +376,16 @@ bootstrap: async () => {
         throw new Error("Your account has no valid role assigned. Please contact an administrator.");
       }
 
-      const personId = profile.linkedPersonId || profile.id;
-      const actualFullName = await fetchPersonFullName(role, personId);
+      const personId =
+        role === "student"
+          ? profile.linkedStudentId || profile.linkedPersonId || profile.id
+          : profile.linkedPersonId || profile.id;
+      const authFullName = normalizeDisplayName(authUser.user_metadata?.full_name ?? authUser.user_metadata?.name);
+      const actualFullName = await fetchPersonFullName(role, personId, profile.email, authFullName);
 
       const mappedUser: AuthUser = {
         role,
-        id: profile.linkedPersonId || profile.id,
+        id: personId,
         email: authUser.email || email,
         fullName: actualFullName,
 

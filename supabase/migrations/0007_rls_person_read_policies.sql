@@ -14,21 +14,36 @@ drop policy if exists "M0 Placeholder: Authenticated users can view students" on
 -- 3. Create strict Self-Read Policies
 
 -- STUDENTS
-create policy "Students can read their own record" 
-  on public.students for select to authenticated 
-  using ( id IN (select linked_person_id from public.user_profiles where id = auth.uid()) );
+drop policy if exists "Students can read their own record" on public.students;
+create policy "Students can read their own record"
+  on public.students for select to authenticated
+  using (
+    id IN (
+      select linked_student_id
+      from public.user_profiles
+      where id = auth.uid()
+    )
+    OR id IN (
+      select linked_person_id
+      from public.user_profiles
+      where id = auth.uid()
+    )
+  );
 
 -- LECTURERS
+drop policy if exists "Lecturers can read their own record" on public.lecturers;
 create policy "Lecturers can read their own record" 
   on public.lecturers for select to authenticated 
   using ( id IN (select linked_person_id from public.user_profiles where id = auth.uid()) );
 
 -- DEANS
+drop policy if exists "Deans can read their own record" on public.deans;
 create policy "Deans can read their own record" 
   on public.deans for select to authenticated 
   using ( id IN (select linked_person_id from public.user_profiles where id = auth.uid()) );
 
 -- HODS
+drop policy if exists "HODs can read their own record" on public.hods;
 create policy "HODs can read their own record" 
   on public.hods for select to authenticated 
   using ( id IN (select linked_person_id from public.user_profiles where id = auth.uid()) );
