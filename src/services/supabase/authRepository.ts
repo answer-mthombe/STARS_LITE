@@ -2,6 +2,9 @@ import type { User } from "@supabase/supabase-js";
 
 import { requireSupabaseClient } from "@/supabase/client";
 
+import { mapAuthError } from "@/utils/supabase/mapAuthError";
+
+
 export async function signInWithEmailPassword(email: string, password: string): Promise<User> {
   const supabase = requireSupabaseClient();
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -27,6 +30,8 @@ export function subscribeAuthState(callback: (user: User | null) => void): () =>
   });
   return () => subscription.unsubscribe();
 }
+
+
 
 
 export async function registerStudentSupabase(args: {
@@ -106,3 +111,7 @@ export async function registerStudentSupabase(args: {
   // If we reach here, all 3 steps succeeded perfectly!
   return { authUser: authData.user, studentId: newStudentId };
 }
+
+
+
+
