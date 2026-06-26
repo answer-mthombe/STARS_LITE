@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { authStorage } from "@/utils/authStorage";
 import type { UserRole } from "@/types/roles";
+import { INSTITUTION_ROLES } from "@/types/roles";
 import { mockAuthService } from "@/services/mockAuthService";
 
 import {
@@ -13,6 +14,25 @@ import { registerStudentSupabase, signInWithEmailPassword, signOutSupabase } fro
 import { getUserProfileByUid } from "@/services/supabase";
 
 type AuthStatus = "loading" | "ready";
+
+const KNOWN_ROLES = INSTITUTION_ROLES as readonly string[];
+
+function normalizeDisplayName(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+/**
+ * Validate + normalise the role coming from `user_profiles`. A missing or
+ * unexpected role must NOT become an `AuthUser`, otherwise route guards bounce
+ * the user between screens forever ("Maximum update depth exceeded").
+ */
+function normalizeRole(role: unknown): UserRole | null {
+  if (typeof role !== "string") return null;
+  const r = role.trim().toLowerCase();
+  return KNOWN_ROLES.includes(r) ? (r as UserRole) : null;
+}
 
 // Internal helper to map ugly or technical error messages to human-readable ones
 const mapAuthError = (error: any): string => {
@@ -68,20 +88,39 @@ type AuthState = {
   registerStudent: (args: RegisterStudentArgs) => Promise<void>;
 };
 
-// --- HELPER: Fetch the actual name from the correct database table ---
+// type AuthState = {
+//   status: AuthStatus;
+//   user: AuthUser | null;
+//   bootstrap: () => Promise<void>;
+//   login: (args: { role: UserRole; email: string; password: string }) => Promise<void>;
+//   logout: () => Promise<void>;
+//   registerStudent: (args: {
+//     fullName: string;
+//     studentNumber: string;
+//     gender: "male" | "female" | "other";
+//     facultyId: string;
+//     courseId: string;
+//     password: string;
+//   }) => Promise<void>;
+// };
+
+
+// --- NEW HELPER: Fetch the actual name from the correct database table ---
+
 async function fetchPersonFullName(role: string, personId: string): Promise<string> {
-  if (!personId) return "System Admin"; 
+  if (!personId) return "System Admin"; // Fallback for root users
 
   const supabase = tryGetSupabaseClient();
   if (!supabase) return "Authenticated User";
 
+  // Map the role to the exact table name in your Postgres database
   const tableMap: Record<string, string> = {
     student: "students",
     lecturer: "lecturers",
     dean: "deans",
     hod: "hods",
     tutor: "tutors",
-    admin: "admins"
+    admin: "admins" // Adjust if your admin table is named differently
   };
 
   const tableName = tableMap[role];
@@ -93,6 +132,7 @@ async function fetchPersonFullName(role: string, personId: string): Promise<stri
       .select("full_name")
       .eq("id", personId)
       .maybeSingle();
+      console.log(`[AUTH DEBUG] Role: ${role} | ID: ${personId} | Data:`, data, `| Error:`, error);
 
     if (!error && data && data.full_name) {
       return data.full_name;
@@ -101,7 +141,7 @@ async function fetchPersonFullName(role: string, personId: string): Promise<stri
     console.warn(`Could not fetch full name for ${role} ${personId}`, error);
   }
 
-  return "Authenticated User"; 
+  return "Authenticated User"; // Safe fallback if the query fails
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -127,30 +167,31 @@ export const useAuthStore = create<AuthState>((set) => ({
 
         const profile = await getUserProfileByUid(session.user.id);
 
-        if (!profile) {
-          set({ user: null, status: "ready" });
-          return;
-        }
+      if (!profile) {
+        set({
+          user: null,
+          status: "ready",
+        });
+        return;
+      }
 
-        // Fix: Fetch the real name during bootstrap so refreshing the page doesn't reset it
-        const personId = profile.linkedPersonId || profile.id;
-        const actualFullName = await fetchPersonFullName(profile.role, personId);
+      const mappedUser: AuthUser = {
+        role: profile.role,
+        id: profile.linkedPersonId || profile.id,
+        email: session.user.email || "",
+        fullName: "Authenticated User",
 
-        const mappedUser: AuthUser = {
-          role: profile.role,
-          id: personId,
-          email: session.user.email || "",
-          fullName: actualFullName,
-
-          ...(profile.role === "tutor"
-            ? {
-                studentId: profile.linkedStudentId || personId,
-                moduleIds: profile.delegatedModuleIds || [],
-              }
-            : {}),
-          ...(profile.role === "dean" ? { facultyId: profile.facultyId || "" } : {}),
-          ...(profile.role === "hod" ? { departmentId: profile.departmentId || "" } : {}),
-        } as AuthUser;
+        ...(profile.role === "tutor"
+          ? {
+              studentId:
+                profile.linkedStudentId ||
+                profile.linkedPersonId ||
+                profile.id,
+              moduleIds:
+                profile.delegatedModuleIds || [],
+            }
+          : {}),
+      } as AuthUser;
 
         await authStorage.setItem(JSON.stringify(mappedUser));
         set({ user: mappedUser, status: "ready" });
@@ -186,31 +227,36 @@ export const useAuthStore = create<AuthState>((set) => ({
           throw new Error("Account authenticated, but no user profile exists in the system.");
         }
 
-        const personId = profile.linkedPersonId || profile.id;
-        const actualFullName = await fetchPersonFullName(profile.role, personId);
+      const personId = profile.linkedPersonId || profile.id;
+      const actualFullName = await fetchPersonFullName(profile.role, personId);
 
-        const mappedUser: AuthUser = {
-          role: profile.role,
-          id: personId,
-          email: authUser.email || email,
-          fullName: actualFullName,
+      const mappedUser: AuthUser = {
+        role: profile.role ,
+        id: profile.linkedPersonId || profile.id, 
+        email:  authUser.email || email,
+        fullName: actualFullName,
 
-          ...(profile.role === "tutor" ? { 
-              studentId: profile.linkedStudentId || personId, 
-              moduleIds: profile.delegatedModuleIds || []
-          } : {}),
-          ...(profile.role === "dean" ? { facultyId: profile.facultyId || "" } : {}),
-          ...(profile.role === "hod" ? { departmentId: profile.departmentId || "" } : {}),
-        } as AuthUser;
 
-        await authStorage.setItem(JSON.stringify(mappedUser));
-        set({ user: mappedUser });
-        return;
-      } catch (err: any) {
-        // Fix: Properly call the local mapAuthError utility here
-        const friendly = mapAuthError(err);
-        throw new Error(friendly); 
-      }
+        ...(profile.role === "tutor" ? { 
+        studentId: profile.linkedStudentId || profile.linkedPersonId || profile.id, 
+            moduleIds: profile.delegatedModuleIds || []
+        
+        } : {}),
+        ...(profile.role === "dean" ? { facultyId: profile.facultyId || "" } : {}),
+
+        ...(profile.role === "hod" ? { departmentId: profile.departmentId || "" } : {}),
+
+
+
+      } as AuthUser;
+
+      await authStorage.setItem(JSON.stringify(mappedUser));
+      set({ user: mappedUser });
+      return;
+    } catch (err: any) {
+      // 👇 NEW: use mapAuthError here
+      const friendly = (err);
+      throw new Error(friendly); // bubble up friendly message
     }
 
     // Legacy mock login

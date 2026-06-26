@@ -51,6 +51,11 @@ export async function registerStudentSupabase(args: {
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email: args.email,
     password: args.password,
+    options: {
+      data: {
+        full_name: args.fullName,
+      },
+    },
   });
 
   if (authError) throw authError;

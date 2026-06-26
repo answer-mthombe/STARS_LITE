@@ -17,7 +17,9 @@ export default function SplashScreen() {
     if (user.role === "hod") return <Redirect href="/hod/dashboard" />;
     if (user.role === "lecturer") return <Redirect href="/lecturer/dashboard" />;
     if (user.role === "tutor") return <Redirect href="/tutor/dashboard" />;
-    return <Redirect href="/student/dashboard" />;
+    if (user.role === "student") return <Redirect href="/student/dashboard" />;
+    // Unknown role: never bounce into a guarded screen (would loop) — restart onboarding.
+    return <Redirect href="/onboarding" />;
   }
 
   return (
