@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { usePathname, useRouter } from "expo-router";
+import {  useRouter } from "expo-router";
+import {usePathname} from "expo-router/build/hooks";
 import { useAuthStore } from "@/store/authStore";
 import type { UserRole } from "@/types/roles";
 import { INSTITUTION_ROLES } from "@/types/roles";

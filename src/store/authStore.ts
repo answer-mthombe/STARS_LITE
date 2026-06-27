@@ -13,7 +13,8 @@ import {
 } from "../supabase/client";
 
 
-import { registerStudentSupabase, signInWithEmailPassword, signOutSupabase } from "../services/supabase/authRepository";
+import {  signInWithEmailPassword, signOutSupabase } from "../services/supabase/authRepository";
+import { registerStudentPipeline } from "@/pipelines/registerStudent";
 import { getUserProfileByUid } from "@/services/supabase";
 
 type AuthStatus = "loading" | "ready";
@@ -434,31 +435,31 @@ bootstrap: async () => {
   },
 
   registerStudent: async (args) => {
-    // Generate the standard student email format (adjust if your app does this differently)
     const email = `${args.studentNumber}@live.mut.ac.za`;
 
     if (isSupabaseEnabled()) {
       try {
-        // 1. Save to Supabase
-        const result = await registerStudentSupabase({
+        // 1. Call the new isolated pipeline!
+        const result = await registerStudentPipeline({
           ...args,
           email,
         });
 
-        // 2. Create the AuthUser object for the app state
+        // 2. Create the AuthUser object
         const mappedUser: AuthUser = {
           role: "student",
-          id: result.studentId, // Use the new database student ID
+          id: result.studentId, 
           email: email,
           fullName: args.fullName,
         };
 
-        // 3. Save to local storage and state
+        // 3. Save state
         await authStorage.setItem(JSON.stringify(mappedUser));
         set({ user: mappedUser });
         return;
       } catch (error: any) {
-        throw new Error(error.message || "Failed to register student.");
+        // 4. Mapped friendly error!
+        throw new Error(mapAuthError(error)); 
       }
     }
 

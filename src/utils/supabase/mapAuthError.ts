@@ -18,6 +18,13 @@ export function mapAuthError(error: AuthErrorLike | null | undefined): string {
   const errorMessage = error.message?.toLowerCase() || "";
 
   switch (errorCode) {
+    case "weak_password":
+      return "Your password is too weak. Please use at least 6 characters including numbers and symbols.";
+    case "user_already_exists":
+    case "email_exists":
+      return "An account with this email address already exists. Please sign in instead.";
+    case "bad_request":
+      return "Invalid registration data. Please ensure your student number is correct.";
     case "invalid_credentials":
       return "Incorrect email or password. Please verify your credentials and try again.";
     case "email_not_confirmed":
@@ -31,6 +38,16 @@ export function mapAuthError(error: AuthErrorLike | null | undefined): string {
   }
 
   // Fallback checks using message strings if error code is missing
+if (errorMessage.includes("already registered") || errorMessage.includes("user already exists")) {
+    return "This student number/email is already registered.";
+  }
+  if (errorMessage.includes("password should be at least")) {
+    return "Password must be at least 6 characters long.";
+  }
+  if (errorMessage.includes("email") && errorMessage.includes("valid")) {
+    return "Please provide a valid institutional email address.";                  // ⬆ for registration, ⬇ for login
+  }
+
   if (errorMessage.includes("invalid claim") || errorMessage.includes("login details")) {
     return "The login credentials provided are invalid.";
   }
