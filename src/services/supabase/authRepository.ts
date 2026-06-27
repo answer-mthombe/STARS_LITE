@@ -2,6 +2,9 @@ import type { User } from "@supabase/supabase-js";
 
 import { requireSupabaseClient } from "@/supabase/client";
 
+import { mapAuthError } from "@/utils/supabase/mapAuthError";
+
+
 export async function signInWithEmailPassword(email: string, password: string): Promise<User> {
   const supabase = requireSupabaseClient();
   const { data, error } = await supabase.auth.signInWithPassword({

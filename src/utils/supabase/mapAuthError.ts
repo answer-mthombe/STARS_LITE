@@ -1,4 +1,3 @@
-// src/utils/supabase/mapAuthError.ts
 
 export interface AuthErrorLike {
   message?: string;
@@ -51,13 +50,28 @@ if (errorMessage.includes("already registered") || errorMessage.includes("user a
   if (errorMessage.includes("invalid claim") || errorMessage.includes("login details")) {
     return "The login credentials provided are invalid.";
   }
-  if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
-    return "Network error. Please check your internet connection and try again.";
+  
+  if (errorMessage.includes("user not found")) {
+    return "No account exists with this email.";
   }
-  if (errorMessage.includes("rate limit") || error.status === 429) {
-    return "Too many attempts. Please wait a few minutes before trying to sign in again.";
+  
+  if (errorMessage.includes("confirm your email") || errorMessage.includes("email not confirmed")) {
+    return "Please verify your email before logging in.";
+  }
+  
+  // 2. Enhanced Rate Limiting / Too Many Attempts Check
+  if (
+    errorMessage.includes("rate limit") || 
+    errorMessage.includes("too many requests") || 
+    errorMessage.includes("over_rate_limit") ||
+    errorCode === "over_rate_limit"
+  ) {
+    return "Too many attempts. Please try again later.";
+  }
+  
+  if (errorMessage.includes("network") || errorMessage.includes("fetch failed") || errorMessage.includes("offline") || errorMessage.includes("failed to fetch")) {
+    return "Network error. Check your connection.";
   }
 
-  // Final fallback safe error
-  return error.message || "An unexpected error occurred during authentication. Please contact support.";
+  return "Something went wrong. Please try again.";
 }
