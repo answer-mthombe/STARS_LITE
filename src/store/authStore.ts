@@ -5,7 +5,6 @@ import type { UserRole } from "@/types/roles";
 import { INSTITUTION_ROLES } from "@/types/roles";
 import { mockAuthService } from "@/services/mockAuthService";
 
-
 import {
   isSupabaseEnabled,
   requireSupabaseClient,

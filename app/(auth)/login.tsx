@@ -143,8 +143,12 @@ export default function LoginScreen() {
               disabled={busy}
               fullWidth
               onPress={async () => {
-                // 2️⃣ Check lockout rule live on button press
-                if (failedAttempts >= 5) {
+                // Fetch fresh values from storage immediately on press to avoid stale state issues
+                const savedAttemptsStr = await AsyncStorage.getItem(ATTEMPTS_KEY);
+                const currentAttempts = savedAttemptsStr ? parseInt(savedAttemptsStr, 10) : 0;
+
+                // 2️⃣ Check lockout rule live using storage data
+                if (currentAttempts >= 5) {
                   const savedLockoutTime = await AsyncStorage.getItem(LOCKOUT_TIME_KEY);
                   if (savedLockoutTime) {
                     const timeLeft = LOCKOUT_DURATION - (Date.now() - parseInt(savedLockoutTime, 10));
@@ -179,7 +183,8 @@ export default function LoginScreen() {
                 } catch (e: any) {
                   setBusy(false);
                   
-                  const nextCount = failedAttempts + 1;
+                  // Calculate next count based directly on true storage values
+                  const nextCount = currentAttempts + 1;
                   setFailedAttempts(nextCount);
                   await AsyncStorage.setItem(ATTEMPTS_KEY, nextCount.toString());
 
@@ -189,7 +194,7 @@ export default function LoginScreen() {
                     show({
                       type: "error",
                       title: "Too Many Attempts",
-                      message: "Too many attempts. Your account is locked for 2 minutes.",
+                      message: "Too many attempts. Your account is locked for 15 minutes.",
                     });
                   } else {
                     show({
