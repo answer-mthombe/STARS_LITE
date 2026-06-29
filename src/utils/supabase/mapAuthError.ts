@@ -1,40 +1,75 @@
-// src/services/mapAuthError.ts
-export function mapAuthError(error: unknown): string {
-  // 🔴 TEMPORARY DEBUG: Let's see exactly what Supabase is sending
-  console.log("RAW AUTH ERROR:", error);
-  console.log("ERROR MESSAGE STRING:", (error as any).message);
 
-  if (!error || typeof error !== "object") {
-    return "Unexpected error occurred. Please try again.";
+export interface AuthErrorLike {
+  message?: string;
+  status?: number;
+  code?: string;
+}
+
+/**
+ * Translates Supabase / GoTrue error codes into user-friendly messages.
+ * Prevents exposing raw API/database exceptions to end-users.
+ */
+export function mapAuthError(error: AuthErrorLike | null | undefined): string {
+  if (!error) return "";
+
+  // Check common Supabase error codes or message snippets
+  const errorCode = error.code || "";
+  const errorMessage = error.message?.toLowerCase() || "";
+
+  switch (errorCode) {
+    case "weak_password":
+      return "Your password is too weak. Please use at least 6 characters including numbers and symbols.";
+    case "user_already_exists":
+    case "email_exists":
+      return "An account with this email address already exists. Please sign in instead.";
+    case "bad_request":
+      return "Invalid registration data. Please ensure your student number is correct.";
+    case "invalid_credentials":
+      return "Incorrect email or password. Please verify your credentials and try again.";
+    case "email_not_confirmed":
+      return "Your institutional email address has not been verified yet. Please check your inbox for the activation link.";
+    case "user_not_found":
+      return "No account exists with this email address.";
+    case "invalid_grant":
+      return "Invalid login credentials provided.";
+    default:
+      break;
   }
 
-  const message = (error as any).message?.toLowerCase() || "";
-  const code = (error as any).code?.toLowerCase() || ""; // Supabase sometimes provides an error code
+  // Fallback checks using message strings if error code is missing
+if (errorMessage.includes("already registered") || errorMessage.includes("user already exists")) {
+    return "This student number/email is already registered.";
+  }
+  if (errorMessage.includes("password should be at least")) {
+    return "Password must be at least 6 characters long.";
+  }
+  if (errorMessage.includes("email") && errorMessage.includes("valid")) {
+    return "Please provide a valid institutional email address.";                  // ⬆ for registration, ⬇ for login
+  }
 
-  // 1. Invalid Credentials (broadened the check)
-  if (message.includes("invalid login") || message.includes("invalid email") || message.includes("credentials")) {
-    return "Email or password is incorrect.";
+  if (errorMessage.includes("invalid claim") || errorMessage.includes("login details")) {
+    return "The login credentials provided are invalid.";
   }
   
-  if (message.includes("user not found")) {
+  if (errorMessage.includes("user not found")) {
     return "No account exists with this email.";
   }
   
-  if (message.includes("confirm your email") || message.includes("email not confirmed")) {
+  if (errorMessage.includes("confirm your email") || errorMessage.includes("email not confirmed")) {
     return "Please verify your email before logging in.";
   }
   
   // 2. Enhanced Rate Limiting / Too Many Attempts Check
   if (
-    message.includes("rate limit") || 
-    message.includes("too many requests") || 
-    message.includes("over_rate_limit") ||
-    code === "over_rate_limit"
+    errorMessage.includes("rate limit") || 
+    errorMessage.includes("too many requests") || 
+    errorMessage.includes("over_rate_limit") ||
+    errorCode === "over_rate_limit"
   ) {
     return "Too many attempts. Please try again later.";
   }
   
-  if (message.includes("network") || message.includes("fetch failed") || message.includes("offline") || message.includes("failed to fetch")) {
+  if (errorMessage.includes("network") || errorMessage.includes("fetch failed") || errorMessage.includes("offline") || errorMessage.includes("failed to fetch")) {
     return "Network error. Check your connection.";
   }
 
