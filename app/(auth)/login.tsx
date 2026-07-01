@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { mapAuthError } from "@/utils/supabase/mapAuthError";
+
+import { mapAuthError } from "src/utils/supabase/mapAuthError";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   AppButton,
   AppInput,
@@ -31,6 +33,11 @@ const ROLE_DEFAULT_EMAIL: Record<UserRole, string> = {
   admin: "admin@mut.ac.za",
 };
 
+// 🔑 Storage keys for tracking attempts and time
+const ATTEMPTS_KEY = "@login_failed_attempts";
+const LOCKOUT_TIME_KEY = "@login_lockout_time";
+const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
+
 export default function LoginScreen() {
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
@@ -40,23 +47,51 @@ export default function LoginScreen() {
   const [email, setEmail] = useState(ROLE_DEFAULT_EMAIL.student);
   const [password, setPassword] = useState("password");
   const [busy, setBusy] = useState(false);
+  
+  const [failedAttempts, setFailedAttempts] = useState(0);
+
+  // 1️⃣ Load storage state and check if lockout has expired on boot
+  useEffect(() => {
+    const checkLockoutStatus = async () => {
+      try {
+        const savedAttempts = await AsyncStorage.getItem(ATTEMPTS_KEY);
+        const savedLockoutTime = await AsyncStorage.getItem(LOCKOUT_TIME_KEY);
+
+        if (savedAttempts) {
+          const attempts = parseInt(savedAttempts, 10);
+          
+          if (attempts >= 5 && savedLockoutTime) {
+            const lockoutTimestamp = parseInt(savedLockoutTime, 10);
+            const currentTime = Date.now();
+            
+            // Has 15 minutes passed?
+            if (currentTime - lockoutTimestamp >= LOCKOUT_DURATION) {
+              // ⏱️ Timer expired! Clear everything and reset
+              await AsyncStorage.removeItem(ATTEMPTS_KEY);
+              await AsyncStorage.removeItem(LOCKOUT_TIME_KEY);
+              setFailedAttempts(0);
+              return;
+            }
+          }
+          setFailedAttempts(attempts);
+        }
+      } catch (e) {
+        console.error("Failed to load lockout tracking status", e);
+      }
+    };
+
+    checkLockoutStatus();
+  }, []);
 
   const hint = useMemo(() => {
     switch (role) {
-      case "student":
-        return "Student: any seeded @live.mut.ac.za (e.g. 22001234) / password";
-      case "tutor":
-        return "Tutor (also a student): 22005678@live.mut.ac.za — module tutor for Mobile Dev / password";
-      case "lecturer":
-        return "Lecturer: mkhize@mut.ac.za, naidoo@mut.ac.za, dube@mut.ac.za, mahlangu@mut.ac.za / password";
-      case "hod":
-        return "HOD: hod.it@mut.ac.za (IT), hod.electrical@mut.ac.za, hod.business@mut.ac.za / password";
-      case "dean":
-        return "Dean: dean.engineering@mut.ac.za or dean.management@mut.ac.za / password";
-      case "admin":
-        return "Admin: admin@mut.ac.za / password";
-      default:
-        return "Password for all demo accounts: password";
+      case "student": return "Student: any seeded @live.mut.ac.za (e.g. 22001234) / password";
+      case "tutor": return "Tutor: 22005678@live.mut.ac.za / password";
+      case "lecturer": return "Lecturer: mkhize@mut.ac.za / password";
+      case "hod": return "HOD: hod.it@mut.ac.za / password";
+      case "dean": return "Dean: dean.engineering@mut.ac.za / password";
+      case "admin": return "Admin: admin@mut.ac.za / password";
+      default: return "Password for all demo accounts: password";
     }
   }, [role]);
 
@@ -74,7 +109,6 @@ export default function LoginScreen() {
           </AppText>
 
           <Stack gap="md" style={{ marginTop: 18 }}>
-            <AppText variant="heading">Role</AppText>
             <ChipSelectGroup
               options={INSTITUTION_ROLES}
               value={role}
@@ -89,9 +123,6 @@ export default function LoginScreen() {
             <AppInput label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" />
             <AppInput label="Password" value={password} onChangeText={setPassword} secureTextEntry />
 
-            <AppText variant="heading" style={{ marginTop: 8 }}>
-              Quick demo (password: password)
-            </AppText>
             <ChipPicker>
               {DEMO_LOGIN_PRESETS.map((p) => (
                 <Chip
@@ -112,18 +143,66 @@ export default function LoginScreen() {
               disabled={busy}
               fullWidth
               onPress={async () => {
+                // Fetch fresh values from storage immediately on press to avoid stale state issues
+                const savedAttemptsStr = await AsyncStorage.getItem(ATTEMPTS_KEY);
+                const currentAttempts = savedAttemptsStr ? parseInt(savedAttemptsStr, 10) : 0;
+
+                // 2️⃣ Check lockout rule live using storage data
+                if (currentAttempts >= 5) {
+                  const savedLockoutTime = await AsyncStorage.getItem(LOCKOUT_TIME_KEY);
+                  if (savedLockoutTime) {
+                    const timeLeft = LOCKOUT_DURATION - (Date.now() - parseInt(savedLockoutTime, 10));
+                    
+                    if (timeLeft > 0) {
+                      const minutesLeft = Math.ceil(timeLeft / 60 / 1000);
+                      show({
+                        type: "error",
+                        title: "Account Locked",
+                        message: `Too many attempts. Please try again in ${minutesLeft} minutes.`, 
+                      });
+                      return;
+                    } else {
+                      // Safety override: time passed while screen was open
+                      await AsyncStorage.removeItem(ATTEMPTS_KEY);
+                      await AsyncStorage.removeItem(LOCKOUT_TIME_KEY);
+                      setFailedAttempts(0);
+                    }
+                  }
+                }
+
                 setBusy(true);
                 try {
                   await login({ role, email, password });
-                  router.replace("/");
-                } catch (e) {
-                  show({
-                    type: "error",
-                    title: "Sign in failed",
-                    message: e instanceof Error ? e.message : "Please try again.",
-                  });
-                } finally {
+                  
+                  // Clean up variables on valid login
+                  await AsyncStorage.removeItem(ATTEMPTS_KEY);
+                  await AsyncStorage.removeItem(LOCKOUT_TIME_KEY);
+                  setFailedAttempts(0); 
                   setBusy(false);
+                  router.replace("/");
+                } catch (e: any) {
+                  setBusy(false);
+                  
+                  // Calculate next count based directly on true storage values
+                  const nextCount = currentAttempts + 1;
+                  setFailedAttempts(nextCount);
+                  await AsyncStorage.setItem(ATTEMPTS_KEY, nextCount.toString());
+
+                  if (nextCount >= 5) {
+                    // 3️⃣ Hit limit! Set the timestamp marker
+                    await AsyncStorage.setItem(LOCKOUT_TIME_KEY, Date.now().toString());
+                    show({
+                      type: "error",
+                      title: "Too Many Attempts",
+                      message: "Too many attempts. Your account is locked for 15 minutes.",
+                    });
+                  } else {
+                    show({
+                      type: "error",
+                      title: "Sign in failed",
+                      message: `${mapAuthError(e)} (${5 - nextCount} attempts remaining)`,
+                    });
+                  }
                 }
               }}
             />
