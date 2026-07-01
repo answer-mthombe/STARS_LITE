@@ -39,7 +39,7 @@ export default function StudentDashboard() {
   }, [user, v]);
 
   const ratePct = data.student ? Math.round((data.student.attendanceStats.attendanceRate ?? 0) * 100) : 0;
-  const first = user?.role === "student" ? (user.fullName?.trim().split(/\s+/)[0] ?? "Student") : "";
+  const first = user?.role === "student" ? user.fullName.split(" ")[0] : "";
 
   return (
     <ScreenShell scroll hideHeader>
