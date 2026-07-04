@@ -12,6 +12,9 @@ import { ATTENDANCE_CODE_WINDOW_MS, currentAttendanceCode } from "@/utils/rotati
 import { buildAttendanceQrPayload } from "@/utils/attendanceQr";
 import { classRegisterService } from "@/services/classRegisterService";
 import { useToastStore } from "@/store/toastStore";
+import { AttendanceSessionModel } from "@/models/Attendance";
+import { attendanceSessionRepository } from "@/services/supabase/attendanceSessionRepository";
+import { isSupabaseEnabled } from "@/supabase/client";
 
 export default function LecturerActiveSessionScreen() {
   useRoleGuard(["lecturer", "tutor"]);
@@ -22,11 +25,25 @@ export default function LecturerActiveSessionScreen() {
   const v = useMockDbVersionStore((s) => s.version);
   const [tick, setTick] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [session, setSession] = useState<AttendanceSessionModel | null>(null);
 
-  const session = useMemo(() => {
-    mockDB.touch();
-    return mockDB.read("attendanceSessions", String(sessionId));
-  }, [sessionId, v, tick]);
+  // const session = useMemo(() => {
+  //   mockDB.touch();
+  //   return mockDB.read("attendanceSessions", String(sessionId));
+  // }, [sessionId, v, tick]);
+
+  useEffect(() => {
+  async function loadSession() {
+    if (isSupabaseEnabled()) {
+       const live = await attendanceSessionRepository.getActiveSession(String(sessionId));
+       setSession(live);
+    } else {
+       mockDB.touch();
+       setSession(mockDB.read("attendanceSessions", String(sessionId)) ?? null);
+    }
+  }
+  loadSession();
+}, [sessionId, v, tick]);
 
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 1000);

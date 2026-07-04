@@ -1,5 +1,7 @@
-import { useMemo } from "react";
+import { useMemo ,useEffect, useState} from "react";
 import { useRouter } from "expo-router";
+import { getDataSource } from "@/services/dataSource";
+import { fetchStudentProfile, getLinkedStudentId, listModulesForStudent } from "@/services/supabase/moduleRepository";
 
 import {
   AppCard,
@@ -27,18 +29,50 @@ export default function StudentDashboard() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const v = useMockDbVersionStore((s) => s.version);
+  const [data, setData] = useState({ student: null as any, modules: [] as ModuleModel[] });
 
-  const data = useMemo(() => {
-    mockDB.touch();
-    if (!user || user.role !== "student") return { student: null, modules: [] as ModuleModel[] };
-    const student = mockDB.read("students", user.id);
-    const modules: ModuleModel[] = (student?.registeredModules ?? [])
-      .map((id) => mockDB.read("modules", id))
-      .filter((m): m is ModuleModel => m != null);
-    return { student, modules };
-  }, [user, v]);
+  // const data = useMemo(() => {
+  //   mockDB.touch();
+  //   if (!user || user.role !== "student") return { student: null, modules: [] as ModuleModel[] };
+  //   const student = mockDB.read("students", user.id);
+  //   const modules: ModuleModel[] = (student?.registeredModules ?? [])
+  //     .map((id) => mockDB.read("modules", id))
+  //     .filter((m): m is ModuleModel => m != null);
+  //   return { student, modules };
+  // }, [user, v]);
 
-  const ratePct = data.student ? Math.round((data.student.attendanceStats.attendanceRate ?? 0) * 100) : 0;
+  useEffect(() => {
+  async function loadData() {
+    if (!user || user.role !== "student") return;
+    console.log("DEBUG: Attempting to fetch with Auth ID:", user.id);
+    if (getDataSource() === "supabase") {
+      const studentId = await getLinkedStudentId();
+  if (studentId) {
+        // 2. Fetch live data
+        const [modules, student] = await Promise.all([
+          listModulesForStudent(studentId),
+          fetchStudentProfile(studentId) 
+        ]);
+        
+        setData({ student, modules });
+      }
+    } else {
+      // 3. Keep existing mock logic
+      mockDB.touch();
+      const student = mockDB.read("students", user.id);
+      const modules: ModuleModel[] = (student?.registeredModules ?? [])
+        .map((id) => mockDB.read("modules", id))
+        .filter((m): m is ModuleModel => m != null);
+      setData({ student, modules });
+    }
+  }
+  loadData();
+}, [user, v,getDataSource()]); // v keeps reactivity when you trigger mock changes
+
+ // const ratePct = data.student ? Math.round((data.student.attendanceStats.attendanceRate ?? 0) * 100) : 0;
+ const ratePct = data.student?.attendanceStats?.attendanceRate 
+  ? Math.round(data.student.attendanceStats.attendanceRate * 100) 
+  : 0;
   const first = user?.role === "student" ? (user.fullName?.trim().split(/\s+/)[0] ?? "Student") : "";
 
   return (
