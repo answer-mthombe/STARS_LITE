@@ -34,7 +34,7 @@ export async function listModulesForStudent(
   const { data, error } = await supabase
     .from(TABLES.modules)
     .select("*")
-    .contains("enrolled_students", [studentId]);
+    .contains("enrolled_students", JSON.stringify([studentId]));
 
   if (error) {
     console.error("[JOB-012] Error fetching student modules:", error);

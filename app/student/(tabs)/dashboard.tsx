@@ -1,6 +1,11 @@
 import { useMemo } from "react";
 import { useRouter } from "expo-router";
 
+
+import { useEffect, useState } from "react";
+import { getDataSource } from "@/services/dataSource";
+import { listModulesForStudent } from "@/services/supabase/moduleRepository";
+
 import {
   AppCard,
   AppText,
@@ -27,20 +32,67 @@ export default function StudentDashboard() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const v = useMockDbVersionStore((s) => s.version);
+ const [modules, setModules] = useState<ModuleModel[]>([]);
+  const [ratePct, setRatePct] = useState(0);
 
-  const data = useMemo(() => {
-    mockDB.touch();
-    if (!user || user.role !== "student") return { student: null, modules: [] as ModuleModel[] };
-    const student = mockDB.read("students", user.id);
-    const modules: ModuleModel[] = (student?.registeredModules ?? [])
-      .map((id) => mockDB.read("modules", id))
-      .filter((m): m is ModuleModel => m != null);
-    return { student, modules };
+  // const data = useMemo(() => {
+  //   mockDB.touch();
+  //   if (!user || user.role !== "student") return { student: null, modules: [] as ModuleModel[] };
+  //   const student = mockDB.read("students", user.id);
+  //   const modules: ModuleModel[] = (student?.registeredModules ?? [])
+  //     .map((id) => mockDB.read("modules", id))
+  //     .filter((m): m is ModuleModel => m != null);
+  //   return { student, modules };
+  // }, [user, v]);
+
+  //const ratePct = data.student ? Math.round((data.student.attendanceStats.attendanceRate ?? 0) * 100) : 0;
+ useEffect(() => {
+    async function loadDashboard() {
+      if (!user || user.role !== "student") {
+        setModules([]);
+        setRatePct(0);
+        return;
+      }
+
+      if (getDataSource() === "mock") {
+        mockDB.touch();
+
+        const student = mockDB.read("students", user.id);
+
+        const moduleList: ModuleModel[] = (student?.registeredModules ?? [])
+          .map((id) => mockDB.read("modules", id))
+          .filter((m): m is ModuleModel => m != null);
+
+        setModules(moduleList);
+
+        setRatePct(
+          Math.round(
+            (student?.attendanceStats.attendanceRate ?? 0) * 100
+          )
+        );
+      } else {
+        try {
+          const moduleList = await listModulesForStudent(user.id);
+          setModules(moduleList);
+
+          // Attendance migration comes later
+          setRatePct(0);
+        } catch (error) {
+          console.error("[JOB-012] Failed to load modules:", error);
+          setModules([]);
+          setRatePct(0);
+        }
+      }
+    }
+
+    loadDashboard();
   }, [user, v]);
-
-  const ratePct = data.student ? Math.round((data.student.attendanceStats.attendanceRate ?? 0) * 100) : 0;
+ 
   const first = user?.role === "student" ? user.fullName.split(" ")[0] : "";
 
+
+
+  
   return (
     <ScreenShell scroll hideHeader>
       <Row style={{ justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
@@ -69,7 +121,7 @@ export default function StudentDashboard() {
       <SectionHeader title="My classes" overline />
 
       <Stack gap="md" style={{ marginBottom: 22 }}>
-        {data.modules.map((m) => (
+        {modules.map((m) => (
           <ModuleCard
             key={m.id}
             code={m.moduleCode}
@@ -80,8 +132,11 @@ export default function StudentDashboard() {
             onActionPress={m.activeSessionId ? () => router.push(`/student/mark-attendance/${m.id}`) : undefined}
           />
         ))}
-        {data.modules.length === 0 ? <AppText variant="body">No modules yet. Use Join class with your code.</AppText> : null}
-      </Stack>
+{modules.length === 0 ? (
+          <AppText variant="body">
+            No modules yet. Use Join class with your code.
+          </AppText>
+        ) : null}      </Stack>
 
       <AppCard>
         <AppText variant="overline">Attendance</AppText>
