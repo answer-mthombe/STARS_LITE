@@ -1,38 +1,54 @@
-import { getRowById } from "@/supabase/queries";
-import { TABLES } from "@/supabase/tables";
-import type { AttendanceRecordModel } from "@/models/Attendance";
 import { requireSupabaseClient } from "@/supabase/client";
+import { TABLES } from "@/supabase/tables";
 
-export async function getAttendanceRecordById(id: string): Promise<AttendanceRecordModel | null> {
-  return getRowById<AttendanceRecordModel>(TABLES.attendanceRecords, id);
+export interface IntegratedAttendanceRecord {
+  id: string;
+  student_id: string;
+  session_id: string;
+  status: "present" | "absent" | "late";
+  created_at: string;
+  session?: {
+    id: string;
+    timestamp: string;
+    module?: {
+      module_code: string;
+      module_name: string;
+    };
+  };
 }
 
+/**
+ * JOB-014: Fetch a student's attendance history joined with session and module data.
+ */
+export async function listForStudent(
+  studentId: string
+): Promise<IntegratedAttendanceRecord[]> {
+  const supabase = requireSupabaseClient();
 
-export const attendanceRecordRepository = {
-  async saveRecord(record: AttendanceRecordModel): Promise<{ ok: true } | { ok: false; reason: string }> {
-    const client = requireSupabaseClient();
-    
-    // We map to snake_case here to match our normalized schema
-    const { error } = await client.from(TABLES.attendanceRecords).insert({
-      session_id: record.sessionId,
-      student_id: record.studentId,
-      distance: record.distance,
-      verified: record.verified,
-      device_id: record.deviceId,
-      time_bucket: record.timeBucket,
-      gps_bucket_hash: record.gpsBucketHash,
-      tapped_index: record.tappedIndex,
-      tier_used: record.tierUsed,
-      action_hash: record.actionHash,
-      passed: record.passed,
-    });
+  const { data, error } = await supabase
+    .from(TABLES.attendanceRecords)
+    .select(`
+      id,
+      student_id,
+      session_id,
+      status,
+      created_at,
+      session:attendance_sessions (
+        id,
+        timestamp,
+        module:modules (
+          module_code,
+          module_name
+        )
+      )
+    `)
+    .eq("student_id", studentId)
+    .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Failed to save attendance:", error);
-      // Logic for handling Unique Constraint violation: (session_id, device_id)
-      if (error.code === '23505') return { ok: false, reason: "Already checked in." };
-      return { ok: false, reason: "Database error." };
-    }
-    return { ok: true };
+  if (error) {
+    console.error("[JOB-014] Error fetching student attendance history:", error);
+    throw error;
   }
-};
+
+  return (data as unknown as IntegratedAttendanceRecord[]) ?? [];
+}

@@ -9,11 +9,34 @@ import { delegationService } from "@/services/delegationService";
 import { canStartModuleSession } from "@/permissions/delegationPermissions";
 import type { InstitutionRole } from "@/types/roles";
 
+import { isSupabaseEnabled } from "@/supabase/client";
+import { attendanceSessionRepository } from "@/services/supabase/attendanceSessionRepository";
+import { getModuleById } from "@/services/supabase/moduleRepository";
+
 function bump() {
   useMockDbVersionStore.getState().bump();
 }
 
 export const attendanceSimulationService = {
+
+  async fetchLiveSessionForModule(moduleId: string): Promise<AttendanceSessionModel | null> {
+       if (isSupabaseEnabled()) {
+      const moduleData = await getModuleById(moduleId);
+      // If the module doesn't exist or has no active session, return null
+        if (!moduleData || !moduleData.activeSessionId) return null;
+      
+      // Fetch the actual session row using the ID from the module
+        return await attendanceSessionRepository.getActiveSession(moduleData.activeSessionId);
+    }
+
+    // 2. Legacy Mock Path
+         mockDB.touch();
+         const mod = mockDB.read("modules", moduleId);
+        if (!mod || !mod.activeSessionId) return null;
+    
+    return mockDB.read("attendanceSessions", mod.activeSessionId) ?? null;
+  },
+
   verifyCodeForSession(args: { sessionId: string; codeEntered: string }): { ok: true } | { ok: false; reason: string } {
     mockDB.touch();
     const session = mockDB.read("attendanceSessions", args.sessionId);

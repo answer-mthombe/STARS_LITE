@@ -1,6 +1,9 @@
 import { useMemo,useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 
+import { getDataSource } from "@/services/dataSource";
+import { listModulesForLecturer } from "@/services/supabase/moduleRepository";
+
 import {
   AppText,
   Chip,
@@ -19,7 +22,6 @@ import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { mockDB } from "@/mockDB/mockDBService";
 import { useMockDbVersionStore } from "@/store/mockDbVersionStore";
 import type { ModuleModel } from "@/models/Module";
-import { listModulesForLecturer } from "@/services/supabase/moduleRepository";
 
 export default function LecturerDashboard() {
   useRoleGuard("lecturer");
@@ -37,6 +39,33 @@ const [modules, setModules] = useState<ModuleModel[]>([]);
   useEffect(() => {
     async function loadModules() {
       if (!user || user.role !== "lecturer") return;
+
+  const [modules, setModules] = useState<ModuleModel[]>([]);
+
+  // const modules = useMemo(() => {
+  //   mockDB.touch();
+  //   if (!user || user.role !== "lecturer") return [] as ModuleModel[];
+  //   return mockDB.list("modules").filter((m) => m.lecturerId === user.id);
+  // }, [user, v]);
+
+  useEffect(() => {
+  async function loadModules() {
+    if (!user || user.role !== "lecturer") return;
+
+    if (getDataSource() === "supabase") {
+      // 1. Fetch real modules for the lecturer
+      const data = await listModulesForLecturer(user.id);
+      setModules(data);
+    } else {
+      // 2. Keep existing mock logic
+      mockDB.touch();
+      const allModules = mockDB.list("modules");
+      const filtered = allModules.filter((m) => m.lecturerId === user.id);
+      setModules(filtered);
+    }
+  }
+  loadModules();
+}, [user, v]); // v ensures it updates if the mockDB changes
 
       try {
         setLoading(true);
