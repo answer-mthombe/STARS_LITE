@@ -28,60 +28,44 @@ export default function LecturerDashboard() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const v = useMockDbVersionStore((s) => s.version);
+
 const [modules, setModules] = useState<ModuleModel[]>([]);
   const [loading, setLoading] = useState(true);
-  // const modules = useMemo(() => {
-  //   mockDB.touch();
-  //   if (!user || user.role !== "lecturer") return [] as ModuleModel[];
-  //   return mockDB.list("modules").filter((m) => m.lecturerId === user.id);
-  // }, [user, v]);
+  
 
+// 2. Single useEffect for data fetching
   useEffect(() => {
     async function loadModules() {
-      if (!user || user.role !== "lecturer") return;
+      if (!user || user.role !== "lecturer") {
+        setLoading(false);
+        return;
+      }
 
-  const [modules, setModules] = useState<ModuleModel[]>([]);
-
-  // const modules = useMemo(() => {
-  //   mockDB.touch();
-  //   if (!user || user.role !== "lecturer") return [] as ModuleModel[];
-  //   return mockDB.list("modules").filter((m) => m.lecturerId === user.id);
-  // }, [user, v]);
-
-  useEffect(() => {
-  async function loadModules() {
-    if (!user || user.role !== "lecturer") return;
-
-    if (getDataSource() === "supabase") {
-      // 1. Fetch real modules for the lecturer
-      const data = await listModulesForLecturer(user.id);
-      setModules(data);
-    } else {
-      // 2. Keep existing mock logic
-      mockDB.touch();
-      const allModules = mockDB.list("modules");
-      const filtered = allModules.filter((m) => m.lecturerId === user.id);
-      setModules(filtered);
-    }
-  }
-  loadModules();
-}, [user, v]); // v ensures it updates if the mockDB changes
-
+      setLoading(true);
       try {
-        setLoading(true);
-        const data = await listModulesForLecturer(user.id);
-        setModules(data);
+        if (getDataSource() === "supabase") {
+          // Fetch real modules for the lecturer from Supabase
+          const data = await listModulesForLecturer(user.id);
+          setModules(data);
+        } else {
+          // Keep existing mock logic for offline/mock development
+          mockDB.touch();
+          const allModules = mockDB.list("modules");
+          const filtered = allModules.filter((m) => m.lecturerId === user.id);
+          setModules(filtered);
+        }
       } catch (error) {
-        console.error("Failed to load lecturer modules from Supabase:", error);
+        console.error("Failed to load lecturer modules:", error);
       } finally {
         setLoading(false);
       }
     }
 
     loadModules();
-  }, [user]);
+  }, [user, v]); // v ensures it updates if the mockDB changes
+
+  const first = user?.role === "lecturer" ? (user.fullName?.trim().split(/\s+/)[0] ?? "Lecturer") : "";
   
-const first = user?.role === "lecturer" ? (user.fullName?.trim().split(/\s+/)[0] ?? "Lecturer") : "";
   return (
     <ScreenShell
       title="Lecturer"
