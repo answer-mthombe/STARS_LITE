@@ -1,8 +1,11 @@
 import { getRowById } from "@/supabase/queries";
 import { TABLES } from "@/supabase/tables";
 import type { ModuleModel } from "@/models/Module";
+// Fixed Import: Pulling the explicit client getter function from your client file
+
 import { requireSupabaseClient } from "@/supabase/client";
 import { fromRow } from "@/supabase/mappers/idBasedMapper";
+
 
 
 export async function getModuleById(id: string): Promise<ModuleModel | null> {

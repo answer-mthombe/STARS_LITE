@@ -1,6 +1,8 @@
 import { mockDB } from "@/mockDB/mockDBService";
 import type { AuthUser } from "@/store/authStore";
 import type { ModuleModel } from "@/models/Module";
+import { requireSupabaseClient } from "@/supabase/client"; 
+import { getDataSource } from "@/services/dataSource"; // Standardized import
 
 function overallAttendanceRate(): number {
   const students = mockDB.list("students");
@@ -13,9 +15,17 @@ function modulesForLecturer(lecturerId: string): ModuleModel[] {
   return mockDB.list("modules").filter((m) => m.lecturerId === lecturerId);
 }
 
-/** Scoped aggregates for dashboards — mock DB only; mirror queries in Supabase later. */
+/** Scoped aggregates for dashboards — handles real-time Supabase queries or safe MockDB fallbacks */
 export const institutionAnalytics = {
-  universityOverview() {
+  async universityOverview() {
+    if (getDataSource() === "supabase") {
+      const supabase = requireSupabaseClient();
+      const { data, error } = await supabase.rpc("get_university_overview");
+      if (error) throw error;
+      return data;
+    }
+
+    // --- Mock Fallback ---
     mockDB.touch();
     const students = mockDB.list("students");
     const records = mockDB.list("attendanceRecords");
@@ -47,7 +57,15 @@ export const institutionAnalytics = {
     };
   },
 
-  facultyOverview(facultyId: string) {
+  async facultyOverview(facultyId: string) {
+    if (getDataSource() === "supabase") {
+      const supabase = requireSupabaseClient();
+      const { data, error } = await supabase.rpc("get_faculty_overview", { target_faculty_id: facultyId });
+      if (error) throw error;
+      return data;
+    }
+
+    // --- Mock Fallback ---
     mockDB.touch();
     const departments = mockDB.list("departments").filter((d) => d.facultyId === facultyId);
     const courseIds = mockDB
@@ -95,7 +113,15 @@ export const institutionAnalytics = {
     };
   },
 
-  departmentOverview(departmentId: string) {
+  async departmentOverview(departmentId: string) {
+    if (getDataSource() === "supabase") {
+      const supabase = requireSupabaseClient();
+      const { data, error } = await supabase.rpc("get_department_overview", { target_dept_id: departmentId });
+      if (error) throw error;
+      return data;
+    }
+
+    // --- Mock Fallback ---
     mockDB.touch();
     const dept = mockDB.read("departments", departmentId);
     const courses = mockDB.list("courses").filter((c) => c.departmentId === departmentId);
@@ -164,11 +190,11 @@ export const institutionAnalytics = {
     };
   },
 
-  forUser(user: AuthUser | null) {
+  async forUser(user: AuthUser | null) {
     if (!user) return { scope: "none" as const, payload: null };
-    if (user.role === "admin") return { scope: "university" as const, payload: this.universityOverview() };
-    if (user.role === "dean") return { scope: "faculty" as const, payload: this.facultyOverview(user.facultyId) };
-    if (user.role === "hod") return { scope: "department" as const, payload: this.departmentOverview(user.departmentId) };
+    if (user.role === "admin") return { scope: "university" as const, payload: await this.universityOverview() };
+    if (user.role === "dean") return { scope: "faculty" as const, payload: await this.facultyOverview(user.facultyId) };
+    if (user.role === "hod") return { scope: "department" as const, payload: await this.departmentOverview(user.departmentId) };
     if (user.role === "lecturer") return { scope: "lecturer" as const, payload: this.lecturerScoped(user.id) };
     return { scope: "student" as const, payload: this.studentScoped(user.id) };
   },

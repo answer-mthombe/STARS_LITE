@@ -28,6 +28,18 @@ export default function LecturerDashboard() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const v = useMockDbVersionStore((s) => s.version);
+const [modules, setModules] = useState<ModuleModel[]>([]);
+  const [loading, setLoading] = useState(true);
+  // const modules = useMemo(() => {
+  //   mockDB.touch();
+  //   if (!user || user.role !== "lecturer") return [] as ModuleModel[];
+  //   return mockDB.list("modules").filter((m) => m.lecturerId === user.id);
+  // }, [user, v]);
+
+  useEffect(() => {
+    async function loadModules() {
+      if (!user || user.role !== "lecturer") return;
+
   const [modules, setModules] = useState<ModuleModel[]>([]);
 
   // const modules = useMemo(() => {
@@ -55,6 +67,21 @@ export default function LecturerDashboard() {
   loadModules();
 }, [user, v]); // v ensures it updates if the mockDB changes
 
+      try {
+        setLoading(true);
+        const data = await listModulesForLecturer(user.id);
+        setModules(data);
+      } catch (error) {
+        console.error("Failed to load lecturer modules from Supabase:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadModules();
+  }, [user]);
+  
+const first = user?.role === "lecturer" ? (user.fullName?.trim().split(/\s+/)[0] ?? "Lecturer") : "";
   return (
     <ScreenShell
       title="Lecturer"
@@ -74,7 +101,7 @@ export default function LecturerDashboard() {
 
       <SectionHeader title="Your modules" overline />
 
-      <Stack gap="md">
+      {/* <Stack gap="md">
         {modules.map((m) => (
           <Stack key={m.id} gap="sm">
             <ModuleCard
@@ -97,6 +124,42 @@ export default function LecturerDashboard() {
             </Row>
           </Stack>
         ))}
+      </Stack> */}
+      <Stack gap="md">
+        {loading ? (
+          <AppText variant="body" style={{ color: "#687076" }}>
+            Loading your modules from Supabase...
+          </AppText>
+        ) : (
+          modules.map((m) => (
+            <Stack key={m.id} gap="sm">
+              <ModuleCard
+                code={m.moduleCode}
+                name={m.moduleName}
+                meta={m.activeSessionId ? "Session running" : "Idle"}
+                onPress={() => router.push(`/lecturer/student-management/${m.id}`)}
+              />
+              <Row gap="sm">
+                <Chip
+                  label="Class session"
+                  variant="accent"
+                  onPress={() => router.push(`/lecturer/create-session/${m.id}` as never)}
+                />
+                <Chip
+                  label="Test / scan"
+                  variant="outline"
+                  onPress={() => router.push(`/lecturer/test-session/${m.id}` as never)}
+                />
+              </Row>
+            </Stack>
+          ))
+        )}
+
+        {!loading && modules.length === 0 ? (
+          <AppText variant="body" style={{ color: "#687076" }}>
+            No modules found where you are listed as a primary or co-lecturer.
+          </AppText>
+        ) : null}
       </Stack>
 
       <Spacer size="lg" />

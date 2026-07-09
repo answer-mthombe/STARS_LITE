@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "expo-router";
+import { ActivityIndicator } from "react-native";
 
 import { useDeanData } from "@/hooks/useDeanData";
 
@@ -177,7 +178,7 @@ if (loading) {
           <Spacer size="md" />
           <AppCard>
             <SectionHeader title="Low-performing departments" />
-            {overview.lowPerformingDepartments.map((d) => (
+            {overview.lowPerformingDepartments.map((d: any) => (
               <AppText key={d.departmentId} variant="body" style={{ marginBottom: 4 }}>
                 {d.name} — {(d.avgAttendance * 100).toFixed(0)}%
               </AppText>

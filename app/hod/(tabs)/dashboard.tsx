@@ -1,5 +1,6 @@
 import { useEffect,useMemo,useState } from "react";
 import { useRouter } from "expo-router";
+import { ActivityIndicator } from "react-native";
 
 import {
   AppButton,
@@ -19,7 +20,6 @@ import { useAuthStore } from "@/store/authStore";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { institutionAnalytics } from "@/services/institutionAnalytics";
 import { hodModuleBars, hodRiskTrend } from "@/services/dashboardChartDummy";
-import { mockDB } from "@/mockDB/mockDBService";
 import { useMockDbVersionStore } from "@/store/mockDbVersionStore";
 
 import { getDataSource } from "@/services/dataSource";
@@ -36,9 +36,35 @@ export default function HodDashboardScreen() {
 
   const departmentId = user?.role === "hod" ? user.departmentId : "";
 
-  const overview = useMemo(() => {
-    mockDB.touch();
-    return institutionAnalytics.departmentOverview(departmentId);
+  // 1. Manage loading, error, and dynamic payload state
+  const [overview, setOverview] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 2. Fetch the department-scoped data asynchronously
+  useEffect(() => {
+    if (!departmentId) return;
+
+    let isMounted = true;
+    async function loadHodData() {
+      try {
+        setLoading(true);
+        const data = await institutionAnalytics.departmentOverview(departmentId);
+        if (isMounted) {
+          setOverview(data);
+          setError(null);
+        }
+      } catch (err: any) {
+        if (isMounted) {
+          setError(err?.message || "Failed to load department analytics.");
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    loadHodData();
+    return () => { isMounted = false; };
   }, [departmentId, v]);
 
   //const previewModBars = useMemo(() => hodModuleBars(overview).slice(0, 4), [overview]);
@@ -135,12 +161,14 @@ const previewModBars = useMemo(() => {
       <HighlightStat
         label="Department attendance rate"
         value={`${(overview.attendanceRate * 100).toFixed(1)}%`}
-        detail={`Students tracked: ${overview.studentInsights.total} · At-risk (&lt;55%): ${overview.studentInsights.atRiskCount}`}
+        detail={`Students tracked: ${overview.studentInsights?.total ?? 0} · At-risk (<55%): ${overview.studentInsights?.atRiskCount ?? 0}`}
       />
+
+      <Spacer size="md" />
 
       <AppCard>
         <SectionHeader title="Modules" />
-        {overview.moduleStats.map((m) => (
+        {overview.moduleStats?.map((m: any) => (
           <DividerListRow key={m.moduleId} left={m.name} right={`${m.enrolled} enrolled`} />
         ))}
       </AppCard>

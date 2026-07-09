@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "expo-router";
+import { ActivityIndicator } from "react-native";
 
 import {
   AppButton,
@@ -17,11 +18,9 @@ import {
 import { RoleQuickNav } from "@/components/navigation/RoleQuickNav";
 import { StatsBarChart } from "@/components/charts/StatsBarChart";
 import { StatsLineChart } from "@/components/charts/StatsLineChart";
-import { useAuthStore } from "@/store/authStore";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { institutionAnalytics } from "@/services/institutionAnalytics";
 import { adminAttendanceTrend, adminFacultyBars } from "@/services/dashboardChartDummy";
-import { mockDB } from "@/mockDB/mockDBService";
 import { useMockDbVersionStore } from "@/store/mockDbVersionStore";
 
 export default function AdminDashboardScreen() {
@@ -29,14 +28,72 @@ export default function AdminDashboardScreen() {
   const router = useRouter();
   const v = useMockDbVersionStore((s) => s.version);
 
-  const overview = useMemo(() => {
-    mockDB.touch();
-    return institutionAnalytics.universityOverview();
+  // 1. Manage state for backend remote data loading
+  const [overview, setOverview] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 2. Fetch the asynchronous universityOverview data
+  useEffect(() => {
+    let isMounted = true;
+    async function loadDashboardData() {
+      try {
+        setLoading(true);
+        const data = await institutionAnalytics.universityOverview();
+        if (isMounted) {
+          setOverview(data);
+          setError(null);
+        }
+      } catch (err: any) {
+        if (isMounted) {
+          setError(err?.message || "Failed to load admin analytics data.");
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    loadDashboardData();
+    return () => { isMounted = false; };
   }, [v]);
 
-  const previewBars = useMemo(() => adminFacultyBars(overview).slice(0, 3), [overview]);
-  const previewTrend = useMemo(() => adminAttendanceTrend(overview.overallAttendanceRate).slice(-8), [overview]);
+  // 3. Dynamic layout charts fallback securely if data is missing
+  const previewBars = useMemo(() => {
+    if (!overview) return [];
+    return adminFacultyBars(overview).slice(0, 3);
+  }, [overview]);
 
+  const previewTrend = useMemo(() => {
+    if (!overview) return [];
+    return adminAttendanceTrend(overview.overallAttendanceRate).slice(-8);
+  }, [overview]);
+
+  // 4. Loading indicator view
+  if (loading) {
+    return (
+      <ScreenShell title="University overview" subtitle="STARS — Loading live data...">
+        <Spacer size="xl" />
+        <ActivityIndicator size="large" color="#0000ff" />
+      </ScreenShell>
+    );
+  }
+
+// 5. Database execution failure block
+  if (error || !overview) {
+    return (
+      <ScreenShell title="University overview" subtitle="STARS — Connection Error">
+        {/* We use Stack to handle the border styling cleanly */}
+        <Stack style={{ borderColor: "red", borderWidth: 1, borderRadius: 8, padding: 4 }}>
+          <AppCard>
+            <SectionHeader title="Database Connection Failed" />
+            <AppText variant="body">{error || "No dynamic overview payload loaded."}</AppText>
+          </AppCard>
+        </Stack>
+        <Spacer size="md" />
+        <RoleQuickNav role="admin" />
+      </ScreenShell>
+    );
+  }
   const statTiles = [
     { label: "Students", value: overview.totalStudents },
     { label: "Lecturers", value: overview.totalLecturers },
@@ -47,10 +104,10 @@ export default function AdminDashboardScreen() {
   ];
 
   return (
-    <ScreenShell title="University overview" subtitle="STARS — institutional analytics (simulation)" scroll>
+    <ScreenShell title="University overview" subtitle="STARS — institutional analytics" scroll>
       <AppText variant="body" style={{ marginBottom: 14 }}>
         Full visibility across Mangosuthu University of Technology: enrolment, attendance, and faculty performance
-        (mock data — Supabase RLS will scope the same views per security policies).
+        routed live from remote engine via Supabase RPC services.
       </AppText>
 
       <Row wrap gap="sm" style={{ marginBottom: 4 }}>
@@ -72,7 +129,7 @@ export default function AdminDashboardScreen() {
 
       <AppCard>
         <SectionHeader title="Faculty performance snapshot" />
-        {overview.facultyPerformance.map((f) => (
+        {overview.facultyPerformance?.map((f: any) => (
           <DividerListRow
             key={f.facultyId}
             left={f.facultyName}
