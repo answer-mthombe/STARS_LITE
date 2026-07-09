@@ -25,10 +25,10 @@ export function useDeanData(facultyId: string) {
         setData({ departments: deptData, lecturers: lectData, loading: false });
       } else {
         // FLOW 2: SIMULATION (as you had before)
-        const overview = institutionAnalytics.facultyOverview(facultyId);
+        const overview =  await institutionAnalytics.facultyOverview(facultyId);
 
         // Transform the data to match AnalyticsFacultyDepartmentSummary
-        const transformedDepts: AnalyticsFacultyDepartmentSummary[] = overview.departmentStats.map(d => ({
+        const transformedDepts: AnalyticsFacultyDepartmentSummary[] = overview.departmentStats.map((d:any) => ({
         department_id: d.departmentId,
         department_name: d.name,
         faculty_id: facultyId, // map existing facultyId
@@ -38,7 +38,7 @@ export function useDeanData(facultyId: string) {
 
         setData({ 
                 departments: transformedDepts, 
-                lecturers: overview.lecturerPerformance.map(l => ({
+                lecturers: overview.lecturerPerformance.map((l:any) => ({
                 lecturer_id: l.lecturerId,
                 lecturer_name: l.name,
                 modules_taught: l.modulesTaught,

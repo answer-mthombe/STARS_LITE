@@ -67,10 +67,10 @@ export default function HodDashboardScreen() {
     return () => { isMounted = false; };
   }, [departmentId, v]);
 
-  //const previewModBars = useMemo(() => hodModuleBars(overview).slice(0, 4), [overview]);
 
-  
-  const previewRisk = useMemo(() => hodRiskTrend(overview.attendanceRate).slice(-6).map((x) => x * 100), [overview]);
+  const previewRisk = useMemo(() => {
+  return overview ? hodRiskTrend(overview.attendanceRate).slice(-6).map((x) => x * 100) : [];
+}, [overview]);
 
   const [riskTrendPoints, setRiskTrendPoints] = useState<number[]>([]);
   const [riskTrendLabels, setRiskTrendLabels] = useState<string[]>([]);
@@ -86,45 +86,10 @@ const previewModBars = useMemo(() => {
     })).slice(0, 4);
   }
 
-  // Fallback to mock data
-  return hodModuleBars(overview).slice(0, 4);
+  // Fallback to mock data with a safety check
+  return overview ? hodModuleBars(overview).slice(0, 4) : [];
 }, [overview, isLive, liveModuleStats]);
 
-  // useEffect(() => {
-  //   console.log("DEBUG: useEffect running. Department ID:", departmentId);
-  //   async function loadTrends() {
-  //     setIsLoading(true);
-  //     const isSupabase = getDataSource() === "supabase";
-  //     setIsLive(isSupabase);
-
-  //     console.log("DEBUG: isSupabase flag evaluates to:", isSupabase);
-  //     if (isSupabase) {
-  //       // Fetch real data (Returns empty array if no data exists yet)
-  //       console.log("DEBUG: About to call fetchDepartmentRiskTrends...");
-  //       const liveData = await analyticsRepository.fetchDepartmentRiskTrends(departmentId);
-  //       console.log("DEBUG: Data returned from Supabase:", liveData);
-  //       // Map data to the chart arrays
-  //       setRiskTrendPoints(liveData.map(d => Number(d.attendance_rate)));
-  //       setRiskTrendLabels(liveData.map(d => {
-  //         const date = new Date(d.trend_date);
-  //         return `${date.getDate()}/${date.getMonth() + 1}`;
-  //       }));
-  //     } else {
-  //       // Fallback to the dashboardChartDummy logic
-  //       console.log("DEBUG: Taking the Mock Data path.");
-  //       const mockRisk = hodRiskTrend(overview.attendanceRate).slice(-6).map((x) => x * 100);
-  //       setRiskTrendPoints(mockRisk);
-  //       setRiskTrendLabels([]); // Let chart auto-generate labels
-  //     }
-  //     setIsLoading(false);
-  //   }
-
-  //   if (departmentId) {
-  //     loadTrends();
-  //   }else{
-  //     console.log("DEBUG: loadTrends skipped because departmentId is falsy.");
-  //   }
-  // }, [departmentId, v, overview.attendanceRate]); // Re-run if department or mock version changes
 
   useEffect(() => {
   async function loadData() {
@@ -152,57 +117,80 @@ const previewModBars = useMemo(() => {
   loadData();
 }, [departmentId, v]);
 
-  return (
-    <ScreenShell title="Department overview" subtitle={overview.departmentName} scroll>
-      <AppText variant="body" style={{ marginBottom: 14 }}>
-        Head of Department view — courses, modules, lecturers, and student attendance risk within your department only.
-      </AppText>
 
-      <HighlightStat
-        label="Department attendance rate"
-        value={`${(overview.attendanceRate * 100).toFixed(1)}%`}
-        detail={`Students tracked: ${overview.studentInsights?.total ?? 0} · At-risk (<55%): ${overview.studentInsights?.atRiskCount ?? 0}`}
-      />
 
-      <Spacer size="md" />
+  
+return (
+    <ScreenShell 
+      title="Department overview" 
+      // Safely handle the subtitle while loading so it doesn't crash
+      subtitle={overview?.departmentName || "Loading..."} 
+      scroll
+    >
+      {loading || !overview ? (
+        // ==========================================
+        // ⏳ SHOW THIS IF LOADING
+        // ==========================================
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", marginTop: 40 }}>
+          {/* Using the corrected colors.palette.primary */}
+          <ActivityIndicator size="large" color={colors.palette.primary} />
+          <AppText variant="caption" style={{ marginTop: 10 }}>Fetching department data...</AppText>
+        </View>
+      ) : (
+        // ==========================================
+        // ✅ SHOW THIS WHEN DATA IS READY
+        // ==========================================
+        <>
+          <AppText variant="body" style={{ marginBottom: 14 }}>
+            Head of Department view — courses, modules, lecturers, and student attendance risk within your department only.
+          </AppText>
 
-      <AppCard>
-        <SectionHeader title="Modules" />
-        {overview.moduleStats?.map((m: any) => (
-          <DividerListRow key={m.moduleId} left={m.name} right={`${m.enrolled} enrolled`} />
-        ))}
-      </AppCard>
-
-      <Spacer size="md" />
-
-      <AppCard>
-        <StatsBarChart title="Preview · modules (proxy %)" data={previewModBars} />
-        <Spacer size="sm" />
-        {/* <StatsLineChart title="Preview · at-risk trend" points={previewRisk} /> */}
-       {isLoading ? (
-          <AppText variant="caption" style={{ padding: 20, textAlign: "center" }}>Loading trends...</AppText>
-        ) : riskTrendPoints.length > 0 ? (
-          <StatsLineChart 
-            title="Preview · at-risk trend" 
-            points={riskTrendPoints} 
-            labels={riskTrendLabels}
-            isLive={isLive} 
+          <HighlightStat
+            label="Department attendance rate"
+            value={`${(overview.attendanceRate * 100).toFixed(1)}%`}
+            detail={`Students tracked: ${overview.studentInsights?.total ?? 0} · At-risk (<55%): ${overview.studentInsights?.atRiskCount ?? 0}`}
           />
-        ) : (
-          <View style={{ padding: 20, alignItems: 'center' }}>
-            <AppText variant="caption" style={{ color: colors.ink.muted }}>
-              {isLive ? "No historical trend data available" : "Trend data simulated"}
-            </AppText>
-          </View>
-        )}
-      </AppCard>
 
-      <Spacer size="md" />
+          <Spacer size="md" />
 
-      <AppButton title="Department analytics (full)" onPress={() => router.push("/hod/analytics")} />
+          <AppCard>
+            <SectionHeader title="Modules" />
+            {overview.moduleStats?.map((m: any) => (
+              <DividerListRow key={m.moduleId} left={m.name} right={`${m.enrolled} enrolled`} />
+            ))}
+          </AppCard>
 
-      <Spacer size="lg" />
-      <RoleQuickNav role="hod" />
+          <Spacer size="md" />
+
+          <AppCard>
+            <StatsBarChart title="Preview · modules (proxy %)" data={previewModBars} />
+            <Spacer size="sm" />
+            {isLoading ? (
+              <AppText variant="caption" style={{ padding: 20, textAlign: "center" }}>Loading trends...</AppText>
+            ) : riskTrendPoints.length > 0 ? (
+              <StatsLineChart 
+                title="Preview · at-risk trend" 
+                points={riskTrendPoints} 
+                labels={riskTrendLabels}
+                isLive={isLive} 
+              />
+            ) : (
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <AppText variant="caption" style={{ color: colors.ink.muted }}>
+                  {isLive ? "No historical trend data available" : "Trend data simulated"}
+                </AppText>
+              </View>
+            )}
+          </AppCard>
+
+          <Spacer size="md" />
+
+          <AppButton title="Department analytics (full)" onPress={() => router.push("/hod/analytics")} />
+
+          <Spacer size="lg" />
+          <RoleQuickNav role="hod" />
+        </>
+      )}
     </ScreenShell>
   );
 }

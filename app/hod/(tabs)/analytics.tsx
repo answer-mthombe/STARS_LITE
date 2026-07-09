@@ -31,17 +31,16 @@ export default function HodAnalyticsSimulationScreen() {
     modBars: AnalyticsModulePerformance[];
     risk: AnalyticsDepartmentRisk[];
     heat: AnalyticsHeatmapData[]; }>({ modBars: [], risk: [], heat: [] }) ;
-
+   const [overview, setOverview] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true); 
 
-  const overview = useMemo(() => {
-    mockDB.touch();
-    return institutionAnalytics.departmentOverview(departmentId);
-  }, [departmentId, v]);
+  
 
- const mockModBars = useMemo(() => hodModuleBars(overview), [overview]);
- const mockRisk = useMemo(() => hodRiskTrend(overview.attendanceRate).map((x) => x * 100), [overview]);
- const mockHeat = useMemo(() => dummyHeatmapMatrix(`hod-${departmentId}`), [departmentId]);
+
+
+const mockModBars = useMemo(() => overview ? hodModuleBars(overview) : [], [overview]);
+  const mockRisk = useMemo(() => overview ? hodRiskTrend(overview.attendanceRate).map((x) => x * 100) : [], [overview]);
+  const mockHeat = useMemo(() => dummyHeatmapMatrix(`hod-${departmentId}`), [departmentId]);
 
  //const modBars = isLive ? liveData.modBars.map(m => ({ label: m.module_name, value: m.avg_attendance })) : mockModBars;
 const modBars = useMemo(() => {
@@ -79,23 +78,34 @@ const modBars = useMemo(() => {
 
 useEffect(() => {
     async function loadFullAnalytics() {
-      if (getDataSource() === "supabase") {
-        setIsLive(true);
-        try {
+      setIsLoading(true);
+      const supabaseMode = getDataSource() === "supabase";
+      setIsLive(supabaseMode);
+
+      try {
+        // AWAIT the mock overview first, because our dummy charts rely on it
+        mockDB.touch();
+        const mockData = await institutionAnalytics.departmentOverview(departmentId);
+        setOverview(mockData);
+
+        // If Live, also fetch from Supabase
+        if (supabaseMode) {
           const [modData, riskData, heatData] = await Promise.all([
              analyticsRepository.fetchModulePerformance(departmentId),
              analyticsRepository.fetchDepartmentRiskTrends(departmentId),
              analyticsRepository.fetchHeatmapData(departmentId)
           ]);
           setLiveData({ modBars: modData, risk: riskData, heat: heatData });
-        } catch (e) {
-          console.error("Analytics fetch failed", e);
         }
+      } catch (e) {
+        console.error("Analytics fetch failed", e);
       }
+      
       setIsLoading(false);
     }
     loadFullAnalytics();
   }, [departmentId, v]);
+
 
  if (isLoading) return <ScreenShell title="Loading..."><Text>Fetching data...</Text></ScreenShell>;
   return (
