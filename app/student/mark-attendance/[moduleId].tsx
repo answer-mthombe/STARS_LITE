@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -17,6 +17,7 @@ import { captureLocationOnce } from "@/utils/captureLocationOnce";
 import { useToastStore } from "@/store/toastStore";
 import { parseAttendanceQrPayload } from "@/utils/attendanceQr";
 import { attendanceChallengeService } from "@/services/attendanceChallengeService";
+import { AttendanceSessionModel } from "@/models/Attendance";
 
 type Tab = "scan" | "manual";
 
@@ -32,13 +33,22 @@ export default function StudentMarkAttendanceScreen() {
   const [tab, setTab] = useState<Tab>(Platform.OS === "web" ? "manual" : "scan");
   const [permission, requestPermission] = useCameraPermissions();
   const handledScan = useRef(false);
+const [session, setSession] = useState<AttendanceSessionModel | null>(null);
 
-  const session = useMemo(() => {
-    mockDB.touch();
-    const mod = mockDB.read("modules", String(moduleId));
-    if (!mod?.activeSessionId) return null;
-    return mockDB.read("attendanceSessions", mod.activeSessionId);
-  }, [moduleId, v]);
+  // const session = useMemo(() => {
+  //   mockDB.touch();
+  //   const mod = mockDB.read("modules", String(moduleId));
+  //   if (!mod?.activeSessionId) return null;
+  //   return mockDB.read("attendanceSessions", mod.activeSessionId);
+  // }, [moduleId, v]);
+
+  useEffect(() => {
+  async function loadSession() {                  
+    const live = await attendanceSimulationService.fetchLiveSessionForModule(String(moduleId));
+    setSession(live);
+  }
+  loadSession();
+}, [moduleId, v]);
 
   const submit = useCallback(
     async (codeEntered: string): Promise<boolean> => {

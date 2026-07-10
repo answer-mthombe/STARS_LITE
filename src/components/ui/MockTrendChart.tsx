@@ -7,13 +7,29 @@ type Props = {
   /** Series of points in 0–100 (attendance index) */
   points: number[];
   labels?: string[];
+  isLive?: boolean;
 };
 
-export function MockTrendChart({ title, points, labels }: Props) {
+export function MockTrendChart({ title, points, labels, isLive =false}: Props) {
+  // const max = Math.max(...points, 1);
+  // const min = Math.min(...points, 0);
+  // const range = max - min || 1;
+  const h = 88;
+
+  if (!points || points.length === 0) {
+    return (
+      <View style={{ marginBottom: 8 }}>
+        <Text style={{ color: colors.palette.accent, fontWeight: "900", marginBottom: 10 }}>{title}</Text>
+        <View style={{ height: h, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: colors.ink.muted }}>No attendance data recorded yet.</Text>
+        </View>
+      </View>
+    );
+  }
+
   const max = Math.max(...points, 1);
   const min = Math.min(...points, 0);
   const range = max - min || 1;
-  const h = 88;
 
   return (
     <View style={{ marginBottom: 8 }}>
@@ -41,9 +57,15 @@ export function MockTrendChart({ title, points, labels }: Props) {
           );
         })}
       </View>
-      <Text style={{ color: colors.ink.muted, fontSize: 12, marginTop: 6 }}>
+      {/* <Text style={{ color: colors.ink.muted, fontSize: 12, marginTop: 6 }}>
         Simulation — Supabase phase will use dated rollups (JOB-019).
-      </Text>
+      </Text> */}
+
+      {!isLive && (
+        <Text style={{ color: colors.ink.muted, fontSize: 12, marginTop: 6 }}>
+          Simulation — Using dummy data
+        </Text>
+      )}
     </View>
   );
 }

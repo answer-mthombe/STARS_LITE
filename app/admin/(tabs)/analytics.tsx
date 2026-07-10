@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
 
@@ -25,14 +25,23 @@ export default function AdminAnalyticsSimulationScreen() {
   const router = useRouter();
   const v = useMockDbVersionStore((s) => s.version);
 
-  const overview = useMemo(() => {
+  const [overview, setOverview] = useState<any>(null);
+const [isLoading, setIsLoading] = useState(true);
+  
+useEffect(() => {
+  async function loadData() {
+    setIsLoading(true);
     mockDB.touch();
-    return institutionAnalytics.universityOverview();
-  }, [v]);
+    const data = await institutionAnalytics.universityOverview();
+    setOverview(data); // This holds the actual data object now
+    setIsLoading(false);
+  }
+  loadData();
+}, [v]);  
 
-  const facultyBars = useMemo(() => adminFacultyBars(overview), [overview]);
-  const trend = useMemo(() => adminAttendanceTrend(overview.overallAttendanceRate), [overview]);
-  const enrol = useMemo(() => adminEnrolmentSplit(overview), [overview]);
+const facultyBars = useMemo(() => overview ? adminFacultyBars(overview) : [], [overview]);
+const trend = useMemo(() => overview ? adminAttendanceTrend(overview.overallAttendanceRate) : [], [overview]);
+const enrol = useMemo(() => overview ? adminEnrolmentSplit(overview) : [], [overview]);
   const heat = useMemo(() => dummyHeatmapMatrix("admin-university"), []);
 
   return (
