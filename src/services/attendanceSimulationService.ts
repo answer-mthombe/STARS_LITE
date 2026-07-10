@@ -8,6 +8,9 @@ import { useMockDbVersionStore } from "@/store/mockDbVersionStore";
 import { delegationService } from "@/services/delegationService";
 import { canStartModuleSession } from "@/permissions/delegationPermissions";
 import type { InstitutionRole } from "@/types/roles";
+//added imports from m4 job 019
+import { getDataSource } from "@/services/dataSource";
+import { createSession as createSupabaseSession } from "@/services/supabase/attendanceSessionRepository";
 
 function bump() {
   useMockDbVersionStore.getState().bump();
@@ -65,6 +68,24 @@ export const attendanceSimulationService = {
       `${args.moduleId}:${now}:${Math.random().toString(16)}`
     );
     const shortSeed = seed.slice(0, 16);
+
+    //new added code from job 019
+
+    if (getDataSource() === "supabase") {
+  const expiresAt = new Date(now + mins * 60_000).toISOString();
+
+  return await createSupabaseSession({
+    moduleId: args.moduleId,
+    hostRole: args.hostRole,
+    hostId: args.hostId,
+    latitude: args.latitude,
+    longitude: args.longitude,
+    algorithmSeed: shortSeed,
+    radius,
+    expiresAt,
+    active: true,
+  });
+}
 
     const session = mockDB.create("attendanceSessions", {
       moduleId: args.moduleId,

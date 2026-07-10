@@ -44,4 +44,44 @@ export async function listModulesForStudent(
   return (data ?? [])
     .map((row) => fromRow<ModuleModel>(row))
     .filter((module): module is ModuleModel => module !== null);
+
+}
+
+
+//just got added for M4 ........................................................................................
+export async function setActiveSession(
+  moduleId: string,
+  sessionId: string
+): Promise<void> {
+  const supabase = requireSupabaseClient();
+
+  const { error } = await supabase
+    .from(TABLES.modules)
+    .update({
+      active_session_id: sessionId,
+    })
+    .eq("id", moduleId);
+
+  if (error) {
+    console.error("[JOB-020] Failed to set active session:", error);
+    throw error;
+  }
+}
+
+export async function clearActiveSession(
+  moduleId: string
+): Promise<void> {
+  const supabase = requireSupabaseClient();
+
+  const { error } = await supabase
+    .from(TABLES.modules)
+    .update({
+      active_session_id: null,
+    })
+    .eq("id", moduleId);
+
+  if (error) {
+    console.error("[JOB-020] Failed to clear active session:", error);
+    throw error;
+  }
 }
