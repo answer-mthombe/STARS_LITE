@@ -2,7 +2,6 @@ import { useMemo ,useEffect, useState} from "react";
 import { useRouter } from "expo-router";
 
 
-import { useEffect, useState } from "react";
 import { getDataSource } from "@/services/dataSource";
 import { listModulesForStudent } from "@/services/supabase/moduleRepository";
 
