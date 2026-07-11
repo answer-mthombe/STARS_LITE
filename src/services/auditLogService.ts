@@ -1,7 +1,12 @@
+import { requireSupabaseClient } from "@/supabase/client";
 import type { AuditLogModel, AuditAction } from "@/models/AuditLog";
 import type { AuthUser } from "@/store/authStore";
 import type { InstitutionRole } from "@/types/roles";
+import {getDataSource} from "@/services/dataSource"; 
 import { mockDB } from "@/mockDB/mockDBService";
+
+
+
 
 export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   "user.privilege_granted": "Privilege granted",
@@ -17,120 +22,148 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   "request.rejected": "Request rejected",
 };
 
-function personLabel(personId: string): string {
-  const student = mockDB.read("students", personId);
-  if (student) return `${student.fullName} (student)`;
-  const lecturer = mockDB.read("lecturers", personId);
-  if (lecturer) return lecturer.fullName;
-  const tutor = mockDB.list("tutors").find((t) => t.id === personId || t.studentId === personId);
-  if (tutor) {
-    const stu = mockDB.read("students", tutor.studentId);
-    return stu ? `${stu.fullName} (tutor)` : personId;
-  }
-  return personId;
-}
-
-function moduleLabel(moduleId: string | null | undefined): string | undefined {
-  if (!moduleId) return undefined;
-  const mod = mockDB.read("modules", moduleId);
-  return mod ? `${mod.moduleCode} · ${mod.moduleName}` : moduleId;
-}
-
 export type AuditLogViewRow = AuditLogModel & {
   actionLabel: string;
   actorLabel: string;
   scopeLabel?: string;
 };
 
-function enrich(row: AuditLogModel): AuditLogViewRow {
+function enrich(row: any): AuditLogViewRow {
   return {
     ...row,
-    actionLabel: AUDIT_ACTION_LABELS[row.action] ?? row.action,
-    actorLabel: personLabel(row.actorPersonId),
-    scopeLabel:
-      row.scopeType === "module"
-        ? moduleLabel(row.scopeId ?? undefined)
-        : row.scopeType
-          ? `${row.scopeType}${row.scopeId ? ` · ${row.scopeId}` : ""}`
-          : undefined,
+    id: row.id,
+    action: row.action,
+    actorPersonId: row.actor_person_id,
+    actorRole: row.actor_role,
+    scopeType: row.scope_type,
+    scopeId: row.scope_id,
+    targetPersonId: row.target_person_id,
+    createdAt: row.created_at,
+    actionLabel: AUDIT_ACTION_LABELS[row.action as AuditAction] ?? row.action,
+    actorLabel: row.full_name || row.actor_person_id || "System",
+   // scopeLabel: row.scope_display_name || undefined,
+   scopeLabel: row.scope_type ? `${row.scope_type.charAt(0).toUpperCase() + row.scope_type.slice(1)}: ${row.scope_id}` : "General",
   };
 }
 
-function lecturerModuleIds(lecturerId: string): Set<string> {
-  return new Set(mockDB.list("modules").filter((m) => m.lecturerId === lecturerId).map((m) => m.id));
-}
+/**
+ * STORY-307: Fetches a real scoped list of audit logs from Supabase.
+ */
+/**
+ * STORY-307: Fetches a real scoped list of audit logs from Supabase.
+ * * @param user - The authenticated active user session containing role metadata context.
+ * @param limit - The maximum number of log rows to return per page slice. Defaults to 50 rows.
+ * @param offset - The starting index offset utilized for cursor-less pagination ranges. Defaults to 0.
+ * @returns A processed array of enriched audit log viewport rows.
+ */
+// export async function listAuditLogsForUser(
+//   user: AuthUser, 
+//   limit = 50, 
+//   offset = 0
+// ): Promise<AuditLogViewRow[]> {
+//   const role = user.role as InstitutionRole;
+  
+//   // Cast to any safely to access custom application metadata properties without breaking compilation
+//   const userMetadata = user as any;
 
-function departmentModuleIds(departmentId: string): Set<string> {
-  const courseIds = new Set(
-    mockDB
-      .list("courses")
-      .filter((c) => c.departmentId != null && c.departmentId === departmentId)
-      .map((c) => c.id)
-  );
-  return new Set(mockDB.list("modules").filter((m) => m.courseId != null && courseIds.has(m.courseId)).map((m) => m.id));
-}
+//   const supabase = requireSupabaseClient();
+//   let query = supabase
+//     .from("audit_logs")
+//     .select(`
+//       *,
+//       profiles:actor_person_id (full_name)
+//     `)
+//     .order("created_at", { ascending: false })
+//     .range(offset, offset + limit - 1);
 
-function facultyModuleIds(facultyId: string): Set<string> {
-  const deptIds = new Set(mockDB.list("departments").filter((d) => d.facultyId === facultyId).map((d) => d.id));
-  const courseIds = new Set(
-    mockDB
-      .list("courses")
-      .filter((c) => c.departmentId != null && deptIds.has(c.departmentId))
-      .map((c) => c.id)
-  );
-  return new Set(mockDB.list("modules").filter((m) => m.courseId != null && courseIds.has(m.courseId)).map((m) => m.id));
-}
+//   if (role === "admin") {
+//     // Admins have systemic visibility
+//   } else if (role === "lecturer") {
+//     const moduleIds: string[] = userMetadata.moduleIds || [];
+//     query = query.or(`actor_person_id.eq.${user.id},and(scope_type.eq.module,scope_id.in.(${moduleIds.join(",") || ""}))`);
+//   } else if (role === "hod") {
+//     const departmentId = userMetadata.departmentId || "";
+//     query = query.or(`scope_type.eq.department,scope_id.eq.${departmentId},actor_role.eq.hod`);
+//   } else if (role === "dean") {
+//     const facultyId = userMetadata.facultyId || "";
+//     query = query.or(`scope_type.eq.faculty,scope_id.eq.${facultyId},scope_type.eq.university,actor_role.eq.dean`);
+//   } else {
+//     return []; 
+//   }
 
-export function listAuditLogsForUser(user: AuthUser, limit = 50): AuditLogViewRow[] {
-  mockDB.touch();
-  const rows = mockDB
-    .list("auditLogs")
-    .slice()
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+//   const { data, error } = await query;
 
-  const filtered = filterByRole(rows, user);
-  return filtered.slice(0, limit).map(enrich);
-}
+//   if (error) {
+//     console.error("Error fetching scoped audit logs:", error);
+//     throw error;
+//   }
 
-function filterByRole(rows: AuditLogModel[], user: AuthUser): AuditLogModel[] {
+//   return (data || []).map(enrich);
+// }
+
+export async function listAuditLogsForUser(
+  user: AuthUser, 
+  limit = 50, 
+  offset = 0
+): Promise<AuditLogViewRow[]> {
   const role = user.role as InstitutionRole;
+  const userMetadata = user as any;
 
-  if (role === "admin") return rows;
-
-  if (role === "lecturer") {
-    const mods = lecturerModuleIds(user.id);
-    return rows.filter(
-      (r) =>
-        r.actorPersonId === user.id ||
-        (r.scopeType === "module" && r.scopeId != null && mods.has(r.scopeId))
-    );
+  // --- Mock Fallback ---
+  if (getDataSource() === "mock") {
+    mockDB.touch();
+    let allLogs = mockDB.list("auditLogs") || [];
+    
+    // Basic mock filtering reflecting RLS rules
+    if (role === "lecturer") {
+      const moduleIds: string[] = userMetadata.moduleIds || [];
+      allLogs = allLogs.filter(log => log.actorPersonId === user.id || (log.scopeType === "module" && moduleIds.includes(log.scopeId ?? "")));
+    } else if (role === "hod") {
+      const departmentId = userMetadata.departmentId || "";
+      allLogs = allLogs.filter(log => log.scopeType === "department" && log.scopeId === departmentId);
+    } else if (role === "dean") {
+      const facultyId = userMetadata.facultyId || "";
+      allLogs = allLogs.filter(log => log.scopeType === "faculty" && log.scopeId === facultyId);
+    }
+    
+    // Admins see all logs
+    return allLogs
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(offset, offset + limit)
+      .map(enrich);
   }
 
-  if (role === "dean" && user.role === "dean") {
-    const mods = facultyModuleIds(user.facultyId);
-    return rows.filter(
-      (r) =>
-        r.scopeType === "faculty"
-          ? r.scopeId === user.facultyId
-          : r.scopeType === "module" && r.scopeId != null
-            ? mods.has(r.scopeId)
-            : r.scopeType === "university" || r.actorRole === "dean"
-    );
+  // --- Real Supabase Path ---
+  const supabase = requireSupabaseClient();
+  let query = supabase
+    .from("audit_logs_view") 
+    .select("*")
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+    
+  if (role === "admin") {
+    // Admins have systemic visibility
+  } else if (role === "lecturer") {
+    const moduleIds: string[] = userMetadata.moduleIds || [];
+    query = query.or(`actor_person_id.eq.${user.id},and(scope_type.eq.module,scope_id.in.(${moduleIds.join(",") || ""}))`);
+  } else if (role === "hod") {
+    const departmentId = userMetadata.departmentId || "";
+    query = query.or(`scope_type.eq.department,scope_id.eq.${departmentId},actor_role.eq.hod`);
+  } else if (role === "dean") {
+    const facultyId = userMetadata.facultyId || "";
+    query = query.or(`scope_type.eq.faculty,scope_id.eq.${facultyId},scope_type.eq.university,actor_role.eq.dean`);
+  } else {
+    return []; 
   }
 
-  if (role === "hod" && user.role === "hod") {
-    const mods = departmentModuleIds(user.departmentId);
-    return rows.filter(
-      (r) =>
-        r.scopeType === "department"
-          ? r.scopeId === user.departmentId
-          : r.scopeType === "module" && r.scopeId != null
-            ? mods.has(r.scopeId)
-            : r.actorRole === "hod"
-    );
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Error fetching scoped audit logs:", error);
+    throw error;
   }
 
-  return [];
+  return (data || []).map(enrich);
 }
 
 export function auditLogScopeDescription(role: InstitutionRole): string {

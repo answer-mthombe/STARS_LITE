@@ -190,6 +190,7 @@ export const institutionAnalytics = {
     };
   },
 
+  
   async forUser(user: AuthUser | null) {
     if (!user) return { scope: "none" as const, payload: null };
     if (user.role === "admin") return { scope: "university" as const, payload: await this.universityOverview() };
