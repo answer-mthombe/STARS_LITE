@@ -17,7 +17,8 @@ import { TABLES } from "@/supabase/tables";
 
 import { isSupabaseEnabled } from "@/supabase/client";
 import { attendanceSessionRepository } from "./supabase";
-import { attendanceRecordRepository } from "./supabase";
+import { saveRecord } from "./supabase/attendanceRecordRepository";
+import { enqueueMutation } from "./offline/offlineSync";
 
 
 export type ChallengeObjectShape = "circle" | "square" | "triangle" | "star" | "diamond" | "hexagon" | "cross" | "arrow";
@@ -294,12 +295,38 @@ const session = isSupabaseEnabled()
     //   passed: true,
     // } as any);
 
-    const recordData = {
+//     const recordData = {
+//       sessionId: chal.sessionId,
+//       studentId: chal.studentId,
+//       timestamp: new Date().toISOString(),
+//       distance,
+//       verified: true,
+//       deviceId: chal.deviceId,
+//       timeBucket: chal.openedTimeBucket,
+//       gpsBucketHash: chal.gpsBucketHash,
+//       tappedIndex: args.tappedIndex,
+//       tierUsed: chal.tierUsed,
+//       actionHash: `taps:${args.tapCount}`,
+//       passed: true,
+//     } as any;
+
+// if (isSupabaseEnabled()) {
+//       // CALL YOUR REPOSITORY HERE
+//       const result = await saveRecord(recordData);
+//       if (!result.ok) return result; // This returns the "Already checked in" error if the DB constraint triggers
+//     } else {
+//       // FALLBACK TO MOCK
+//       mockDB.create("attendanceRecords", recordData);
+//     }
+
+
+//     challenges.delete(chal.id);
+//     return { ok: true };
+//   },
+
+const recordPayload = {
       sessionId: chal.sessionId,
       studentId: chal.studentId,
-      timestamp: new Date().toISOString(),
-      distance,
-      verified: true,
       deviceId: chal.deviceId,
       timeBucket: chal.openedTimeBucket,
       gpsBucketHash: chal.gpsBucketHash,
@@ -307,17 +334,28 @@ const session = isSupabaseEnabled()
       tierUsed: chal.tierUsed,
       actionHash: `taps:${args.tapCount}`,
       passed: true,
-    } as any;
+      timestamp: new Date().toISOString(),
+      distance: distance,
+      verified: true,
+    };
 
-if (isSupabaseEnabled()) {
-      // CALL YOUR REPOSITORY HERE
-      const result = await attendanceRecordRepository.saveRecord(recordData);
-      if (!result.ok) return result; // This returns the "Already checked in" error if the DB constraint triggers
-    } else {
-      // FALLBACK TO MOCK
-      mockDB.create("attendanceRecords", recordData);
+    try {
+      if (isSupabaseEnabled()) {
+        // USE THE OUTBOX (JOB-022)
+        await enqueueMutation({
+          mutationId: `submit_attendance_${chal.id}`,
+          collection: "attendanceRecords",
+          entityId: chal.id,
+          op: "set",
+          payload: recordPayload, // Or use recordPayload if you prefer the DB schema keys
+        });
+      } else {
+        // FALLBACK TO MOCK
+        mockDB.create("attendanceRecords", { ...recordPayload, timestamp: new Date().toISOString(), distance });
+      }
+    } catch (e: any) {
+      return { ok: false, reason: e.message || "Failed to save attendance" };
     }
-
 
     challenges.delete(chal.id);
     return { ok: true };

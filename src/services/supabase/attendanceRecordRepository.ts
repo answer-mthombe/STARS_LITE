@@ -51,4 +51,47 @@ export async function listForStudent(
   }
 
   return (data as unknown as IntegratedAttendanceRecord[]) ?? [];
+
+}
+
+export interface AttendanceRecordPayload {
+  session_id: string;
+  student_id: string;
+  device_id: string;
+  time_bucket: number;
+  gps_bucket_hash: string;
+  tapped_index: number;
+  tier_used: number;
+  action_hash: string;
+  passed: boolean;
+}
+
+export async function saveRecord(payload: AttendanceRecordPayload): Promise<void> {
+  const supabase = requireSupabaseClient();
+
+  const { error } = await supabase
+    .from(TABLES.attendanceRecords)
+    .insert([
+      {
+        session_id: payload.session_id,
+        student_id: payload.student_id,
+        device_id: payload.device_id,
+        time_bucket: payload.time_bucket,
+        gps_bucket_hash: payload.gps_bucket_hash,
+        tapped_index: payload.tapped_index,
+        tier_used: payload.tier_used,
+        action_hash: payload.action_hash,
+        passed: payload.passed,
+      }
+    ]);
+
+  if (error) {
+    // If a student tries to cheat and check in twice with the same device, 
+    // Postgres throws a unique constraint violation error (code 23505).
+    if (error.code === '23505') {
+      throw new Error("Already checked in on this device.");
+    }
+    console.error("[JOB-021] Failed to save attendance record:", error.message);
+    throw new Error("Could not save attendance record. Please try again.");
+  }
 }
