@@ -1,20 +1,22 @@
 import { View, Text } from "react-native";
 
 import { colors } from "@/theme";
+import { getDataSource } from "@/services/dataSource";
 
 type Props = {
   title: string;
   /** Series of points in 0–100 (attendance index) */
   points: number[];
   labels?: string[];
-  isLive?: boolean;
+  // isLive?: boolean;
 };
 
-export function MockTrendChart({ title, points, labels, isLive =false}: Props) {
+export function MockTrendChart({ title, points, labels}: Props) {
   // const max = Math.max(...points, 1);
   // const min = Math.min(...points, 0);
   // const range = max - min || 1;
   const h = 88;
+  const isMock = getDataSource() === "mock";
 
   if (!points || points.length === 0) {
     return (
@@ -61,11 +63,10 @@ export function MockTrendChart({ title, points, labels, isLive =false}: Props) {
         Simulation — Supabase phase will use dated rollups (JOB-019).
       </Text> */}
 
-      {!isLive && (
-        <Text style={{ color: colors.ink.muted, fontSize: 12, marginTop: 6 }}>
-          Simulation — Using dummy data
-        </Text>
-      )}
+     {isMock 
+          ? "Simulation — Supabase phase will use dated rollups (JOB-019)." 
+          : "Live PostgreSQL aggregation."}
+          
     </View>
   );
 }

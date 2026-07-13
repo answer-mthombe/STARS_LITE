@@ -32,41 +32,54 @@ export async function listModulesForLecturer(lecturerId: string): Promise<Module
   const { data, error } = await client
     .from(TABLES.modules)
     .select("*")
-.or(`lecturer_id.eq.${lecturerId},co_lecturer_ids.cs.${JSON.stringify([lecturerId])}`);
+    .contains("enrolled_students", JSON.stringify([lecturerId]));
 
   if (error) {
     console.error("Error fetching lecturer modules:", error);
     throw error;
   }
-  return (data || []).map((row) => fromRow(row) as ModuleModel);
+
+  return (data ?? [])
+    .map((row) => fromRow<ModuleModel>(row))
+    .filter((module): module is ModuleModel => module !== null);
+
 }
 
-export async function getLinkedStudentId(): Promise<string | null> {
-  const client = requireSupabaseClient();
-  const { data: { session } } = await client.auth.getSession();
-  if (!session?.user?.id) return null;
-    
-  const { data, error } = await client
-    .from(TABLES.userProfiles)
-    .select("linked_student_id")
-    .eq("id", session.user.id) // Using the true UUID
-    .single();
 
-  if (error || !data) return null;
-  return data.linked_student_id;
-}
+//just got added for M4 ........................................................................................
+export async function setActiveSession(
+  moduleId: string,
+  sessionId: string
+): Promise<void> {
+  const supabase = requireSupabaseClient();
 
-export async function fetchStudentProfile(studentId: string) {
-  const client = requireSupabaseClient();
-  const { data, error } = await client
-    .from(TABLES.students)
-    .select("*")
-    .eq("id", studentId)
-    .single();
+  const { error } = await supabase
+    .from(TABLES.modules)
+    .update({
+      active_session_id: sessionId,
+    })
+    .eq("id", moduleId);
 
   if (error) {
-    console.error("Error fetching student profile:", error);
-    return null;
+    console.error("[JOB-020] Failed to set active session:", error);
+    throw error;
   }
-  return data;
+}
+
+export async function clearActiveSession(
+  moduleId: string
+): Promise<void> {
+  const supabase = requireSupabaseClient();
+
+  const { error } = await supabase
+    .from(TABLES.modules)
+    .update({
+      active_session_id: null,
+    })
+    .eq("id", moduleId);
+
+  if (error) {
+    console.error("[JOB-020] Failed to clear active session:", error);
+    throw error;
+  }
 }

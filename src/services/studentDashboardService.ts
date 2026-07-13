@@ -63,7 +63,7 @@ export async function getStudentDashboard(
       absent: Math.max(0, totalSessions - attended),
       attendanceRate,
     },
-  };
+  };   
 
   return {
     student: studentWithLiveStats,

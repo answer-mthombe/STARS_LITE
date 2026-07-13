@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
-import { mapAuthError } from "src/utils/supabase/mapAuthError";
+import { mapAuthError } from "../../src/utils/supabase/mapAuthError";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   AppButton,

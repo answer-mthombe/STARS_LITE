@@ -4,24 +4,37 @@
  */
 
 import { institutionAnalytics } from "@/services/institutionAnalytics";
+import { getDataSource } from "./dataSource";
 
-type Univ = ReturnType<typeof institutionAnalytics.universityOverview>;
-type Fac = ReturnType<typeof institutionAnalytics.facultyOverview>;
-type Dept = ReturnType<typeof institutionAnalytics.departmentOverview>;
+type Univ = Awaited<ReturnType<typeof institutionAnalytics.universityOverview>>;
+type Fac = Awaited<ReturnType<typeof institutionAnalytics.facultyOverview>>;
+type Dept = Awaited<ReturnType<typeof institutionAnalytics.departmentOverview>>;
+
 
 export type BarDatum = { label: string; value: number; subtitle?: string };
 
 /** Faculty attendance bars — uses real averages from overview when present */
 export function adminFacultyBars(overview: Univ): BarDatum[] {
-  return overview.facultyPerformance.map((f) => ({
+  return overview.facultyPerformance.map((f:any) => ({
     label: f.facultyName,
     value: Math.round(f.avgAttendance * 1000) / 10,
-    subtitle: `${f.studentCount} students`,
+    subtitle: `${f.studentCount || f.student_count} students`,
   }));
 }
 
 /** Dummy 14-day trend (% attendance index) — tail anchored to real overall rate */
-export function adminAttendanceTrend(overallRate: number): number[] {
+// export function adminAttendanceTrend(overallRate: number): number[] {
+//   const tail = Math.round(overallRate * 1000) / 10;
+//   const base = [68, 70, 69, 71, 73, 72, 74, 73, 75, 76, 74, 77, 78, tail];
+//   return base;
+// }
+
+export function adminAttendanceTrend(overallRate: number, realTrend?: number[]): number[] {
+  if (getDataSource() === "supabase" && realTrend && realTrend.length > 0) {
+    return realTrend; // Real data intercept
+  }
+  
+  // --- Mock Fallback ---
   const tail = Math.round(overallRate * 1000) / 10;
   const base = [68, 70, 69, 71, 73, 72, 74, 73, 75, 76, 74, 77, 78, tail];
   return base;
@@ -29,19 +42,30 @@ export function adminAttendanceTrend(overallRate: number): number[] {
 
 /** Synthetic enrolment split by faculty for donut-style bar comparison */
 export function adminEnrolmentSplit(overview: Univ): BarDatum[] {
-  return overview.facultyPerformance.map((f) => ({
+  return overview.facultyPerformance.map((f:any) => ({
     label: f.facultyName,
     value: Math.max(1, f.studentCount),
     subtitle: `${f.moduleCount} modules`,
   }));
 }
 
+// export function deanDepartmentBars(f: Fac): BarDatum[] {
+//   return f.departmentStats.map((d:any) => ({
+//     label: d.name.split(" ")[0] ?? d.name,
+//     value: Math.round(d.avgAttendance * 1000) / 10,
+//     subtitle: `${d.studentCount} students`,
+//   }));
+// }
+
 export function deanDepartmentBars(f: Fac): BarDatum[] {
-  return f.departmentStats.map((d) => ({
-    label: d.name.split(" ")[0] ?? d.name,
-    value: Math.round(d.avgAttendance * 1000) / 10,
-    subtitle: `${d.studentCount} students`,
-  }));
+  return f.departmentStats.map((d: any) => {
+    const nameStr = d.name || d.department_name || d.departmentName || "Dept";
+    return {
+      label: nameStr.split(" ")[0] ?? nameStr,
+      value: Math.round((d.avgAttendance || d.avg_attendance || 0) * 1000) / 10,
+      subtitle: `${d.studentCount || d.student_count || 0} students`,
+    };
+  });
 }
 
 /** Dummy weekly attendance trend for dean (faculty scope) */
@@ -66,11 +90,19 @@ export function dummyHeatmapMatrix(seed: string): number[][] {
   return rows;
 }
 
+// export function hodModuleBars(d: Dept): BarDatum[] {
+//   return d.moduleStats.map((m:any, i:number) => ({
+//     label: m.code,
+//     value: Math.min(96, 58 + ((m.enrolled + i) * 13) % 38),
+//     subtitle: `${m.enrolled} enrolled`,
+//   }));
+// }
+
 export function hodModuleBars(d: Dept): BarDatum[] {
-  return d.moduleStats.map((m, i) => ({
-    label: m.code,
-    value: Math.min(96, 58 + ((m.enrolled + i) * 13) % 38),
-    subtitle: `${m.enrolled} enrolled`,
+  return d.moduleStats.map((m: any, i: number) => ({
+    label: m.code || m.module_code || m.moduleCode || "N/A",
+    value: Math.min(96, 58 + (((m.enrolled || m.enrolled_count || 0) + i) * 13) % 38),
+    subtitle: `${m.enrolled || m.enrolled_count || 0} enrolled`,
   }));
 }
 
