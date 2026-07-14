@@ -32,7 +32,7 @@ export async function listModulesForLecturer(lecturerId: string): Promise<Module
   const { data, error } = await client
     .from(TABLES.modules)
     .select("*")
-    .contains("enrolled_students", JSON.stringify([lecturerId]));
+    .or(`lecturer_id.eq.${lecturerId},co_lecturer_ids.cs.["${lecturerId}"]`);
 
   if (error) {
     console.error("Error fetching lecturer modules:", error);
