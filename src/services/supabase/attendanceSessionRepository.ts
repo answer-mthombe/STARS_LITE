@@ -21,7 +21,7 @@ export const attendanceSessionRepository = {
       .select("*")
       .eq("id", sessionId)
       .eq("active", true)
-      .single();
+      .maybeSingle();
 
       console.log("Supabase response:", { data, error });
     
@@ -51,22 +51,23 @@ export async function createSession(session: {
 }) {
   const client = requireSupabaseClient();
 
+  // 1. Create the new session
   const { data, error } = await client
     .from(TABLES.attendanceSessions)
-  .insert({
-  module_id: session.moduleId,
-  lecturer_id: session.hostId,
-  started_by_role: session.hostRole,
-  started_by_id: session.hostId,
-  lecturer_location: {
-    latitude: session.latitude,
-    longitude: session.longitude,
-  },
-  algorithm_seed: session.algorithmSeed,
-  radius: session.radius,
-  expires_at: session.expiresAt,
-  active: session.active,
-})
+    .insert({
+      module_id: session.moduleId,
+      lecturer_id: session.hostId,
+      started_by_role: session.hostRole,
+      started_by_id: session.hostId,
+      lecturer_location: {
+        latitude: session.latitude,
+        longitude: session.longitude,
+      },
+      algorithm_seed: session.algorithmSeed,
+      radius: session.radius,
+      expires_at: session.expiresAt,
+      active: session.active,
+    })
     .select()
     .single();
 
@@ -74,8 +75,44 @@ export async function createSession(session: {
     throw error;
   }
 
+  // 2. NEW: Update the module to store this new active session ID!
+  const { error: moduleUpdateError } = await client
+    .from("modules")
+    .update({ active_session_id: data.id })
+    .eq("id", session.moduleId);
+
+  if (moduleUpdateError) {
+    console.error("Failed to link session to module:", moduleUpdateError);
+    throw moduleUpdateError;
+  }
+
   return data;
 }
 
+export async function endSessionAndCreateRegister(args: {
+  sessionId: string;
+  moduleId: string;
+  lecturerId: string;
+  studentsPayload: any[]; // The bundled array of attendance data
+}) {
+  const client = requireSupabaseClient();
+  
+  // Generate a unique ID for the text-based class_registers.id column
+  const registerId = `reg_${Date.now()}`;
 
+  const { data, error } = await client.rpc('end_session_and_create_register', {
+    p_session_id: args.sessionId,
+    p_module_id: args.moduleId,
+    p_register_id: registerId,
+    p_lecturer_id: args.lecturerId,
+    p_students: args.studentsPayload
+  });
+
+  if (error) {
+    console.error("Failed to end session and generate register:", error);
+    throw error;
+  }
+
+  return { ok: true, registerId };
+}
 

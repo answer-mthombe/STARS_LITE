@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 
 import { AppButton, AppText, ScreenShell, Spacer, Stack } from "@/components/ui";
@@ -8,6 +8,7 @@ import { testInvigilationService } from "@/services/testInvigilationService";
 import { mockDB } from "@/mockDB/mockDBService";
 import { useMockDbVersionStore } from "@/store/mockDbVersionStore";
 import { useToastStore } from "@/store/toastStore";
+import type { ClassRegisterModel } from "@/models/ClassRegister";
 
 export default function ViewRegisterScreen() {
   useRoleGuard(["lecturer", "tutor", "hod", "dean", "admin"]);
@@ -15,15 +16,45 @@ export default function ViewRegisterScreen() {
   const v = useMockDbVersionStore((s) => s.version);
   const show = useToastStore((s) => s.show);
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<{ kind: "class" | "test"; reg: any } | null>(null);
 
-  const data = useMemo(() => {
-    mockDB.touch();
-    if (type === "test") {
-      const reg = mockDB.read("testRegisters", String(registerId));
-      return reg ? { kind: "test" as const, reg } : null;
+  // const data = useMemo(() => {
+  //   mockDB.touch();
+  //   if (type === "test") {
+  //     const reg = mockDB.read("testRegisters", String(registerId));
+  //     return reg ? { kind: "test" as const, reg } : null;
+  //   }
+  //   const reg = classRegisterService.getRegister(String(registerId));
+  //   return reg ? { kind: "class" as const, reg } : null;
+  // }, [registerId, type, v]);
+
+useEffect(() => {
+    let isMounted = true;
+    
+    async function loadRegister() {
+      setLoading(true);
+      try {
+        if (type === "test") {
+          const reg = mockDB.read("testRegisters", String(registerId));
+          if (isMounted) setData(reg ? { kind: "test", reg } : null);
+        } else {
+          // This await is the magic key that prevents the crash!
+          const reg = await classRegisterService.getRegister(String(registerId));
+          if (isMounted) setData(reg ? { kind: "class", reg } : null);
+        }
+      } catch (error) {
+        console.error("Failed to load register:", error);
+        if (isMounted) setData(null);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     }
-    const reg = classRegisterService.getRegister(String(registerId));
-    return reg ? { kind: "class" as const, reg } : null;
+
+    mockDB.touch(); // keep for backward compatibility
+    loadRegister();
+
+    return () => { isMounted = false; };
   }, [registerId, type, v]);
 
   if (!data) {
@@ -34,9 +65,32 @@ export default function ViewRegisterScreen() {
     );
   }
 
+  if (loading) {
+    return (
+      <ScreenShell title="Loading..." showBack>
+        <AppText variant="body">Fetching register from database...</AppText>
+      </ScreenShell>
+    );
+  }
+
+  if (!data || !data.reg) {
+    return (
+      <ScreenShell title="Register" showBack>
+        <AppText variant="body">Register not found.</AppText>
+      </ScreenShell>
+    );
+  }
+
   const title = data.kind === "class" ? `${data.reg.moduleCode} class register` : data.reg.title;
-  const present = data.reg.students.filter((s) => s.present).length;
-  const total = data.reg.students.length;
+
+  // Safe fallback to empty arrays just in case, preventing filter crashes
+  const students = data.reg.students || [];
+  const tutorNames = data.reg.tutorNames || [];
+
+  // const present = data.reg.students.filter((s) => s.present).length;
+  // const total = data.reg.students.length;
+  const present = students.filter((s: any) => s.present).length;
+  const total = students.length;
   const meta =
     data.kind === "class"
       ? `Tutor(s): ${data.reg.tutorNames.join(", ") || "—"} · ${data.reg.durationMinutes} min`
@@ -48,7 +102,7 @@ export default function ViewRegisterScreen() {
         Print-ready PDF — pre-loaded in simulator demo data.
       </AppText>
       <Stack gap="xs" style={{ marginBottom: 16 }}>
-        {data.reg.students.map((s) => (
+        {students.map((s:any) => (
           <AppText key={s.studentId} variant="bodyStrong">
             {s.present ? "✓" : "○"} {s.studentNumber} — {s.fullName}
           </AppText>
