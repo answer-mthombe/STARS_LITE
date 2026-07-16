@@ -259,9 +259,9 @@ import { canStartModuleSession } from "@/permissions/delegationPermissions";
 import type { InstitutionRole } from "@/types/roles";
 //added imports from m4 job 019
 import { getDataSource } from "@/services/dataSource";
-import { createSession as createSupabaseSession } from "@/services/supabase/attendanceSessionRepository";
+import { createSession as createSupabaseSession, endSessionAndCreateRegister } from "@/services/supabase/attendanceSessionRepository";
 
-import { isSupabaseEnabled } from "@/supabase/client";
+import { isSupabaseEnabled, requireSupabaseClient } from "@/supabase/client";
 import { attendanceSessionRepository } from "@/services/supabase/attendanceSessionRepository";
 import { getModuleById, setActiveSession } from "@/services/supabase/moduleRepository";
 import { listActiveDelegationsForModule } from "@/services/supabase/moduleDelegationRepository";
@@ -370,7 +370,7 @@ export const attendanceSimulationService = {
     if (!mod) throw new Error("Module not found.");
 
     const lecturerId = args.lecturerId ?? mod.lecturerId;
-    const delegations = delegationService.listModuleDelegations(args.moduleId);
+    const delegations = await delegationService.listModuleDelegations(args.moduleId);
 
 console.log("Host role:", args.hostRole);
 console.log("Host ID:", args.hostId);
