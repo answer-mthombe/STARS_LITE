@@ -32,18 +32,15 @@ export async function listModulesForLecturer(lecturerId: string): Promise<Module
   const { data, error } = await client
     .from(TABLES.modules)
     .select("*")
-    .contains("enrolled_students", JSON.stringify([lecturerId]));
+.or(`lecturer_id.eq.${lecturerId},co_lecturer_ids.cs.${JSON.stringify([lecturerId])}`);
 
   if (error) {
     console.error("Error fetching lecturer modules:", error);
     throw error;
   }
-
-  return (data ?? [])
-    .map((row) => fromRow<ModuleModel>(row))
-    .filter((module): module is ModuleModel => module !== null);
-
+  return (data || []).map((row) => fromRow(row) as ModuleModel);
 }
+
 
 
 //just got added for M4 ........................................................................................

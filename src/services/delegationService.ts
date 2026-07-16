@@ -7,6 +7,12 @@ import type { ProxyScope } from "@/models/ProxyAssignment";
 import type { AuditLogModel } from "@/models/AuditLog";
 import type { InstitutionRole } from "@/types/roles";
 
+//new added imports 
+import { requireSupabaseClient } from "@/supabase/client";
+import { TABLES } from "@/supabase/tables";
+import { fromRow } from "@/supabase/mappers/idBasedMapper";
+import type { ModuleModel } from "@/models/Module";
+
 function bump() {
   useMockDbVersionStore.getState().bump();
 }
@@ -173,3 +179,24 @@ export const delegationService = {
     bump();
   },
 };
+export async function listModulesForTutor(
+  studentId: string
+): Promise<ModuleModel[]> {
+
+  const client = requireSupabaseClient();
+
+  const { data: modules, error } = await client
+    .from(TABLES.moduleDelegations)
+    .select(`
+      modules (*)
+    `)
+    .eq("delegate_student_id", studentId)
+    .eq("active", true);
+
+  if (error) throw error;
+
+  return (modules ?? [])
+    .map((row: any) => fromRow(row.modules) as ModuleModel);
+}
+
+

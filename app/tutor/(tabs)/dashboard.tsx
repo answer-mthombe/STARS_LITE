@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "expo-router";
 
 import {
@@ -16,30 +16,72 @@ import {
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { useAuthStore } from "@/store/authStore";
 import { mockDB } from "@/mockDB/mockDBService";
-import { delegationService } from "@/services/delegationService";
-import { testInvigilationService } from "@/services/testInvigilationService";
+import { delegationService, listModulesForTutor } from "@/services/delegationService";import { testInvigilationService } from "@/services/testInvigilationService";
+import { getDataSource } from "@/services/dataSource";
+import type { ModuleModel } from "@/models/Module";
 import { useMockDbVersionStore } from "@/store/mockDbVersionStore";
 import { RoleQuickNav } from "@/components/navigation/RoleQuickNav";
 
+
 export default function TutorDashboard() {
+console.log("===== TUTOR DASHBOARD LOADED =====");
+
   useRoleGuard("tutor");
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  console.log("Tutor user:", user);
   const version = useMockDbVersionStore((s) => s.version);
+  // added 
+  const [supabaseModules, setSupabaseModules] = useState<ModuleModel[]>([]);
 
-  const modules = useMemo(() => {
-    if (!user || user.role !== "tutor") return [];
-    mockDB.touch();
-    return user.moduleIds
-      .map((id) => mockDB.read("modules", id))
-      .filter(Boolean)
-      .map((m) => {
-        const del = delegationService
-          .listModuleDelegations(m!.id)
-          .find((d) => d.delegateStudentId === user.studentId && d.active);
-        return { module: m!, delegation: del };
-      });
-  }, [user, version]);
+  useEffect(() => {
+  async function loadModules() {
+    if (!user || user.role !== "tutor") return;
+
+    if (getDataSource() !== "supabase") return;
+
+    try {
+      const modules = await listModulesForTutor(user.studentId);
+
+      console.log("Tutor Supabase modules:", modules);
+
+      setSupabaseModules(modules);
+    } catch (error) {
+      console.error("Failed to load tutor modules:", error);
+    }
+  }
+
+  loadModules();
+}, [user]);
+
+const modules = useMemo(() => {
+  if (!user || user.role !== "tutor") return [];
+
+  // Supabase path
+  if (getDataSource() === "supabase") {
+    return supabaseModules.map((module) => ({
+      module,
+      delegation: undefined,
+    }));
+  }
+
+  // Mock path
+  mockDB.touch();
+
+  return user.moduleIds
+    .map((id) => mockDB.read("modules", id))
+    .filter(Boolean)
+    .map((m) => {
+      const del = delegationService
+        .listModuleDelegations(m!.id)
+        .find((d) => d.delegateStudentId === user.studentId && d.active);
+
+      return {
+        module: m!,
+        delegation: del,
+      };
+    });
+}, [user, version, supabaseModules]);
 
   const activeTests = useMemo(() => {
     if (!user || user.role !== "tutor") return [];
