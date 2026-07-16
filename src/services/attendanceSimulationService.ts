@@ -10,9 +10,9 @@ import { canStartModuleSession } from "@/permissions/delegationPermissions";
 import type { InstitutionRole } from "@/types/roles";
 //added imports from m4 job 019
 import { getDataSource } from "@/services/dataSource";
-import { createSession as createSupabaseSession } from "@/services/supabase/attendanceSessionRepository";
+import { createSession as createSupabaseSession, endSessionAndCreateRegister } from "@/services/supabase/attendanceSessionRepository";
 
-import { isSupabaseEnabled } from "@/supabase/client";
+import { isSupabaseEnabled, requireSupabaseClient } from "@/supabase/client";
 import { attendanceSessionRepository } from "@/services/supabase/attendanceSessionRepository";
 import { getModuleById } from "@/services/supabase/moduleRepository";
 
@@ -64,12 +64,22 @@ export const attendanceSimulationService = {
     radiusMeters?: number;
     durationMinutes?: number;
   }): Promise<AttendanceSessionModel> {
-    mockDB.touch();
-    const mod = mockDB.read("modules", args.moduleId);
-    if (!mod) throw new Error("Module not found.");
+  //  mockDB.touch();
+   // const mod = mockDB.read("modules", args.moduleId);
+   // if (!mod) throw new Error("Module not found.");
+
+   let mod: any;
+    if (getDataSource() === "supabase") {
+      mod = await getModuleById(args.moduleId);
+      if (!mod) throw new Error("Module not found in Supabase.");
+    } else {
+      mockDB.touch();
+      mod = mockDB.read("modules", args.moduleId);
+      if (!mod) throw new Error("Module not found in MockDB.");
+    }
 
     const lecturerId = args.lecturerId ?? mod.lecturerId;
-    const delegations = delegationService.listModuleDelegations(args.moduleId);
+    const delegations = await delegationService.listModuleDelegations(args.moduleId);
 
     const roleForCheck: InstitutionRole =
       args.hostRole === "lecturer" ? "lecturer" : args.hostRole === "tutor" ? "tutor" : "student";
@@ -486,5 +496,55 @@ console.log("Delegations:", delegations);
     bump();
     return { ok: true };
   },
-}; 
 
+
+  async endSession(args: {
+    sessionId: string;
+    moduleId: string;
+    lecturerId: string;
+  }): Promise<{ ok: true; registerId?: string } | { ok: false; reason: string }> {
+    
+    // 1. LIVE SUPABASE PATH
+    if (getDataSource() === "supabase" || isSupabaseEnabled()) {
+      try {
+        const supabase = requireSupabaseClient();
+        
+        // Fetch raw attendance records to bundle into the register
+        const { data: records, error: fetchErr } = await supabase
+          .from("attendance_records")
+          .select("student_id, timestamp, verified, passed")
+          .eq("session_id", args.sessionId);
+
+        if (fetchErr) throw fetchErr;
+
+        // Execute the atomic SQL function
+        const result = await endSessionAndCreateRegister({
+          sessionId: args.sessionId,
+          moduleId: args.moduleId,
+          lecturerId: args.lecturerId,
+          studentsPayload: records || []
+        });
+
+        return { ok: true, registerId: result.registerId };
+      } catch (e) {
+        console.error("Failed to close live session:", e);
+        return { ok: false, reason: "Database error closing session." };
+      }
+    }
+
+    // 2. LEGACY MOCK PATH
+    mockDB.touch();
+    mockDB.update("attendanceSessions", args.sessionId, { 
+      active: false, 
+      endedAt: new Date().toISOString() 
+    });
+    
+    const mod = mockDB.read("modules", args.moduleId);
+    if (mod) {
+      mockDB.update("modules", args.moduleId, { activeSessionId: undefined as any });
+    }
+    bump();
+    
+    return { ok: true, registerId: "mock_reg_" + Date.now() };
+  },
+};

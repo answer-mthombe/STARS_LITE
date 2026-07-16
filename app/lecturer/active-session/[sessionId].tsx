@@ -15,6 +15,7 @@ import { useToastStore } from "@/store/toastStore";
 import { AttendanceSessionModel } from "@/models/Attendance";
 import { attendanceSessionRepository } from "@/services/supabase/attendanceSessionRepository";
 import { isSupabaseEnabled } from "@/supabase/client";
+import { attendanceSimulationService } from "@/services/attendanceSimulationService";
 
 export default function LecturerActiveSessionScreen() {
   useRoleGuard(["lecturer", "tutor"]);
