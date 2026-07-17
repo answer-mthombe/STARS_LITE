@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
@@ -11,16 +11,58 @@ import { mockDB } from "@/mockDB/mockDBService";
 import { attendanceSimulationService } from "@/services/attendanceSimulationService";
 import { captureLocationOnce } from "@/utils/captureLocationOnce";
 import { useToastStore } from "@/store/toastStore";
+import { isSupabaseEnabled, requireSupabaseClient } from "@/supabase";
+import { TABLES } from "@/supabase";
 
 export default function LecturerCreateSessionScreen() {
-  useRoleGuard(["lecturer", "tutor"]);
+  useRoleGuard([
+    "lecturer",
+    "tutor",
+    
+  ]);
+
   const { moduleId } = useLocalSearchParams() as { moduleId: string };
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const show = useToastStore((s) => s.show);
   const [busy, setBusy] = useState(false);
 
-  const mod = useMemo(() => mockDB.read("modules", String(moduleId)), [moduleId]);
+  //const mod = useMemo(() => mockDB.read("modules", String(moduleId)), [moduleId]);
+  const [mod, setMod] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+    async function loadModule() {
+      try {
+        if (isSupabaseEnabled()) {
+          const supabase = requireSupabaseClient();
+          const { data, error } = await supabase
+            .from(TABLES.modules)
+            .select("*")
+            .eq("id", moduleId)
+            .single();
+
+          if (error) throw error;
+          
+          // Convert database snake_case to UI camelCase
+          setMod({
+            id: data.id,
+            moduleName: data.module_name,
+            lecturerId: data.lecturer_id,
+            coLecturerIds: data.co_lecturer_ids || [],
+          });
+        } else {
+          setMod(mockDB.read("modules", String(moduleId)));
+        }
+      } catch (err) {
+        console.error("Failed to load module:", err);
+        show({ type: "error", title: "Error", message: "Failed to load module details." });
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadModule();
+  }, [moduleId]);
 
   return (
     <ScreenShell title="Start session" subtitle={mod?.moduleName ?? "Module"} showBack>

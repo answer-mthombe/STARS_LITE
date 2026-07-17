@@ -30,6 +30,12 @@ export function canStartModuleSession(args: {
   if (role === "lecturer" && (module.lecturerId === personId || module.coLecturerIds?.includes(personId))) {
     return true;
   }
+
+console.log("===== Permission Check =====");
+console.log("Module ID:", module.id);
+console.log("Person ID:", personId);
+console.log("Delegations:", delegations);
+
   const active = delegations.filter(
     (d) =>
       d.moduleId === module.id &&
@@ -37,6 +43,9 @@ export function canStartModuleSession(args: {
       isDelegationActive(d) &&
       d.capabilities.includes("attendance.start_session")
   );
+
+console.log("Matching delegations:", active);
+
   if (role === "tutor" || role === "student") {
     return active.some((d) => d.delegateType === "tutor" || d.delegateType === "student_registrar");
   }

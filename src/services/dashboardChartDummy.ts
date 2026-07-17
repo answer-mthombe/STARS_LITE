@@ -17,7 +17,7 @@ export type BarDatum = { label: string; value: number; subtitle?: string };
 export function adminFacultyBars(overview: Univ): BarDatum[] {
   return overview.facultyPerformance.map((f:any) => ({
     label: f.facultyName,
-    value: Math.round(f.avgAttendance * 1000) / 10,
+    value: Math.round(f.avgAttendance * 1000) / 10, 
     subtitle: `${f.studentCount || f.student_count} students`,
   }));
 }
@@ -48,14 +48,6 @@ export function adminEnrolmentSplit(overview: Univ): BarDatum[] {
     subtitle: `${f.moduleCount} modules`,
   }));
 }
-
-// export function deanDepartmentBars(f: Fac): BarDatum[] {
-//   return f.departmentStats.map((d:any) => ({
-//     label: d.name.split(" ")[0] ?? d.name,
-//     value: Math.round(d.avgAttendance * 1000) / 10,
-//     subtitle: `${d.studentCount} students`,
-//   }));
-// }
 
 export function deanDepartmentBars(f: Fac): BarDatum[] {
   return f.departmentStats.map((d: any) => {
@@ -89,14 +81,6 @@ export function dummyHeatmapMatrix(seed: string): number[][] {
   }
   return rows;
 }
-
-// export function hodModuleBars(d: Dept): BarDatum[] {
-//   return d.moduleStats.map((m:any, i:number) => ({
-//     label: m.code,
-//     value: Math.min(96, 58 + ((m.enrolled + i) * 13) % 38),
-//     subtitle: `${m.enrolled} enrolled`,
-//   }));
-// }
 
 export function hodModuleBars(d: Dept): BarDatum[] {
   return d.moduleStats.map((m: any, i: number) => ({

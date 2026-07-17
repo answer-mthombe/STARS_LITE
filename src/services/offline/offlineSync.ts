@@ -48,10 +48,10 @@ export async function processOutboxOnce() {
   });
 
   const pending = res.rows
-    .map((r) => r.doc)
-    .filter((d): d is OfflineMutationDoc => Boolean(d && (d as any).kind === "mutation"))
-    .filter((m) => m.status === "pending" || m.status === "failed")
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .map((r:any) => r.doc)
+    .filter((d:any): d is OfflineMutationDoc => Boolean(d && (d as any).kind === "mutation"))
+    .filter((m:any) => m.status === "pending" || m.status === "failed")
+    .sort((a:any, b:any) => a.createdAt.localeCompare(b.createdAt))
     .slice(0, 50);
   if (pending.length === 0) return { pushed: 0 };
 
