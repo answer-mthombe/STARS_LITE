@@ -338,7 +338,10 @@ export const attendanceSimulationService = {
               personId: args.hostId,
               module: mod,
               delegations: await listActiveDelegationsForModule(args.moduleId),
+
+              
             });
+            
 
       if (!allowed) throw new Error("You are not authorised to start this session.");
 
@@ -348,6 +351,7 @@ export const attendanceSimulationService = {
         moduleId: args.moduleId,
         hostRole: args.hostRole,
         hostId: args.hostId,
+        lecturerId: mod.lecturerId,
         latitude: args.latitude,
         longitude: args.longitude,
         algorithmSeed: shortSeed,

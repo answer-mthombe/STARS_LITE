@@ -79,7 +79,8 @@ useEffect(() => {
           try {
             const loc = await captureLocationOnce();
             const hostRole = user.role === "tutor" ? "tutor" : "lecturer";
-            const hostId = user.role === "tutor" ? user.studentId : user.id;
+           const hostId = user.role === "tutor" ? user.studentId : user.id;
+            console.log("DEBUG UI: Sending Host ID ->", hostId);
             const session = await attendanceSimulationService.createSession({
               moduleId: mod.id,
               hostRole,

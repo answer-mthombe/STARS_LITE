@@ -143,6 +143,7 @@ export async function createSession(session: {
   moduleId: string;
   hostRole: string;
   hostId: string;
+  lecturerId: string;
   latitude: number;
   longitude: number;
   algorithmSeed: string;
@@ -156,7 +157,7 @@ export async function createSession(session: {
     .from(TABLES.attendanceSessions)
   .insert({
   module_id: session.moduleId,
-  lecturer_id: session.hostId,
+lecturer_id: session.lecturerId,
   started_by_role: session.hostRole,
   started_by_id: session.hostId,
   lecturer_location: {
