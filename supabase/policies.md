@@ -23,3 +23,18 @@ This document is the single source of truth for which roles can read/write each 
 - Some policies currently use `auth.role() = 'authenticated'` as a placeholder.
   Replace with full `user_profiles.role` joins once all Auth users are seeded (post STORY-005).
 - `dean` and `HOD` scopes (faculty/department filtering) to be added after JOB-009.
+
+## Implementation Notes: STORY-405 (RLS Write Paths)
+As of the migration `0007_rls_write_paths.sql`, the following security posture is in effect:
+
+* **Role-Based Access (RBAC):** Policies are enforced using the `user_profiles` table, mapping `auth.uid()` to `linked_person_id`.
+* **Students:** Restricted to `INSERT` and `SELECT` only on their own records in `attendance_records` and `students`. Access to `attendance_sessions` and `modules` is limited to those associated with their `module_enrollments`.
+* **Lecturers:** Granted `ALL` privileges on their own `attendance_sessions` and read-only access to `attendance_records` for sessions they own.
+* **Integrity Constraints:** A `UNIQUE` constraint on `(session_id, device_id)` in `attendance_records` prevents duplicate check-ins at the database level.
+* **Admin Bypass:** Administrative operations must use the `service_role` API key, which bypasses RLS policies entirely.
+
+## Technical Policy Enforcement (STORY-405)
+* **Write Path Logic:** All `INSERT` operations on `attendance_records` are validated against `linked_person_id`.
+* **Data Integrity:** A `UNIQUE` constraint exists on `(session_id, device_id)` to prevent duplicate check-ins.
+* **Administrative Access:** Admin roles leverage the `service_role` key to bypass RLS. This is the only authorized method for broad data management.
+* **Access Lookups:** All role visibility (lecturer modules, student records) is enforced via `JOIN` queries against the `user_profiles.linked_person_id` column.
