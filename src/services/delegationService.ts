@@ -11,8 +11,6 @@ import { TABLES } from "@/supabase";
 import { getDataSource } from "./dataSource";
 
 //new added imports 
-import { requireSupabaseClient } from "@/supabase/client";
-import { TABLES } from "@/supabase/tables";
 import { fromRow } from "@/supabase/mappers/idBasedMapper";
 import type { ModuleModel } from "@/models/Module";
 
