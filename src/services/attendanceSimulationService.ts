@@ -330,20 +330,35 @@ export const attendanceSimulationService = {
       const mod = await getModuleById(args.moduleId);
       if (!mod) throw new Error("Module not found.");
 
-      const allowed =
-        args.hostRole === "lecturer"
-          ? mod.lecturerId === args.hostId || mod.coLecturerIds?.includes(args.hostId)
-          : canStartModuleSession({
-              role: roleForCheck,
-              personId: args.hostId,
-              module: mod,
-              delegations: await listActiveDelegationsForModule(args.moduleId),
 
-              
-            });
             
+const delegations = await listActiveDelegationsForModule(args.moduleId);
 
-      if (!allowed) throw new Error("You are not authorised to start this session.");
+console.log("========== START SESSION DEBUG ==========");
+console.log("Host role:", args.hostRole);
+console.log("Host ID:", args.hostId);
+console.log("Module ID:", mod.id);
+console.log("Delegations:", delegations);
+
+const allowed =
+  args.hostRole === "lecturer"
+    ? mod.lecturerId === args.hostId ||
+      mod.coLecturerIds?.includes(args.hostId)
+    : canStartModuleSession({
+        role: roleForCheck,
+        personId: args.hostId,
+        module: mod,
+        delegations,
+      });
+
+console.log("Allowed:", allowed);
+
+console.log("Allowed:", allowed);
+
+if (!allowed) {
+  console.log("Permission denied.");
+  throw new Error("You are not authorised to start this session.");
+}
 
       const expiresAt = new Date(now + mins * 60_000).toISOString();
 

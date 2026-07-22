@@ -1,3 +1,7 @@
+import { getDataSource } from "@/services/dataSource";
+import { requireSupabaseClient } from "@/supabase/client";
+import { TABLES } from "@/supabase/tables";
+
 import { mockDB } from "@/mockDB/mockDBService";
 import { useMockDbVersionStore } from "@/store/mockDbVersionStore";
 
@@ -6,7 +10,7 @@ function bump() {
 }
 
 export const moduleEnrollmentService = {
-  joinByClassCode(studentId: string, rawCode: string) {
+   async joinByClassCode(studentId: string, rawCode: string) {
     const code = rawCode.trim().toUpperCase();
     const mod = mockDB.list("modules").find((m) => m.classCode.toUpperCase() === code);
     if (!mod) throw new Error("Invalid class code.");
@@ -26,7 +30,7 @@ export const moduleEnrollmentService = {
     return mockDB.read("modules", mod.id)!;
   },
 
-  requestJoin(studentId: string, moduleId: string) {
+ async requestJoin(studentId: string, moduleId: string) {
     const mod = mockDB.read("modules", moduleId);
     if (!mod) throw new Error("Module not found.");
     if (mod.enrolledStudents.includes(studentId)) return;
@@ -35,7 +39,7 @@ export const moduleEnrollmentService = {
     bump();
   },
 
-  acceptPending(moduleId: string, studentId: string) {
+ async acceptPending(moduleId: string, studentId: string) {
     const mod = mockDB.read("modules", moduleId);
     if (!mod) throw new Error("Module not found.");
     const pending = mod.pendingRequests.filter((id) => id !== studentId);
@@ -52,7 +56,7 @@ export const moduleEnrollmentService = {
     bump();
   },
 
-  rejectPending(moduleId: string, studentId: string) {
+  async rejectPending(moduleId: string, studentId: string) {
     const mod = mockDB.read("modules", moduleId);
     if (!mod) throw new Error("Module not found.");
     mockDB.update("modules", moduleId, {
@@ -61,7 +65,7 @@ export const moduleEnrollmentService = {
     bump();
   },
 
-  manualAddStudent(moduleId: string, studentId: string) {
+  async manualAddStudent(moduleId: string, studentId: string) {
     const mod = mockDB.read("modules", moduleId);
     const stu = mockDB.read("students", studentId);
     if (!mod || !stu) throw new Error("Module or student not found.");
