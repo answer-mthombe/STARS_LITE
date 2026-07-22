@@ -368,11 +368,37 @@ export const classRegisterService = {
         createdAt: row.created_at,
     };
 
+    // try {
+    //   const { uri, html } = await registerPdfService.exportClassRegisterPdf(register);
+    //   // Attach local URI so the phone can view it immediately
+    //   register.pdfUri = uri;
+    //   register.htmlSnapshot = html;
+    // } catch (pdfError) {
+    //   console.error("Class ended, but PDF generation failed:", pdfError);
+    // }
+
+    // return { ok: true, register };
+
     try {
       const { uri, html } = await registerPdfService.exportClassRegisterPdf(register);
-      // Attach local URI so the phone can view it immediately
+      
+      // 1. Attach local URI so the phone can view it immediately
       register.pdfUri = uri;
       register.htmlSnapshot = html;
+
+      // 2. 🔥 NEW: Save the generated PDF URI back to Supabase so it persists!
+      const { error: updateError } = await client
+        .from('class_registers')
+        .update({
+          pdf_uri: uri,
+          html_snapshot: html
+        })
+        .eq('id', register.id);
+
+      if (updateError) {
+        console.error("Failed to save PDF URI to Supabase:", updateError);
+      }
+
     } catch (pdfError) {
       console.error("Class ended, but PDF generation failed:", pdfError);
     }
