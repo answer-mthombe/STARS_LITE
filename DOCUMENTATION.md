@@ -114,3 +114,28 @@ npx expo start -c
 - **SecureStore on web** — use `src/utils/authStorage.ts` (already wired in `authStore`).
 
 For questions about this codebase, contact the **MUT Innovation Lab** (see in-app footer).
+
+
+## Observability & Logging Runbook (STORY-503)
+
+### Overview
+This project enforces strict secure logging policies to prevent accidental leaks of sensitive user data, passwords, or authentication tokens into external log aggregators.
+
+### Core Rules
+1. **Never Log Secrets**: Passwords, bearer tokens, API keys, and authorization headers must always be scrubbed or replaced with `[REDACTED]`.
+2. **Include Context**: Every error log must output a unique `requestId` and an `errorCode` to streamline debugging.
+3. **Minimal Logging Fallback**: If performance degrades or the team falls behind schedule during a deployment sprint, toggle `minimalMode` to suppress `debug` and `info` logs, keeping only critical errors and warnings.
+
+### Usage Example
+```typescript
+import { secureLog } from '@/utils/supabase/logger';
+
+try {
+  // Operation logic
+} catch (err: any) {
+  secureLog('error', 'Failed to fetch user session', {
+    requestId: reqId,
+    errorCode: 'AUTH_FETCH_FAILED',
+    details: err.message
+  });
+}
