@@ -353,7 +353,7 @@ const allowed =
 
 console.log("Allowed:", allowed);
 
-console.log("Allowed:", allowed);
+
 
 if (!allowed) {
   console.log("Permission denied.");
