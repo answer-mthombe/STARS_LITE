@@ -11,11 +11,11 @@ FOR SELECT TO authenticated USING (
 );
 
 -- 2. MODULES: Enrollment/Teaching visibility
-CREATE POLICY "Users can read own modules" ON public.modules
-FOR SELECT TO authenticated USING (
-  id IN (SELECT module_id FROM public.module_enrollments WHERE student_id IN (SELECT linked_person_id FROM public.user_profiles WHERE id = auth.uid()))
-  OR id IN (SELECT module_id FROM public.lecturers WHERE id IN (SELECT linked_person_id FROM public.user_profiles WHERE id = auth.uid()))
-);
+-- CREATE POLICY "Users can read own modules" ON public.modules
+-- FOR SELECT TO authenticated USING (
+--   id IN (SELECT module_id FROM public.module_enrollments WHERE student_id IN (SELECT linked_person_id FROM public.user_profiles WHERE id = auth.uid()))
+--   OR id IN (SELECT module_id FROM public.lecturers WHERE id IN (SELECT linked_person_id FROM public.user_profiles WHERE id = auth.uid()))
+-- );
 
 -- 3. ATTENDANCE RECORDS: Insert/Select own + Lecturer view
 CREATE POLICY "Students can insert/select own attendance" ON public.attendance_records
@@ -34,10 +34,10 @@ FOR ALL TO authenticated USING (
   lecturer_id = (SELECT linked_person_id FROM public.user_profiles WHERE id = auth.uid())
 );
 
-CREATE POLICY "Students can read sessions for enrolled modules" ON public.attendance_sessions
-FOR SELECT TO authenticated USING (
-  module_id IN (SELECT module_id FROM public.module_enrollments WHERE student_id IN (SELECT linked_person_id FROM public.user_profiles WHERE id = auth.uid()))
-);
+-- CREATE POLICY "Students can read sessions for enrolled modules" ON public.attendance_sessions
+-- FOR SELECT TO authenticated USING (
+--   module_id IN (SELECT module_id FROM public.module_enrollments WHERE student_id IN (SELECT linked_person_id FROM public.user_profiles WHERE id = auth.uid()))
+-- );
 
 -- 5. INTEGRITY: Reject duplicate session/device pairs
 -- Note: Ensure table is cleaned of duplicates before running this

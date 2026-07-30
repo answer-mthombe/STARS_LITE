@@ -19,5 +19,5 @@ CREATE POLICY "Students can read their courses"
 ON public.courses
 FOR SELECT
 USING (
-  auth.uid() = ANY (student_ids)
+  student_ids ? auth.uid()::text
 );
