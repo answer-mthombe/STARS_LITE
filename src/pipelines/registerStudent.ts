@@ -22,6 +22,7 @@ export async function registerStudentPipeline(args: RegisterStudentArgs & { emai
 
   const authId = authData.user.id;
 
+  console.log("👉 DEBUG [Step 1]: Supabase Auth UUID (authId):", authId);
   // ==========================================
   // STEP 2: Create the Student Record
   // ==========================================
@@ -45,10 +46,13 @@ export async function registerStudentPipeline(args: RegisterStudentArgs & { emai
   }
 
   const newStudentId = studentData.id;
+  
+  console.log("👉 DEBUG [Step 2]: New Student ID:", newStudentId);
 
   // ==========================================
   // STEP 3: Create the User Profile (The Bridge)
   // ==========================================
+  console.log("👉 DEBUG [Step 3]: Inserting into user_profiles -> id (UUID):", authId, "| linked_student_id (Text):", newStudentId);
   const { error: profileError } = await supabase
     .from("user_profiles")
     .insert({
