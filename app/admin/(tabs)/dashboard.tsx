@@ -60,12 +60,22 @@ export default function AdminDashboardScreen() {
   // 3. Dynamic layout charts fallback securely if data is missing
   const previewBars = useMemo(() => {
     if (!overview) return [];
-    return adminFacultyBars(overview).slice(0, 3);
+    try {
+      const bars = adminFacultyBars(overview);
+      return Array.isArray(bars) ? bars.slice(0, 3) : [];
+    } catch {
+      return [];
+    }
   }, [overview]);
 
   const previewTrend = useMemo(() => {
-    if (!overview) return [];
-    return adminAttendanceTrend(overview.overallAttendanceRate).slice(-8);
+    if (!overview || overview.overallAttendanceRate == null) return [];
+    try {
+      const trend = adminAttendanceTrend(overview.overallAttendanceRate);
+      return Array.isArray(trend) ? trend.slice(-8) : [];
+    } catch {
+      return [];
+    }
   }, [overview]);
 
   // 4. Loading indicator view
@@ -78,11 +88,10 @@ export default function AdminDashboardScreen() {
     );
   }
 
-// 5. Database execution failure block
+  // 5. Database execution failure block
   if (error || !overview) {
     return (
       <ScreenShell title="University overview" subtitle="STARS — Connection Error">
-        {/* We use Stack to handle the border styling cleanly */}
         <Stack style={{ borderColor: "red", borderWidth: 1, borderRadius: 8, padding: 4 }}>
           <AppCard>
             <SectionHeader title="Database Connection Failed" />
@@ -94,14 +103,17 @@ export default function AdminDashboardScreen() {
       </ScreenShell>
     );
   }
+
   const statTiles = [
     { label: "Students", value: overview.totalStudents },
     { label: "Lecturers", value: overview.totalLecturers },
     { label: "Faculties", value: overview.totalFaculties },
     { label: "Departments", value: overview.totalDepartments },
     { label: "Courses", value: overview.totalCourses },
-    { label: "Attendance rate", value: `${(overview.overallAttendanceRate * 100).toFixed(1)}%` },
+    { label: "Attendance rate", value: overview.overallAttendanceRate != null ? `${(overview.overallAttendanceRate * 100).toFixed(1)}%` : "0%" },
   ];
+
+  const facultyPerformanceList = Array.isArray(overview.facultyPerformance) ? overview.facultyPerformance : [];
 
   return (
     <ScreenShell title="University overview" subtitle="STARS — institutional analytics" scroll>
@@ -120,22 +132,26 @@ export default function AdminDashboardScreen() {
 
       <AppCard>
         <SectionHeader title="Activity & alerts" />
-        <KeyValueRow label="Live attendance sessions" value={String(overview.activeSessions)} />
-        <KeyValueRow label="Low-attendance student alerts (&lt;60%)" value={String(overview.lowAttendanceAlerts)} />
-        <KeyValueRow label="Attendance records (all time)" value={String(overview.totalAttendanceRecords)} />
+        <KeyValueRow label="Live attendance sessions" value={String(overview.activeSessions ?? 0)} />
+        <KeyValueRow label="Low-attendance student alerts (<60%)" value={String(overview.lowAttendanceAlerts ?? 0)} />
+        <KeyValueRow label="Attendance records (all time)" value={String(overview.totalAttendanceRecords ?? 0)} />
       </AppCard>
 
       <Spacer size="md" />
 
       <AppCard>
         <SectionHeader title="Faculty performance snapshot" />
-        {overview.facultyPerformance?.map((f: any) => (
-          <DividerListRow
-            key={f.facultyId}
-            left={f.facultyName}
-            right={`${(f.avgAttendance * 100).toFixed(0)}% avg`}
-          />
-        ))}
+        {facultyPerformanceList.length > 0 ? (
+          facultyPerformanceList.map((f: any) => (
+            <DividerListRow
+              key={f.facultyId ?? f.facultyName}
+              left={f.facultyName}
+              right={`${((f.avgAttendance ?? 0) * 100).toFixed(0)}% avg`}
+            />
+          ))
+        ) : (
+          <AppText variant="body">No faculty performance data available.</AppText>
+        )}
       </AppCard>
 
       <Spacer size="md" />

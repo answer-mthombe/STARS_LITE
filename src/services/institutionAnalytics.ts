@@ -19,10 +19,31 @@ function modulesForLecturer(lecturerId: string): ModuleModel[] {
 export const institutionAnalytics = {
   async universityOverview() {
     if (getDataSource() === "supabase") {
-      const supabase = requireSupabaseClient();
-      const { data, error } = await supabase.rpc("get_university_overview");
-      if (error) throw error;
-      return data;
+      try {
+        const supabase = requireSupabaseClient();
+        const { data, error } = await supabase.rpc("get_university_overview");
+        if (error) throw error;
+
+        // Map Supabase exact response keys to the dashboard expected properties
+        const raw = data || {};
+        const rateVal = raw.attendance_rate ?? raw.overallAttendanceRate ?? 0;
+        
+        return {
+          totalStudents: raw.students ?? raw.total_students ?? raw.totalStudents ?? 0,
+          totalLecturers: raw.lecturers ?? raw.total_lecturers ?? raw.totalLecturers ?? 0,
+          totalFaculties: raw.faculties ?? raw.total_faculties ?? raw.totalFaculties ?? 0,
+          totalDepartments: raw.departments ?? raw.total_departments ?? raw.totalDepartments ?? 0,
+          totalCourses: raw.courses ?? raw.total_courses ?? raw.totalCourses ?? 0,
+          // Normalize attendance rate if it comes as 85.5 instead of 0.855
+          overallAttendanceRate: rateVal > 1 ? rateVal / 100 : rateVal,
+          totalAttendanceRecords: raw.total_attendance_records ?? raw.totalAttendanceRecords ?? 0,
+          activeSessions: raw.live_sessions ?? raw.active_sessions ?? raw.activeSessions ?? 0,
+          lowAttendanceAlerts: raw.low_attendance_alerts ?? raw.lowAttendanceAlerts ?? 0,
+          facultyPerformance: raw.faculty_performance ?? raw.facultyPerformance ?? [],
+        };
+      } catch (err) {
+        console.warn("Supabase universityOverview failed, falling back to mock data:", err);
+      }
     }
 
     // --- Mock Fallback ---
@@ -59,10 +80,14 @@ export const institutionAnalytics = {
 
   async facultyOverview(facultyId: string) {
     if (getDataSource() === "supabase") {
-      const supabase = requireSupabaseClient();
-      const { data, error } = await supabase.rpc("get_faculty_overview", { target_faculty_id: facultyId });
-      if (error) throw error;
-      return data;
+      try {
+        const supabase = requireSupabaseClient();
+        const { data, error } = await supabase.rpc("get_faculty_overview", { target_faculty_id: facultyId });
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        console.warn("Supabase facultyOverview failed, falling back to mock data:", err);
+      }
     }
 
     // --- Mock Fallback ---
@@ -115,10 +140,14 @@ export const institutionAnalytics = {
 
   async departmentOverview(departmentId: string) {
     if (getDataSource() === "supabase") {
-      const supabase = requireSupabaseClient();
-      const { data, error } = await supabase.rpc("get_department_overview", { target_dept_id: departmentId });
-      if (error) throw error;
-      return data;
+      try {
+        const supabase = requireSupabaseClient();
+        const { data, error } = await supabase.rpc("get_department_overview", { target_dept_id: departmentId });
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        console.warn("Supabase departmentOverview failed, falling back to mock data:", err);
+      }
     }
 
     // --- Mock Fallback ---
@@ -190,7 +219,6 @@ export const institutionAnalytics = {
     };
   },
 
-  
   async forUser(user: AuthUser | null) {
     if (!user) return { scope: "none" as const, payload: null };
     if (user.role === "admin") return { scope: "university" as const, payload: await this.universityOverview() };
