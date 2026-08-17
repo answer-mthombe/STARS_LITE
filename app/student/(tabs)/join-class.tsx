@@ -26,11 +26,11 @@ export default function StudentJoinClassScreen() {
       <AppButton
         title={busy ? "Joining…" : "Join instantly"}
         disabled={busy || !code.trim()}
-        onPress={() => {
+        onPress={async () => {
           if (!user || user.role !== "student") return;
           setBusy(true);
           try {
-            moduleEnrollmentService.joinByClassCode(user.id, code);
+           await  moduleEnrollmentService.joinByClassCode(user.id, code);
             show({ type: "success", title: "Joined", message: "Module added to your dashboard." });
             router.replace("/student/dashboard");
           } catch (e) {

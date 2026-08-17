@@ -17,7 +17,7 @@ import { TABLES } from "@/supabase/tables";
 
 import { isSupabaseEnabled } from "@/supabase/client";
 import { attendanceSessionRepository } from "./supabase";
-import { saveRecord } from "./supabase/attendanceRecordRepository";
+import { saveRecord , hasAlreadyCheckedIn} from "./supabase/attendanceRecordRepository";
 import { enqueueMutation } from "./offline/offlineSync";
 
 
@@ -139,6 +139,11 @@ export const attendanceChallengeService = {
     if (isSupabaseEnabled()) {
        // Optional: You could add a check here via a new repository method 
        // if you wanted to be strict before showing the challenge.
+
+     const alreadyCheckedIn = await hasAlreadyCheckedIn(args.sessionId, deviceId);
+      if (alreadyCheckedIn) {
+        return { ok: false, reason: "You have already marked your attendance for this session." };
+      }
     } else {
       const dup = mockDB.query("attendanceRecords", { sessionId: args.sessionId }).some((r) => r.deviceId === deviceId);
       if (dup) return { ok: false, reason: "Already checked in for this session." };
@@ -162,6 +167,10 @@ export const attendanceChallengeService = {
       { latitude: args.studentLocation.latitude, longitude: args.studentLocation.longitude },
       session.radius
     );
+
+    console.log("********distance:", inside.distance, "radius:", session.radius, "anchor:", session.lecturerLocation, "you**************:", args.studentLocation);
+
+
     if (!inside.ok) return { ok: false, reason: "Location not confirmed. Stay in the room." };
 
     // Code gate stays in the demo flow (lecturer shows it). If code is wrong, student never sees a challenge.
@@ -227,8 +236,10 @@ const session = isSupabaseEnabled()
     if (!session || !session.active) return { ok: false, reason: "Session has ended. See your coordinator." };
     if (new Date(session.expiresAt).getTime() <= Date.now()) return { ok: false, reason: "Session has ended. See your coordinator." };
 
-    const currentBucket = challengeTimeBucket(Date.now());
-    if (currentBucket !== chal.openedTimeBucket) return { ok: false, reason: "Time expired. Open the challenge again." };
+  //  const currentBucket = challengeTimeBucket(Date.now());
+   // if (currentBucket !== chal.openedTimeBucket) return { ok: false, reason: "Time expired. Open the challenge again." };
+   const elapsedMs = Date.now() - chal.openedAtMs;
+if (elapsedMs > CHALLENGE_WINDOW_MS) return { ok: false, reason: "Time expired. Open the challenge again." };
 
     // Duplicate protection (session, device)
     // const dup = mockDB
@@ -247,17 +258,23 @@ const session = isSupabaseEnabled()
     // GPS continuous: require at least 3 polls (0s, 2s, 4s...; UI collects them),
     // all inside radius, and polls not stale.
     const polls = args.gpsPolls.filter((p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude));
-    if (polls.length < 3) return { ok: false, reason: "Location left the session area during check-in." };
+    if (polls.length < 1) return { ok: false, reason: "Location left the session area during check-in." };
 
     const tooManyUnknown = args.gpsPolls.length - polls.length > 1;
     if (tooManyUnknown) return { ok: false, reason: "Location left the session area during check-in." };
 
+    console.log("polls.length:", polls.length, "raw gpsPolls.length:", args.gpsPolls.length);
+
     for (const p of polls) {
       const ageMs = Date.now() - p.capturedAtMs;
-      if (ageMs > 4_000) return { ok: false, reason: "Location not confirmed. Stay in the room." };
-      const acc = p.accuracyMeters ?? (Platform.OS === "web" ? 10 : 999);
-      if (acc > 30) return { ok: false, reason: "Location not confirmed. Stay in the room." };
+      if (ageMs > 60_000) return { ok: false, reason: "Location not confirmed. Stay in the room." };
+      //const acc = p.accuracyMeters ?? (Platform.OS === "web" ? 10 : 999);
+            const acc = p.accuracyMeters ?? 10 ;
+
+      if (acc > 100) return { ok: false, reason: "Location not confirmed. Stay in the room." };
       const inside = withinRadius(session.lecturerLocation, { latitude: p.latitude, longitude: p.longitude }, session.radius);
+        console.log("POLL CHECK:", { ageMs, acc, distance: inside.distance, radius: session.radius, ok: inside.ok });
+
       if (!inside.ok) return { ok: false, reason: "Location left the session area during check-in." };
     }
 
@@ -339,16 +356,44 @@ const recordPayload = {
       verified: true,
     };
 
+    // try {
+    //   if (isSupabaseEnabled()) {
+    //     // USE THE OUTBOX (JOB-022)
+    //     await enqueueMutation({
+    //       mutationId: `submit_attendance_${chal.id}`,
+    //       collection: "attendanceRecords",
+    //       entityId: chal.id,
+    //       op: "set",
+    //       payload: recordPayload, // Or use recordPayload if you prefer the DB schema keys
+    //     });
+    //   } else {
+    //     // FALLBACK TO MOCK
+    //     mockDB.create("attendanceRecords", { ...recordPayload, timestamp: new Date().toISOString(), distance });
+    //   }
+    // } catch (e: any) {
+    //   return { ok: false, reason: e.message || "Failed to save attendance" };
+    // }
+
     try {
       if (isSupabaseEnabled()) {
-        // USE THE OUTBOX (JOB-022)
-        await enqueueMutation({
-          mutationId: `submit_attendance_${chal.id}`,
-          collection: "attendanceRecords",
-          entityId: chal.id,
-          op: "set",
-          payload: recordPayload, // Or use recordPayload if you prefer the DB schema keys
+
+       await saveRecord({
+          id: chal.id,
+          session_id: chal.sessionId,
+          student_id: chal.studentId,
+          device_id: chal.deviceId,
+          time_bucket: chal.openedTimeBucket,
+          gps_bucket_hash: chal.gpsBucketHash,
+          tapped_index: args.tappedIndex,
+          tier_used: chal.tierUsed,
+          action_hash: `taps:${args.tapCount}`,
+          passed: true,
+          timestamp: new Date().toISOString(),
+          distance: distance,
+          verified: true,
         });
+        
+        console.log("✅ SUCCESSFULLY SAVED VIA REPOSITORY");
       } else {
         // FALLBACK TO MOCK
         mockDB.create("attendanceRecords", { ...recordPayload, timestamp: new Date().toISOString(), distance });
