@@ -1,3 +1,16 @@
+import { getDataSource } from "@/services/dataSource";
+
+import {
+  getModuleById,
+  getModuleByClassCode,
+  updateModuleEnrollment,
+} from "@/services/supabase/moduleRepository";
+
+import {
+  getStudentById,
+  updateRegisteredModules,
+} from "@/services/supabase/studentRepository";
+
 import { mockDB } from "@/mockDB/mockDBService";
 import { useMockDbVersionStore } from "@/store/mockDbVersionStore";
 
@@ -6,9 +19,47 @@ function bump() {
 }
 
 export const moduleEnrollmentService = {
-  joinByClassCode(studentId: string, rawCode: string) {
+  async joinByClassCode(studentId: string, rawCode: string) {
     const code = rawCode.trim().toUpperCase();
-    const mod = mockDB.list("modules").find((m) => m.classCode.toUpperCase() === code);
+
+    // ------------------ Supabase ------------------
+    if (getDataSource() === "supabase") {
+      const mod = await getModuleByClassCode(code);
+
+      if (!mod) {
+        throw new Error(
+          `No module was found with class code "${code}". Please check the code and try again.`
+        );
+      }
+
+      const stu = await getStudentById(studentId);
+      if (!stu) {
+        throw new Error("Your student profile could not be found.");
+      }
+
+      if (mod.enrolledStudents.includes(studentId)) {
+        throw new Error("You are already enrolled in this module.");
+      }
+
+      const enrolledStudents = [...mod.enrolledStudents, studentId];
+
+      const registeredModules = Array.from(
+        new Set([...stu.registeredModules, mod.id])
+      );
+
+      await updateModuleEnrollment(mod.id, enrolledStudents);
+      await updateRegisteredModules(studentId, registeredModules);
+
+      return {
+        ...mod,
+        enrolledStudents,
+      };
+    }
+
+    // ------------------ Mock ------------------
+    const mod = mockDB.list("modules").find(
+      (m) => m.classCode.toUpperCase() === code
+    );
     if (!mod) throw new Error("Invalid class code.");
 
     const stu = mockDB.read("students", studentId);
@@ -26,50 +77,188 @@ export const moduleEnrollmentService = {
     return mockDB.read("modules", mod.id)!;
   },
 
-  requestJoin(studentId: string, moduleId: string) {
+  async requestJoin(studentId: string, moduleId: string) {
+    // ------------------ Supabase ------------------
+    if (getDataSource() === "supabase") {
+      const mod = await getModuleById(moduleId);
+
+      if (!mod) throw new Error("Module not found.");
+
+      if (mod.enrolledStudents.includes(studentId)) {
+        return;
+      }
+
+      const pendingRequests = Array.from(
+        new Set([...mod.pendingRequests, studentId])
+      );
+
+      await updateModuleEnrollment(
+        moduleId,
+        mod.enrolledStudents,
+        pendingRequests
+      );
+
+      return;
+    }
+
+    // ------------------ Mock ------------------
     const mod = mockDB.read("modules", moduleId);
     if (!mod) throw new Error("Module not found.");
+
     if (mod.enrolledStudents.includes(studentId)) return;
+
     const pending = Array.from(new Set([...mod.pendingRequests, studentId]));
     mockDB.update("modules", moduleId, { pendingRequests: pending });
+
     bump();
   },
 
-  acceptPending(moduleId: string, studentId: string) {
+  async acceptPending(moduleId: string, studentId: string) {
+    // ------------------ Supabase ------------------
+    if (getDataSource() === "supabase") {
+      const mod = await getModuleById(moduleId);
+      if (!mod) throw new Error("Module not found.");
+
+      const pendingRequests = mod.pendingRequests.filter(
+        (id) => id !== studentId
+      );
+
+      const enrolledStudents = mod.enrolledStudents.includes(studentId)
+        ? mod.enrolledStudents
+        : [...mod.enrolledStudents, studentId];
+
+      await updateModuleEnrollment(
+        moduleId,
+        enrolledStudents,
+        pendingRequests
+      );
+
+      const stu = await getStudentById(studentId);
+
+      if (stu) {
+        const registeredModules = Array.from(
+          new Set([...stu.registeredModules, moduleId])
+        );
+
+        await updateRegisteredModules(studentId, registeredModules);
+      }
+
+      return;
+    }
+
+    // ------------------ Mock ------------------
     const mod = mockDB.read("modules", moduleId);
     if (!mod) throw new Error("Module not found.");
+
     const pending = mod.pendingRequests.filter((id) => id !== studentId);
+
     const enrolled = mod.enrolledStudents.includes(studentId)
       ? mod.enrolledStudents
       : [...mod.enrolledStudents, studentId];
-    mockDB.update("modules", moduleId, { pendingRequests: pending, enrolledStudents: enrolled });
+
+    mockDB.update("modules", moduleId, {
+      pendingRequests: pending,
+      enrolledStudents: enrolled,
+    });
 
     const stu = mockDB.read("students", studentId);
+
     if (stu) {
       const reg = Array.from(new Set([...stu.registeredModules, moduleId]));
-      mockDB.update("students", studentId, { registeredModules: reg });
+
+      mockDB.update("students", studentId, {
+        registeredModules: reg,
+      });
     }
+
     bump();
   },
 
-  rejectPending(moduleId: string, studentId: string) {
+  async rejectPending(moduleId: string, studentId: string) {
+    // ------------------ Supabase ------------------
+    if (getDataSource() === "supabase") {
+      const mod = await getModuleById(moduleId);
+
+      if (!mod) throw new Error("Module not found.");
+
+      const pendingRequests = mod.pendingRequests.filter(
+        (id) => id !== studentId
+      );
+
+      await updateModuleEnrollment(
+        moduleId,
+        mod.enrolledStudents,
+        pendingRequests
+      );
+
+      return;
+    }
+
+    // ------------------ Mock ------------------
     const mod = mockDB.read("modules", moduleId);
+
     if (!mod) throw new Error("Module not found.");
+
     mockDB.update("modules", moduleId, {
       pendingRequests: mod.pendingRequests.filter((id) => id !== studentId),
     });
+
     bump();
   },
 
-  manualAddStudent(moduleId: string, studentId: string) {
+  async manualAddStudent(moduleId: string, studentId: string) {
+    // ------------------ Supabase ------------------
+    if (getDataSource() === "supabase") {
+      const mod = await getModuleById(moduleId);
+      const stu = await getStudentById(studentId);
+
+      if (!mod || !stu) {
+        throw new Error("Module or student not found.");
+      }
+
+      if (mod.enrolledStudents.includes(studentId)) {
+        return;
+      }
+
+      const enrolledStudents = [...mod.enrolledStudents, studentId];
+
+      const registeredModules = Array.from(
+        new Set([...stu.registeredModules, moduleId])
+      );
+
+      await updateModuleEnrollment(
+        moduleId,
+        enrolledStudents,
+        mod.pendingRequests
+      );
+
+      await updateRegisteredModules(studentId, registeredModules);
+
+      return;
+    }
+
+    // ------------------ Mock ------------------
     const mod = mockDB.read("modules", moduleId);
     const stu = mockDB.read("students", studentId);
-    if (!mod || !stu) throw new Error("Module or student not found.");
-    if (mod.enrolledStudents.includes(studentId)) return;
-    mockDB.update("modules", moduleId, { enrolledStudents: [...mod.enrolledStudents, studentId] });
-    mockDB.update("students", studentId, {
-      registeredModules: Array.from(new Set([...stu.registeredModules, moduleId])),
+
+    if (!mod || !stu) {
+      throw new Error("Module or student not found.");
+    }
+
+    if (mod.enrolledStudents.includes(studentId)) {
+      return;
+    }
+
+    mockDB.update("modules", moduleId, {
+      enrolledStudents: [...mod.enrolledStudents, studentId],
     });
+
+    mockDB.update("students", studentId, {
+      registeredModules: Array.from(
+        new Set([...stu.registeredModules, moduleId])
+      ),
+    });
+
     bump();
   },
 };
