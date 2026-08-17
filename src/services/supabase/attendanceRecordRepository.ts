@@ -110,6 +110,7 @@ export async function listForStudent(
 }
 
 export interface AttendanceRecordPayload {
+  id:string;
   session_id: string;
   student_id: string;
   device_id: string;
@@ -119,6 +120,9 @@ export interface AttendanceRecordPayload {
   tier_used: number;
   action_hash: string;
   passed: boolean;
+  timestamp: string; // <-- Added timestamp
+  distance: number | null; // <-- Added distance
+  verified: boolean; // <-- Added verified
 }
 
 export async function saveRecord(payload: AttendanceRecordPayload): Promise<void> {
@@ -128,6 +132,7 @@ export async function saveRecord(payload: AttendanceRecordPayload): Promise<void
     .from(TABLES.attendanceRecords)
     .insert([
       {
+        id: payload.id,
         session_id: payload.session_id,
         student_id: payload.student_id,
         device_id: payload.device_id,
@@ -137,6 +142,9 @@ export async function saveRecord(payload: AttendanceRecordPayload): Promise<void
         tier_used: payload.tier_used,
         action_hash: payload.action_hash,
         passed: payload.passed,
+        timestamp: payload.timestamp,
+        distance: payload.distance,
+        verified: payload.verified,
       }
     ]);
 
@@ -149,4 +157,22 @@ export async function saveRecord(payload: AttendanceRecordPayload): Promise<void
     console.error("[JOB-021] Failed to save attendance record:", error.message);
     throw new Error("Could not save attendance record. Please try again.");
   }
+}
+
+export async function hasAlreadyCheckedIn(sessionId: string, deviceId: string): Promise<boolean> {
+  const supabase = requireSupabaseClient();
+
+  const { data, error } = await supabase
+    .from(TABLES.attendanceRecords)
+    .select("id")
+    .eq("session_id", sessionId)
+    .eq("device_id", deviceId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[JOB-024] Error checking attendance duplicate:", error);
+    return false;
+  }
+
+  return Boolean(data);
 }

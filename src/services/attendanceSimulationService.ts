@@ -290,13 +290,18 @@ export const attendanceSimulationService = {
     return mockDB.read("attendanceSessions", mod.activeSessionId) ?? null;
   },
 
-  verifyCodeForSession(args: { sessionId: string; codeEntered: string }): { ok: true } | { ok: false; reason: string } {
-    mockDB.touch();
-    const session = mockDB.read("attendanceSessions", args.sessionId);
+  async verifyCodeForSession(args: { sessionId: string; codeEntered: string }): Promise<{ ok: true } | { ok: false; reason: string }> {
+    // 1. Fetch from the correct database
+    const session = isSupabaseEnabled() 
+      ? await attendanceSessionRepository.getActiveSession(args.sessionId)
+      : (mockDB.touch(), mockDB.read("attendanceSessions", args.sessionId));
+
     if (!session || !session.active) return { ok: false, reason: "Session not active or missing." };
     if (new Date(session.expiresAt).getTime() <= Date.now()) return { ok: false, reason: "Session expired." };
+    
     const v = verifyAttendanceCode(session.algorithmSeed, args.codeEntered);
     if (!v.ok) return { ok: false, reason: "Invalid attendance code." };
+    
     return { ok: true };
   },
 
@@ -436,31 +441,105 @@ console.log("Delegations:", delegations);
     });
   },
 
-  markAttendance(args: {
+  // markAttendance(args: {
+  //   sessionId: string;
+  //   studentId: string;
+  //   studentLat: number;
+  //   studentLng: number;
+  //   codeEntered: string;
+  // }): { ok: true } | { ok: false; reason: string } {
+  //   mockDB.touch();
+  //   const session = mockDB.read("attendanceSessions", args.sessionId);
+  //   if (!session || !session.active) return { ok: false, reason: "Session not active or missing." };
+  //   if (new Date(session.expiresAt).getTime() <= Date.now()) {
+  //     mockDB.update("attendanceSessions", args.sessionId, { active: false });
+  //     bump();
+  //     return { ok: false, reason: "Session expired." };
+  //   }
+
+  //   const mod = mockDB.read("modules", session.moduleId);
+  //   if (!mod || !mod.enrolledStudents.includes(args.studentId)) {
+  //     return { ok: false, reason: "You are not enrolled in this module." };
+  //   }
+
+  //   const dup = mockDB
+  //     .query("attendanceRecords", { sessionId: args.sessionId })
+  //     .find((r) => r.studentId === args.studentId);
+  //   if (dup) return { ok: false, reason: "Attendance already recorded." };
+
+  //   const v = verifyAttendanceCode(session.algorithmSeed, args.codeEntered);
+  //   if (!v.ok) return { ok: false, reason: "Invalid attendance code." };
+
+  //   const distance = haversineMeters(
+  //     { latitude: args.studentLat, longitude: args.studentLng },
+  //     session.lecturerLocation
+  //   );
+  //   if (distance > session.radius) {
+  //     return { ok: false, reason: `Too far from class (${Math.round(distance)}m / max ${session.radius}m).` };
+  //   }
+
+  //   mockDB.create("attendanceRecords", {
+  //     sessionId: args.sessionId,
+  //     studentId: args.studentId,
+  //     timestamp: new Date().toISOString(),
+  //     distance,
+  //     verified: true,
+  //   });
+
+  //   const stu = mockDB.read("students", args.studentId);
+  //   if (stu) {
+  //     const attended = stu.attendanceStats.attended + 1;
+  //     const totalSessions = Math.max(stu.attendanceStats.totalSessions, attended);
+  //     const rate = totalSessions ? attended / totalSessions : 0;
+  //     mockDB.update("students", args.studentId, {
+  //       attendanceStats: {
+  //         ...stu.attendanceStats,
+  //         attended,
+  //         totalSessions,
+  //         absent: Math.max(0, totalSessions - attended),
+  //         attendanceRate: rate,
+  //       },
+  //     });
+  //   }
+
+  //   bump();
+  //   return { ok: true };
+  // },
+
+async markAttendance(args: {
     sessionId: string;
     studentId: string;
     studentLat: number;
     studentLng: number;
     codeEntered: string;
-  }): { ok: true } | { ok: false; reason: string } {
-    mockDB.touch();
-    const session = mockDB.read("attendanceSessions", args.sessionId);
+  }): Promise<{ ok: true } | { ok: false; reason: string }> {
+    // 1. Fetch from the correct database
+    const session = isSupabaseEnabled()
+      ? await attendanceSessionRepository.getActiveSession(args.sessionId)
+      : (mockDB.touch(), mockDB.read("attendanceSessions", args.sessionId));
+
     if (!session || !session.active) return { ok: false, reason: "Session not active or missing." };
+    
     if (new Date(session.expiresAt).getTime() <= Date.now()) {
-      mockDB.update("attendanceSessions", args.sessionId, { active: false });
-      bump();
+      if (!isSupabaseEnabled()) {
+        mockDB.update("attendanceSessions", args.sessionId, { active: false });
+        bump();
+      }
       return { ok: false, reason: "Session expired." };
     }
 
-    const mod = mockDB.read("modules", session.moduleId);
-    if (!mod || !mod.enrolledStudents.includes(args.studentId)) {
-      return { ok: false, reason: "You are not enrolled in this module." };
-    }
+    // 2. We skip the mock DB enrollment check if using Supabase (handled in backend/challenge logic)
+    if (!isSupabaseEnabled()) {
+      const mod = mockDB.read("modules", session.moduleId);
+      if (!mod || !mod.enrolledStudents.includes(args.studentId)) {
+        return { ok: false, reason: "You are not enrolled in this module." };
+      }
 
-    const dup = mockDB
-      .query("attendanceRecords", { sessionId: args.sessionId })
-      .find((r) => r.studentId === args.studentId);
-    if (dup) return { ok: false, reason: "Attendance already recorded." };
+      const dup = mockDB
+        .query("attendanceRecords", { sessionId: args.sessionId })
+        .find((r) => r.studentId === args.studentId);
+      if (dup) return { ok: false, reason: "Attendance already recorded." };
+    }
 
     const v = verifyAttendanceCode(session.algorithmSeed, args.codeEntered);
     if (!v.ok) return { ok: false, reason: "Invalid attendance code." };
@@ -473,34 +552,36 @@ console.log("Delegations:", delegations);
       return { ok: false, reason: `Too far from class (${Math.round(distance)}m / max ${session.radius}m).` };
     }
 
-    mockDB.create("attendanceRecords", {
-      sessionId: args.sessionId,
-      studentId: args.studentId,
-      timestamp: new Date().toISOString(),
-      distance,
-      verified: true,
-    });
-
-    const stu = mockDB.read("students", args.studentId);
-    if (stu) {
-      const attended = stu.attendanceStats.attended + 1;
-      const totalSessions = Math.max(stu.attendanceStats.totalSessions, attended);
-      const rate = totalSessions ? attended / totalSessions : 0;
-      mockDB.update("students", args.studentId, {
-        attendanceStats: {
-          ...stu.attendanceStats,
-          attended,
-          totalSessions,
-          absent: Math.max(0, totalSessions - attended),
-          attendanceRate: rate,
-        },
+    // 3. Save to MockDB only if not using Supabase (Supabase saves via the challenge service outbox)
+    if (!isSupabaseEnabled()) {
+      mockDB.create("attendanceRecords", {
+        sessionId: args.sessionId,
+        studentId: args.studentId,
+        timestamp: new Date().toISOString(),
+        distance,
+        verified: true,
       });
-    }
 
-    bump();
+      const stu = mockDB.read("students", args.studentId);
+      if (stu) {
+        const attended = stu.attendanceStats.attended + 1;
+        const totalSessions = Math.max(stu.attendanceStats.totalSessions, attended);
+        const rate = totalSessions ? attended / totalSessions : 0;
+        mockDB.update("students", args.studentId, {
+          attendanceStats: {
+            ...stu.attendanceStats,
+            attended,
+            totalSessions,
+            absent: Math.max(0, totalSessions - attended),
+            attendanceRate: rate,
+          },
+        });
+      }
+      bump();
+    }
+    
     return { ok: true };
   },
-
 
   async endSession(args: {
     sessionId: string;

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { View } from "react-native";
+import { View,Text } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { LiveSessionQr } from "@/components/attendance/LiveSessionQr";
@@ -16,6 +16,7 @@ import { AttendanceSessionModel } from "@/models/Attendance";
 import { attendanceSessionRepository } from "@/services/supabase/attendanceSessionRepository";
 import { isSupabaseEnabled } from "@/supabase/client";
 import { attendanceSimulationService } from "@/services/attendanceSimulationService";
+import { colors } from "@/theme/colors";
 
 export default function LecturerActiveSessionScreen() {
   useRoleGuard(["lecturer", "tutor"]);
@@ -97,7 +98,7 @@ export default function LecturerActiveSessionScreen() {
         </>
       ) : (
         <>
-          <SessionTimer expiresAtIso={session.expiresAt} />
+          {/* <SessionTimer expiresAtIso={session.expiresAt} />
           <Spacer size="lg" />
           <AppCard>
             <AppText variant="label">Scan this QR (updates every {ATTENDANCE_CODE_WINDOW_MS / 1000}s)</AppText>
@@ -112,7 +113,37 @@ export default function LecturerActiveSessionScreen() {
               {code}
             </AppText>
           </AppCard>
+          <Spacer size="lg" /> */}
+
+           <SessionTimer expiresAtIso={session.expiresAt} />
           <Spacer size="lg" />
+          <AppCard>
+            <AppText variant="label" align="center">Broadcast Active</AppText>
+            
+            {/* Audio Icon & Frequency Visualizer Placeholder */}
+            <View style={{ alignItems: "center", justifyContent: "center", marginVertical: 20 }}>
+              {/* You can replace this with an actual icon component if you have one imported, e.g., Ionicons */}
+              <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.surface.soft, alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                <Text style={{ fontSize: 28 }}>🔊</Text>
+              </View>
+              
+              {/* Simulated Frequency Waveform / Bars */}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, height: 24 }}>
+                <View style={{ width: 4, height: 12, backgroundColor: colors.palette.primary, borderRadius: 2 }} />
+                <View style={{ width: 4, height: 22, backgroundColor: colors.palette.primary, borderRadius: 2 }} />
+                <View style={{ width: 4, height: 16, backgroundColor: colors.palette.primary, borderRadius: 2 }} />
+                <View style={{ width: 4, height: 24, backgroundColor: colors.palette.primary, borderRadius: 2 }} />
+                <View style={{ width: 4, height: 10, backgroundColor: colors.palette.primary, borderRadius: 2 }} />
+                <View style={{ width: 4, height: 18, backgroundColor: colors.palette.primary, borderRadius: 2 }} />
+              </View>
+            </View>
+
+            <AppText variant="caption" align="center" style={{ color: colors.ink.muted }}>
+              Broadcasting ultrasonic check-in frequency to nearby devices.
+            </AppText>
+          </AppCard>
+          <Spacer size="lg" />
+          
           <AppButton
             title={busy ? "Finalising…" : isLecturer ? "Confirm class ended & PDF" : "Confirm class ended (tutor)"}
             variant="outline"
