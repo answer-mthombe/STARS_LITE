@@ -1,6 +1,6 @@
 import * as Crypto from "expo-crypto";
 
-export const CHALLENGE_WINDOW_MS = 10_000;
+export const CHALLENGE_WINDOW_MS = 25_000;
 export const GPS_POLL_MS = 2_000;
 
 export function challengeTimeBucket(nowMs = Date.now()): number {

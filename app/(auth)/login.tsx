@@ -36,7 +36,7 @@ const ROLE_DEFAULT_EMAIL: Record<UserRole, string> = {
 // 🔑 Storage keys for tracking attempts and time
 const ATTEMPTS_KEY = "@login_failed_attempts";
 const LOCKOUT_TIME_KEY = "@login_lockout_time";
-const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
+const LOCKOUT_DURATION = 3 * 60 * 1000; // 3 minutes in milliseconds
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -64,7 +64,7 @@ export default function LoginScreen() {
             const lockoutTimestamp = parseInt(savedLockoutTime, 10);
             const currentTime = Date.now();
             
-            // Has 15 minutes passed?
+            // Has 3 minutes passed?
             if (currentTime - lockoutTimestamp >= LOCKOUT_DURATION) {
               // ⏱️ Timer expired! Clear everything and reset
               await AsyncStorage.removeItem(ATTEMPTS_KEY);
@@ -194,7 +194,7 @@ export default function LoginScreen() {
                     show({
                       type: "error",
                       title: "Too Many Attempts",
-                      message: "Too many attempts. Your account is locked for 15 minutes.",
+                      message: "Too many attempts. Your account is locked for 3 minutes.",
                     });
                   } else {
                     show({

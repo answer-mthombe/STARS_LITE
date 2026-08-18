@@ -23,7 +23,7 @@ export async function enqueueMutation(args: Omit<OfflineMutationDoc, "_id" | "ki
   };
 
   try {
-    const existing = await db.get<OfflineMutationDoc>(_id);
+    const existing = (await db.get(_id)) as OfflineMutationDoc;
     // Already queued → keep status if pending/failed; update payload to latest intent.
     await db.put({ ...existing, ...docToSave, _rev: existing._rev });
   } catch (e: any) {
@@ -83,13 +83,13 @@ export async function processOutboxOnce() {
         if (error) throw error;
       }
 
-      const existing = await db.get<OfflineMutationDoc>(m._id);
+      const existing = (await db.get(m._id)) as OfflineMutationDoc;
       await db.put({ ...existing, status: "acked", lastError: undefined, _rev: existing._rev } as any);
       pushed += 1;
     } catch (e: any) {
       const msg = e instanceof Error ? e.message : "Sync failed";
       try {
-        const existing = await db.get<OfflineMutationDoc>(m._id);
+        const existing = (await db.get(m._id)) as OfflineMutationDoc;
         await db.put({ ...existing, status: "failed", lastError: msg, _rev: existing._rev } as any);
       } catch {
         // ignore secondary errors

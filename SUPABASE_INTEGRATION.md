@@ -2629,3 +2629,37 @@ Repeat for other `TABLES` entries in migrations. Enable **RLS** before productio
 - **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)** — roles and tables
 - **[FLOW_AND_STRUCTURE.md](./FLOW_AND_STRUCTURE.md)** — diagrams
 - **[full-challenge-mechanism.md](./full-challenge-mechanism.md)** — attendance challenge gates and record shape
+
+
+## STORY-504: Pilot Platform Parity Test Plan & Checklist
+
+### Target Platform
+* **Primary Pilot Target**: Expo Web (Desktop & Mobile Browser viewports)
+* **Scope**: Core authentication flows, session handling, and lecture attendance tracking via Supabase.
+
+---
+
+### 1. Authentication & Session Flow Checklist
+* [ ] **Email/Password Login**: Verify successful authentication with valid credentials.
+* [ ] **Invalid Credentials Handling**: Confirm proper error messaging and lockout triggers on repeated failures.
+* [ ] **Session Persistence**: Verify that tokens persist across page refreshes on Expo Web.
+* [ ] **Logout Flow**: Ensure local session state clears cleanly and redirects to the login screen.
+* [ ] **Row-Level Security (RLS)**: Confirm students can only view/modify their own records and lecturers can manage assigned sessions.
+
+---
+
+### 2. Attendance Tracking Flow Checklist
+* [ ] **Dashboard Loading**: Verify real-time fetching of active lectures from Supabase.
+* [ ] **Attendance Submission**: Test standard check-in actions via web interface.
+* [ ] **Duplicate Prevention**: Confirm the database rejects double check-ins for the same session.
+
+---
+
+### 3. Known Platform Gaps & Workarounds (Expo Web)
+Due to running on a web browser instead of native mobile hardware, the following hardware-dependent features have designated workarounds for the pilot:
+1. **QR Code Scanning**: 
+   * *Gap*: Native camera-based QR scanning libraries (`expo-camera` / barcode scanners) are limited or unsupported natively on standard desktop web browsers.
+   * *Workaround*: Implement manual code-entry fallback or browser-based file upload/mock scanning for the web pilot.
+2. **GPS / Geolocation**:
+   * *Gap*: Precise device location checks (`expo-location`) rely on browser geolocation permissions, which can be restricted or mocked differently across environments.
+   * *Workaround*: Fall back to network-level verification or allow graceful degradation (flagging web check-ins with a `web_fallback` audit tag).
