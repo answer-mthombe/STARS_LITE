@@ -1,3 +1,5 @@
+
+
 import { requireSupabaseClient } from "@/supabase/client";
 import type { AuditLogModel, AuditAction } from "@/models/AuditLog";
 import type { AuthUser } from "@/store/authStore";
@@ -164,6 +166,31 @@ export async function listAuditLogsForUser(
   }
 
   return (data || []).map(enrich);
+}
+
+/**
+ * JOB-026 — Fire-and-forget audit insert for the Supabase write path
+ * (mirrors the shape `delegationService`'s mock `audit()` helper writes).
+ * Never throws: an audit-log failure should not roll back the actual write.
+ */
+export async function insertAuditLog(
+  entry: Omit<AuditLogModel, "id" | "createdAt">,
+): Promise<void> {
+  try {
+    const supabase = requireSupabaseClient();
+    await supabase.from("audit_logs").insert({
+      id: `audit_${Date.now()}`,
+      action: entry.action,
+      actor_role: entry.actorRole,
+      actor_person_id: entry.actorPersonId,
+      scope_type: entry.scopeType ?? "university",
+      scope_id: entry.scopeId ?? "*",
+      target_person_id: entry.targetPersonId ?? null,
+      metadata: entry.metadata ?? {},
+    });
+  } catch (err) {
+    console.error("insertAuditLog failed:", err);
+  }
 }
 
 export function auditLogScopeDescription(role: InstitutionRole): string {
