@@ -12,14 +12,10 @@ import {
   seedToInt32,
 } from "@/utils/challengeBuckets";
 import type { GeoPoint } from "@/models/Attendance";
-import { requireSupabaseClient } from "@/supabase/client";
-import { TABLES } from "@/supabase/tables";
+import { requireSupabaseClient, isSupabaseEnabled } from "@/supabase/client";
 
-import { isSupabaseEnabled } from "@/supabase/client";
 import { attendanceSessionRepository } from "./supabase";
-import { saveRecord , hasAlreadyCheckedIn} from "./supabase/attendanceRecordRepository";
-import { enqueueMutation } from "./offline/offlineSync";
-
+import { saveRecord, hasAlreadyCheckedIn } from "./supabase/attendanceRecordRepository";
 
 export type ChallengeObjectShape = "circle" | "square" | "triangle" | "star" | "diamond" | "hexagon" | "cross" | "arrow";
 export type ChallengeObjectColor =
@@ -50,6 +46,9 @@ export interface AttendanceChallenge {
   openedTimeBucket: number;
   deviceId: string;
   gpsBucketHash: string;
+  /** JOB-033: raw seed hash (hex digest), sent to the server so it can be
+   *  compared against the server's own independently-recomputed seed. */
+  seedHex: string;
   tierUsed: 1;
   requiredTaps: number;
   targetIndex: number; // 0..5
@@ -60,7 +59,7 @@ type BeginArgs = {
   sessionId: string;
   moduleId: string;
   studentId: string;
-  codeEntered: string; // still required in the demo flow
+  codeEntered: string;
   studentLocation: { latitude: number; longitude: number; accuracyMeters?: number; capturedAtMs?: number };
 };
 
@@ -89,7 +88,7 @@ function objFromIndex(idx: number): ChallengeObject {
 }
 
 function makeObjectPool(seedInt: number): ChallengeObject[] {
-  const poolSize = shapes.length * colors.length * sizes.length * patterns.length; // 8*8*3*5 = 960
+  const poolSize = shapes.length * colors.length * sizes.length * patterns.length; // 960
   const offset = (seedInt >>> 8) % poolSize;
   const objs: ChallengeObject[] = [];
   for (let i = 0; i < 6; i++) objs.push(objFromIndex((offset + i * 11) % poolSize));
@@ -101,46 +100,52 @@ function withinRadius(anchor: GeoPoint, point: GeoPoint, radiusMeters: number): 
   return { ok: d <= radiusMeters, distance: d };
 }
 
-// In-memory challenges are fine for the mock app demo.
+// In-memory challenge tracker
 const challenges = new Map<string, AttendanceChallenge>();
-const wrongObjectCounts = new Map<string, { count: number; lockedUntilMs: number }>(); // key = `${sessionId}:${deviceId}`
+const wrongObjectCounts = new Map<string, { count: number; lockedUntilMs: number }>();
 
 function lockKey(sessionId: string, deviceId: string) {
   return `${sessionId}:${deviceId}`;
 }
 
+/**
+ * JOB-033: Shape of response from verify-attendance-record Edge Function.
+ */
+interface VerifyAttendanceResponse {
+  passed: boolean;
+  checks: {
+    seed_valid: boolean;
+    object_valid: boolean;
+    within_radius: boolean;
+    distance_meters: number;
+    plausible: boolean;
+  };
+}
+
+/** Map server check failures to explicit user-facing gate messages. */
+function reasonFromChecks(checks: VerifyAttendanceResponse["checks"]): string {
+  if (!checks.seed_valid) return "Verification failed. Open the challenge again.";
+  if (!checks.object_valid) return "Wrong object. Try again.";
+  if (!checks.within_radius) return "Location left the session area during check-in.";
+  if (!checks.plausible) return "Location not confirmed. Stay in the room.";
+  return "Verification failed.";
+}
+
 export const attendanceChallengeService = {
-  /**
-   * Gates 1–5 (demo implementation):
-   * - session active
-   * - not already checked in by (session_id, device_id)
-   * - gps inside radius, fresh (<4s), accuracy (<30m)
-   * - audio token: stubbed as pass in the dummy flow
-   * - challenge window open is checked at submit
-   */
   async begin(args: BeginArgs): Promise<{ ok: true; challengeId: string } | { ok: false; reason: string }> {
     mockDB.touch();
-   // const session = mockDB.read("attendanceSessions", args.sessionId);
 
-   const session = isSupabaseEnabled() 
+    const session = isSupabaseEnabled()
       ? await attendanceSessionRepository.getActiveSession(args.sessionId)
       : mockDB.read("attendanceSessions", args.sessionId);
-
 
     if (!session || !session.active) return { ok: false, reason: "Session not active or missing." };
     if (new Date(session.expiresAt).getTime() <= Date.now()) return { ok: false, reason: "Session has ended. See your coordinator." };
 
     const deviceId = await getOrCreateDeviceId();
-    // const dup = mockDB
-    //   .query("attendanceRecords", { sessionId: args.sessionId })
-    //   .some((r) => r.deviceId === deviceId);
-    // if (dup) return { ok: false, reason: "Already checked in for this session." };
 
     if (isSupabaseEnabled()) {
-       // Optional: You could add a check here via a new repository method 
-       // if you wanted to be strict before showing the challenge.
-
-     const alreadyCheckedIn = await hasAlreadyCheckedIn(args.sessionId, deviceId);
+      const alreadyCheckedIn = await hasAlreadyCheckedIn(args.sessionId, deviceId);
       if (alreadyCheckedIn) {
         return { ok: false, reason: "You have already marked your attendance for this session." };
       }
@@ -168,14 +173,7 @@ export const attendanceChallengeService = {
       session.radius
     );
 
-    console.log("********distance:", inside.distance, "radius:", session.radius, "anchor:", session.lecturerLocation, "you**************:", args.studentLocation);
-
-
     if (!inside.ok) return { ok: false, reason: "Location not confirmed. Stay in the room." };
-
-    // Code gate stays in the demo flow (lecturer shows it). If code is wrong, student never sees a challenge.
-    // We validate it using the existing rotating-code verifier in attendanceSimulationService.
-    // To avoid circular import, the screen checks the code before calling begin().
 
     const openedAtMs = Date.now();
     const openedTimeBucket = challengeTimeBucket(openedAtMs);
@@ -188,7 +186,7 @@ export const attendanceChallengeService = {
     });
     const seedInt = seedToInt32(seedHex);
     const targetIndex = seedInt % 6;
-    const requiredTaps = 2 + ((seedInt >>> 24) % 6); // 2..7
+    const requiredTaps = 2 + ((seedInt >>> 24) % 6);
     const objects = makeObjectPool(seedInt);
 
     const challenge: AttendanceChallenge = {
@@ -200,6 +198,7 @@ export const attendanceChallengeService = {
       openedTimeBucket,
       deviceId,
       gpsBucketHash: gbh,
+      seedHex,
       tierUsed: 1,
       requiredTaps,
       targetIndex,
@@ -213,68 +212,40 @@ export const attendanceChallengeService = {
     return challenges.get(challengeId) ?? null;
   },
 
-  /**
-   * Gates 6–9 (demo implementation):
-   * - time bucket unchanged
-   * - gps continuous (all polls inside radius, max 1 missing)
-   * - correct object (wrong twice => 60s lockout)
-   * - physical interaction (tier 1: tap count match)
-   *
-   * ALL GREEN => write attendance record
-   * ANY RED   => write nothing
-   */
   async submit(args: SubmitArgs): Promise<{ ok: true } | { ok: false; reason: string }> {
-    //mockDB.touch();
     const chal = challenges.get(args.challengeId);
     if (!chal) return { ok: false, reason: "Challenge expired. Open the challenge again." };
 
-   // const session = mockDB.read("attendanceSessions", chal.sessionId);
-const session = isSupabaseEnabled() 
+    const session = isSupabaseEnabled()
       ? await attendanceSessionRepository.getActiveSession(chal.sessionId)
       : mockDB.read("attendanceSessions", chal.sessionId);
 
     if (!session || !session.active) return { ok: false, reason: "Session has ended. See your coordinator." };
     if (new Date(session.expiresAt).getTime() <= Date.now()) return { ok: false, reason: "Session has ended. See your coordinator." };
 
-  //  const currentBucket = challengeTimeBucket(Date.now());
-   // if (currentBucket !== chal.openedTimeBucket) return { ok: false, reason: "Time expired. Open the challenge again." };
-   const elapsedMs = Date.now() - chal.openedAtMs;
-if (elapsedMs > CHALLENGE_WINDOW_MS) return { ok: false, reason: "Time expired. Open the challenge again." };
-
-    // Duplicate protection (session, device)
-    // const dup = mockDB
-    //   .query("attendanceRecords", { sessionId: chal.sessionId })
-    //   .some((r) => r.deviceId === chal.deviceId);
-    // if (dup) return { ok: false, reason: "Already checked in for this session." };
+    const elapsedMs = Date.now() - chal.openedAtMs;
+    if (elapsedMs > CHALLENGE_WINDOW_MS) return { ok: false, reason: "Time expired. Open the challenge again." };
 
     if (isSupabaseEnabled()) {
-      // Logic for Supabase check would ideally be in a repository
-      // For now, assume if the DB save fails, we handle it in step 3.
+      const alreadyCheckedIn = await hasAlreadyCheckedIn(chal.sessionId, chal.deviceId);
+      if (alreadyCheckedIn) return { ok: false, reason: "Already checked in for this session." };
     } else {
       const dup = mockDB.query("attendanceRecords", { sessionId: chal.sessionId }).some((r) => r.deviceId === chal.deviceId);
       if (dup) return { ok: false, reason: "Already checked in." };
     }
 
-    // GPS continuous: require at least 3 polls (0s, 2s, 4s...; UI collects them),
-    // all inside radius, and polls not stale.
     const polls = args.gpsPolls.filter((p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude));
     if (polls.length < 1) return { ok: false, reason: "Location left the session area during check-in." };
 
     const tooManyUnknown = args.gpsPolls.length - polls.length > 1;
     if (tooManyUnknown) return { ok: false, reason: "Location left the session area during check-in." };
 
-    console.log("polls.length:", polls.length, "raw gpsPolls.length:", args.gpsPolls.length);
-
     for (const p of polls) {
       const ageMs = Date.now() - p.capturedAtMs;
       if (ageMs > 60_000) return { ok: false, reason: "Location not confirmed. Stay in the room." };
-      //const acc = p.accuracyMeters ?? (Platform.OS === "web" ? 10 : 999);
-            const acc = p.accuracyMeters ?? 10 ;
-
+      const acc = p.accuracyMeters ?? 10;
       if (acc > 100) return { ok: false, reason: "Location not confirmed. Stay in the room." };
       const inside = withinRadius(session.lecturerLocation, { latitude: p.latitude, longitude: p.longitude }, session.radius);
-        console.log("POLL CHECK:", { ageMs, acc, distance: inside.distance, radius: session.radius, ok: inside.ok });
-
       if (!inside.ok) return { ok: false, reason: "Location left the session area during check-in." };
     }
 
@@ -289,95 +260,48 @@ if (elapsedMs > CHALLENGE_WINDOW_MS) return { ok: false, reason: "Time expired. 
 
     if (args.tapCount !== chal.requiredTaps) return { ok: false, reason: "Action not detected. Try again." };
 
-    // Passed. Write attendance record.
     const last = polls[polls.length - 1]!;
     const distance = haversineMeters(
       { latitude: last.latitude, longitude: last.longitude },
       session.lecturerLocation
     );
 
-    // mockDB.create("attendanceRecords", {
-    //   sessionId: chal.sessionId,
-    //   studentId: chal.studentId,
-    //   timestamp: new Date().toISOString(),
-    //   distance,
-    //   verified: true,
-    //   // Challenge mechanism fields (optional in model)
-    //   deviceId: chal.deviceId,
-    //   timeBucket: chal.openedTimeBucket,
-    //   gpsBucketHash: chal.gpsBucketHash,
-    //   tappedIndex: args.tappedIndex,
-    //   tierUsed: chal.tierUsed,
-    //   actionHash: `taps:${args.tapCount}`,
-    //   passed: true,
-    // } as any);
-
-//     const recordData = {
-//       sessionId: chal.sessionId,
-//       studentId: chal.studentId,
-//       timestamp: new Date().toISOString(),
-//       distance,
-//       verified: true,
-//       deviceId: chal.deviceId,
-//       timeBucket: chal.openedTimeBucket,
-//       gpsBucketHash: chal.gpsBucketHash,
-//       tappedIndex: args.tappedIndex,
-//       tierUsed: chal.tierUsed,
-//       actionHash: `taps:${args.tapCount}`,
-//       passed: true,
-//     } as any;
-
-// if (isSupabaseEnabled()) {
-//       // CALL YOUR REPOSITORY HERE
-//       const result = await saveRecord(recordData);
-//       if (!result.ok) return result; // This returns the "Already checked in" error if the DB constraint triggers
-//     } else {
-//       // FALLBACK TO MOCK
-//       mockDB.create("attendanceRecords", recordData);
-//     }
-
-
-//     challenges.delete(chal.id);
-//     return { ok: true };
-//   },
-
-const recordPayload = {
-      sessionId: chal.sessionId,
-      studentId: chal.studentId,
-      deviceId: chal.deviceId,
-      timeBucket: chal.openedTimeBucket,
-      gpsBucketHash: chal.gpsBucketHash,
-      tappedIndex: args.tappedIndex,
-      tierUsed: chal.tierUsed,
-      actionHash: `taps:${args.tapCount}`,
-      passed: true,
-      timestamp: new Date().toISOString(),
-      distance: distance,
-      verified: true,
-    };
-
-    // try {
-    //   if (isSupabaseEnabled()) {
-    //     // USE THE OUTBOX (JOB-022)
-    //     await enqueueMutation({
-    //       mutationId: `submit_attendance_${chal.id}`,
-    //       collection: "attendanceRecords",
-    //       entityId: chal.id,
-    //       op: "set",
-    //       payload: recordPayload, // Or use recordPayload if you prefer the DB schema keys
-    //     });
-    //   } else {
-    //     // FALLBACK TO MOCK
-    //     mockDB.create("attendanceRecords", { ...recordPayload, timestamp: new Date().toISOString(), distance });
-    //   }
-    // } catch (e: any) {
-    //   return { ok: false, reason: e.message || "Failed to save attendance" };
-    // }
-
     try {
       if (isSupabaseEnabled()) {
+        const supabase = requireSupabaseClient();
 
-       await saveRecord({
+        const { data, error } = await supabase.functions.invoke<VerifyAttendanceResponse>(
+          "verify-attendance-record",
+          {
+            body: {
+              session_id: chal.sessionId,
+              device_id: chal.deviceId,
+              gps_bucket_hash: chal.gpsBucketHash,
+              time_bucket: chal.openedTimeBucket,
+              client_seed: chal.seedHex,
+              tapped_index: args.tappedIndex,
+              expected_object: chal.targetIndex,
+              latitude: last.latitude,
+              longitude: last.longitude,
+              target_latitude: session.lecturerLocation.latitude,
+              target_longitude: session.lecturerLocation.longitude,
+              max_radius_meters: session.radius,
+              tier: "standard",
+            },
+          }
+        );
+
+        if (error) {
+          console.error("[JOB-033] verify-attendance-record invoke failed:", error);
+          return { ok: false, reason: "Could not verify attendance. Please try again." };
+        }
+
+        if (!data || !data.passed) {
+          console.log("[JOB-033] Server rejected attendance:", data?.checks);
+          return { ok: false, reason: data ? reasonFromChecks(data.checks) : "Verification failed." };
+        }
+
+        await saveRecord({
           id: chal.id,
           session_id: chal.sessionId,
           student_id: chal.studentId,
@@ -389,14 +313,26 @@ const recordPayload = {
           action_hash: `taps:${args.tapCount}`,
           passed: true,
           timestamp: new Date().toISOString(),
-          distance: distance,
+          distance,
           verified: true,
         });
-        
-        console.log("✅ SUCCESSFULLY SAVED VIA REPOSITORY");
+
+        console.log("✅ Attendance verified by server and saved");
       } else {
-        // FALLBACK TO MOCK
-        mockDB.create("attendanceRecords", { ...recordPayload, timestamp: new Date().toISOString(), distance });
+        mockDB.create("attendanceRecords", {
+          sessionId: chal.sessionId,
+          studentId: chal.studentId,
+          timestamp: new Date().toISOString(),
+          distance,
+          verified: true,
+          deviceId: chal.deviceId,
+          timeBucket: chal.openedTimeBucket,
+          gpsBucketHash: chal.gpsBucketHash,
+          tappedIndex: args.tappedIndex,
+          tierUsed: chal.tierUsed,
+          actionHash: `taps:${args.tapCount}`,
+          passed: true,
+        } as any);
       }
     } catch (e: any) {
       return { ok: false, reason: e.message || "Failed to save attendance" };
@@ -409,4 +345,3 @@ const recordPayload = {
   windowMs: CHALLENGE_WINDOW_MS,
   gpsPollMs: GPS_POLL_MS,
 };
-
