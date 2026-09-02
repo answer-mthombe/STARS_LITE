@@ -5,7 +5,7 @@ import * as Location from "expo-location";
 export async function captureLocationOnce(): Promise<{ latitude: number; longitude: number }> {
   if (Platform.OS === "web") {
   //  return {"latitude": -29.9701, "longitude": 30.9137} // MUT region — demo only
-  return { latitude: -29.9669923, longitude: 30.9134354 };
+  return { latitude: -29.966833, longitude: 30.914485 };
  //  return { latitude: -29.86005, longitude: 31.02824 };
   }
   const { status } = await Location.requestForegroundPermissionsAsync();

@@ -3,6 +3,8 @@ import { useRouter } from "expo-router";
 
 import { getDataSource } from "@/services/dataSource";
 import { listModulesForLecturer } from "@/services/supabase/moduleRepository";
+import { testInvigilationRepository } from "@/services/supabase/testInvigilationRepository"; 
+
 
 import {
   AppText,
@@ -30,7 +32,9 @@ export default function LecturerDashboard() {
   const v = useMockDbVersionStore((s) => s.version);
 
 const [modules, setModules] = useState<ModuleModel[]>([]);
-  const [loading, setLoading] = useState(true);
+const [activeSessions, setActiveSessions] = useState<any[]>([]);
+const [recentTests, setRecentTests] = useState<any[]>([]);
+const [loading, setLoading] = useState(true);
   
 
 // 2. Single useEffect for data fetching
@@ -47,6 +51,12 @@ const [modules, setModules] = useState<ModuleModel[]>([]);
           // Fetch real modules for the lecturer from Supabase
           const data = await listModulesForLecturer(user.id);
           setModules(data);
+
+          const sessions = await testInvigilationRepository.getActiveTestSessionsForLecturer(user.id);
+          setActiveSessions(sessions);
+
+          const recent = await testInvigilationRepository.getRecentCompletedTestsForLecturer(user.id);
+          setRecentTests(recent);
         } else {
           // Keep existing mock logic for offline/mock development
           mockDB.touch();
@@ -72,7 +82,35 @@ const [modules, setModules] = useState<ModuleModel[]>([]);
       subtitle="Modules & sessions"
       right={<LinkText onPress={() => router.push("/notifications")}>Alerts</LinkText>}
     >
-      <PromoBanner
+
+      {activeSessions.length > 0 ? (
+        <Stack gap="sm" style={{ marginBottom: 16 }}>
+          {activeSessions.map((session) => (
+            <PromoBanner
+              key={session.id}
+              title={`Live ${session.session_type}: ${session.title || "Session"}`}
+              subtitle="Session is active — click to manage"
+              onPress={() => router.push(`/lecturer/test-invigilate/${session.id}` as never)}
+            />
+          ))}
+        </Stack>
+      ) : null}
+
+     {recentTests.length > 0 ? (
+        <Stack gap="sm" style={{ marginBottom: 16 }}>
+          {recentTests.map((session) => (
+            <PromoBanner
+              key={session.id}
+              title={`Print-ready: ${session.title || session.session_type} register`}
+              subtitle="Session closed — tap to view PDF"
+              tone="neutral" // <-- Gives it that grey look you had before
+              onPress={() => router.push(`/lecturer/register/${session.id}?type=${session.session_type}` as never)}
+            />
+          ))}
+        </Stack>
+      ) : null}
+
+      {/* <PromoBanner
         title="Live demo: Quiz 2 invigilation"
         subtitle="Pre-seeded — scan student cards now"
         onPress={() => router.push("/lecturer/test-invigilate/test_demo_active" as never)}
@@ -81,7 +119,8 @@ const [modules, setModules] = useState<ModuleModel[]>([]);
         title="Print-ready: Midterm test register (PDF)"
         tone="neutral"
         onPress={() => router.push("/lecturer/register/reg_test_mobile_midterm?type=test" as never)}
-      />
+      /> */}
+
 
       <SectionHeader title="Your modules" overline />
 

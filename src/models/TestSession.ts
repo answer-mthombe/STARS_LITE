@@ -21,6 +21,8 @@ export interface TestSessionModel extends WithTimestamps {
   moduleName: string;
   title: string;
   lecturerId: string;
+  sessionType?: "test" | "exam";       
+  venueId?: string | null;
   status: TestSessionStatus;
   invigilators: TestInvigilator[];
   startedAt: ISODateString;

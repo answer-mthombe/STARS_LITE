@@ -116,7 +116,7 @@ export async function getAttendanceSessionById(id: string): Promise<AttendanceSe
 export const attendanceSessionRepository = {
   async getActiveSession(sessionId: string): Promise<AttendanceSessionModel | null> {
     const client = requireSupabaseClient();
-    console.log("DEBUG: Searching for ID:", `"${sessionId}"`);
+    //console.log("DEBUG: Searching for ID:", `"${sessionId}"`);
     const { data, error } = await client
       .from(TABLES.attendanceSessions)
       .select("*")
@@ -124,7 +124,7 @@ export const attendanceSessionRepository = {
       .eq("active", true)
       .single();
 
-      console.log("Supabase response:", { data, error });
+    //  console.log("Supabase response:", { data, error });
     
     if (error) {
       console.error("Supabase error in getActiveSession:", error);

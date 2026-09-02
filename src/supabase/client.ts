@@ -38,6 +38,8 @@ export function tryGetSupabaseClient(): SupabaseClient | undefined {
       },
     });
   }
+
+
   return client;
 }
 

@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 
 import { getDataSource } from "@/services/dataSource";
 import { listModulesForStudent } from "@/services/supabase/moduleRepository";
+import { requireSupabaseClient } from "@/supabase";
 
 import {
   AppCard,
@@ -45,6 +46,10 @@ export default function StudentDashboard() {
   // }, [user, v]);
 
   //const ratePct = data.student ? Math.round((data.student.attendanceStats.attendanceRate ?? 0) * 100) : 0;
+
+
+
+
  useEffect(() => {
     async function loadDashboard() {
       if (!user || user.role !== "student") {
@@ -87,6 +92,47 @@ export default function StudentDashboard() {
     loadDashboard();
   }, [user, v]);
  
+useEffect(() => {
+    if (!user || getDataSource() === "mock") return;
+
+    const supabase = requireSupabaseClient();
+
+    // Listen to UPDATE events on the 'modules' table
+    const channel = supabase
+      .channel('student-modules-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'modules',
+        },
+        (payload) => {
+          console.log("Realtime module update received!", payload.new);
+          const updatedDbModule = payload.new;
+
+          // Update the specific module in our local React state
+          setModules((prevModules) =>
+            prevModules.map((m) => {
+              if (m.id === updatedDbModule.id) {
+                return {
+                  ...m,
+                  activeSessionId: updatedDbModule.active_session_id,
+                };
+              }
+              return m;
+            })
+          );
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription when the screen unmounts
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const first = user?.role === "student" ? user.fullName.split(" ")[0] : "";
 
 
