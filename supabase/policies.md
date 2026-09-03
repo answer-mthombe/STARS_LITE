@@ -38,3 +38,25 @@ As of the migration `0007_rls_write_paths.sql`, the following security posture i
 * **Data Integrity:** A `UNIQUE` constraint exists on `(session_id, device_id)` to prevent duplicate check-ins.
 * **Administrative Access:** Admin roles leverage the `service_role` key to bypass RLS. This is the only authorized method for broad data management.
 * **Access Lookups:** All role visibility (lecturer modules, student records) is enforced via `JOIN` queries against the `user_profiles.linked_person_id` column.
+
+
+
+-- Ensure Row-Level Security is active on the table
+ALTER TABLE challenge_submissions ENABLE ROW LEVEL SECURITY;
+
+-- 1. Restrict inserts so students can only insert for themselves
+CREATE POLICY "Enable insert for authenticated users matching their own student_id"
+ON challenge_submissions
+FOR INSERT
+TO authenticated
+WITH CHECK (
+  student_id = (
+    SELECT id FROM students WHERE auth_user_id = auth.uid()
+  )
+);
+
+-- 2. Prevent duplicate device usage per session at the constraint level
+-- (Combined with RLS, this ensures strict uniqueness)
+ALTER TABLE challenge_submissions
+ADD CONSTRAINT unique_session_device_submission 
+UNIQUE (session_id, device_id);
