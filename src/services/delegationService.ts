@@ -14,6 +14,23 @@ import { getDataSource } from "./dataSource";
 import { fromRow } from "@/supabase/mappers/idBasedMapper";
 import type { ModuleModel } from "@/models/Module";
 
+// JOB-026 — Delegation & proxy writes
+import {
+  revokeModuleDelegationRow,
+  listActiveDelegationsForStudent,
+} from "./supabase/moduleDelegationRepository";
+import {
+  listProxyAssignments,
+  listActiveProxiesForPerson,
+  createProxyAssignment,
+  deactivateProxyAssignment,
+} from "./supabase/proxyAssignmentRepository";
+import {
+  syncDelegatedModuleIds,
+  syncActiveProxyIds,
+} from "./supabase/userProfileRepository";
+import { insertAuditLog } from "./auditLogService";
+
 function bump() {
   useMockDbVersionStore.getState().bump();
 }
@@ -50,7 +67,10 @@ export const delegationService = {
   },
 
 
-  listProxies(scope?: { scope: ProxyScope; scopeId: string }): ProxyAssignmentModel[] {
+  async listProxies(scope?: { scope: ProxyScope; scopeId: string }): Promise<ProxyAssignmentModel[]> {
+    if (getDataSource() === "supabase") {
+      return listProxyAssignments(scope);
+    }
     mockDB.touch();
     const all = mockDB.list("proxyAssignments");
     if (!scope) return all;
@@ -134,7 +154,23 @@ async grantModuleDelegation(args: {
             .eq("id", args.moduleId);
         }
       }
-      
+
+      // JOB-026: keep profile.delegatedModuleIds in sync (derived from active delegations)
+      const stillActive = await listActiveDelegationsForStudent(args.delegateStudentId);
+      await syncDelegatedModuleIds(
+        args.delegateStudentId,
+        stillActive.map((d) => d.moduleId)
+      );
+      await insertAuditLog({
+        action: "delegation.created",
+        actorRole: "lecturer",
+        actorPersonId: args.grantedByLecturerId,
+        scopeType: "module",
+        scopeId: args.moduleId,
+        targetPersonId: args.delegateStudentId,
+        metadata: { delegateType: args.delegateType, capabilities: args.capabilities },
+      });
+
       return created as unknown as ModuleDelegationModel;
 
     } else {
@@ -283,7 +319,53 @@ async grantModuleDelegation(args: {
   //   return created;
   // },
 
-  revokeModuleDelegation(delegationId: string, revokedByLecturerId: string): void {
+  async revokeModuleDelegation(delegationId: string, revokedByLecturerId: string): Promise<void> {
+    if (getDataSource() === "supabase") {
+      const supabase = requireSupabaseClient();
+
+      const { data: d, error: fetchError } = await supabase
+        .from(TABLES.moduleDelegations)
+        .select("*")
+        .eq("id", delegationId)
+        .single();
+      if (fetchError || !d) throw new Error("Delegation not found.");
+      if (d.granted_by_lecturer_id !== revokedByLecturerId) {
+        throw new Error("Delegation not found.");
+      }
+
+      await revokeModuleDelegationRow(delegationId);
+
+      if (d.delegate_type === "tutor") {
+        const { data: mod } = await supabase
+          .from(TABLES.modules)
+          .select("tutor_ids")
+          .eq("id", d.module_id)
+          .single();
+        const tutorIds: string[] = mod?.tutor_ids ?? [];
+        if (tutorIds.includes(d.delegate_student_id)) {
+          await supabase
+            .from(TABLES.modules)
+            .update({ tutor_ids: tutorIds.filter((id) => id !== d.delegate_student_id) })
+            .eq("id", d.module_id);
+        }
+      }
+
+      // JOB-026: recompute profile.delegatedModuleIds from what's still active
+      const stillActive = await listActiveDelegationsForStudent(d.delegate_student_id);
+      await syncDelegatedModuleIds(d.delegate_student_id, stillActive.map((x) => x.moduleId));
+
+      await insertAuditLog({
+        action: "delegation.revoked",
+        actorRole: "lecturer",
+        actorPersonId: revokedByLecturerId,
+        scopeType: "module",
+        scopeId: d.module_id,
+        targetPersonId: d.delegate_student_id,
+      });
+      return;
+    }
+
+    // Legacy mock path
     mockDB.touch();
     const d = mockDB.read("moduleDelegations", delegationId);
     if (!d || d.grantedByLecturerId !== revokedByLecturerId) throw new Error("Delegation not found.");
@@ -306,14 +388,38 @@ async grantModuleDelegation(args: {
   },
 
   /** Dean / HOD designates acting proxy */
-  grantProxy(args: Omit<ProxyAssignmentModel, "id" | "createdAt" | "active">): ProxyAssignmentModel {
+  async grantProxy(
+    args: Omit<ProxyAssignmentModel, "id" | "createdAt" | "active">
+  ): Promise<ProxyAssignmentModel> {
+    const scopeType =
+      args.scope === "faculty" ? "faculty" : args.scope === "department" ? "department" : "university";
+
+    if (getDataSource() === "supabase") {
+      const created = await createProxyAssignment(args);
+
+      // JOB-026: keep profile.activeProxyIds in sync (derived from active proxies)
+      const stillActive = await listActiveProxiesForPerson(args.granteePersonId);
+      await syncActiveProxyIds(args.granteePersonId, stillActive.map((p) => p.id));
+
+      await insertAuditLog({
+        action: "proxy.activated",
+        actorRole: args.grantorRole as InstitutionRole,
+        actorPersonId: args.grantorPersonId,
+        scopeType,
+        scopeId: args.scopeId,
+        targetPersonId: args.granteePersonId,
+      });
+
+      return created;
+    }
+
     mockDB.touch();
     const created = mockDB.create("proxyAssignments", { ...args, active: true, createdAt: new Date().toISOString() });
     audit({
       action: "proxy.activated",
       actorRole: args.grantorRole as InstitutionRole,
       actorPersonId: args.grantorPersonId,
-      scopeType: args.scope === "faculty" ? "faculty" : args.scope === "department" ? "department" : "university",
+      scopeType,
       scopeId: args.scopeId,
       targetPersonId: args.granteePersonId,
     });
@@ -321,7 +427,32 @@ async grantModuleDelegation(args: {
     return created;
   },
 
-  deactivateProxy(proxyId: string, byPersonId: string): void {
+  async deactivateProxy(proxyId: string, byPersonId: string): Promise<void> {
+    if (getDataSource() === "supabase") {
+      const supabase = requireSupabaseClient();
+      const { data: p, error } = await supabase
+        .from(TABLES.proxyAssignments)
+        .select("*")
+        .eq("id", proxyId)
+        .single();
+      if (error || !p) throw new Error("Proxy not found.");
+
+      await deactivateProxyAssignment(proxyId);
+
+      const stillActive = await listActiveProxiesForPerson(p.grantee_person_id);
+      await syncActiveProxyIds(p.grantee_person_id, stillActive.map((x) => x.id));
+
+      await insertAuditLog({
+        action: "proxy.deactivated",
+        actorRole: p.grantor_role,
+        actorPersonId: byPersonId,
+        scopeType: p.scope === "faculty" ? "faculty" : "department",
+        scopeId: p.scope_id,
+        targetPersonId: p.grantee_person_id,
+      });
+      return;
+    }
+
     mockDB.touch();
     const p = mockDB.read("proxyAssignments", proxyId);
     if (!p) throw new Error("Proxy not found.");
@@ -356,5 +487,3 @@ export async function listModulesForTutor(
   return (modules ?? [])
     .map((row: any) => fromRow(row.modules) as ModuleModel);
 }
-
-
