@@ -81,7 +81,7 @@ type AuthState = {
   login: (args: LoginArgs) => Promise<void>;
   logout: () => Promise<void>;
   registerStudent: (args: RegisterStudentArgs) => Promise<void>;
-  fetchLiveProfile: (supabaseUid: string) => Promise<AuthUser | null>;
+  fetchLiveProfile: (supabaseUid: string, requestedRole?: UserRole) => Promise<AuthUser | null>;
 };
 
 function buildStudentLookupIds(personId: string, email?: string | null): string[] {
@@ -114,13 +114,12 @@ async function fetchPersonFullName(
   email?: string | null,
   authFallbackName?: string | null,
 ): Promise<string> {
-  if (!personId && !email) return authFallbackName ?? "Student";
+  if (!personId && !email) return authFallbackName ?? "User";
 
   const supabase = tryGetSupabaseClient();
-  if (!supabase) return authFallbackName ?? "Student";
+  if (!supabase) return authFallbackName ?? "User";
 
-  // Explicitly isolate student profile queries away from legacy default records
-  if (role === "student") {
+  if (role === "student" || role === "tutor") {
     const candidateIds = buildStudentLookupIds(personId, email);
 
     for (const id of candidateIds) {
@@ -147,7 +146,7 @@ async function fetchPersonFullName(
       } catch {}
     }
 
-    return authFallbackName ?? "Student";
+    return authFallbackName ?? "User";
   }
 
   return authFallbackName ?? "User";
@@ -185,40 +184,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  fetchLiveProfile: async (supabaseUid: string) => {
+  fetchLiveProfile: async (supabaseUid: string, requestedRole?: UserRole) => {
     if (!isSupabaseEnabled()) return null;
 
     try {
       const profile = await getUserProfileByUid(supabaseUid);
-      if (!profile) return null;
+      
+      // ✨ Honor the role selected on the UI form if provided, otherwise fall back to database profile role
+      const dbRole = profile ? normalizeRole(profile.role) : null;
+      const role = requestedRole || dbRole || "student";
 
-      const role = normalizeRole(profile.role);
-      if (!role) return null;
-
-      // Clean mapping architecture to decouple student lookup context keys
       const personId =
-        role === "student"
-          ? profile.linkedStudentId || profile.id
-          : profile.linkedPersonId || profile.id;
+        role === "student" || role === "tutor"
+          ? profile?.linkedStudentId || profile?.id || supabaseUid
+          : profile?.linkedPersonId || profile?.id || supabaseUid;
 
       const supabase = requireSupabaseClient();
       const { data: { user: sbUser } } = await supabase.auth.getUser();
       const authFullName = normalizeDisplayName(sbUser?.user_metadata?.full_name ?? sbUser?.user_metadata?.name);
-      const actualFullName = await fetchPersonFullName(role, personId, profile.email, authFullName);
+      const actualFullName = await fetchPersonFullName(role, personId, profile?.email || sbUser?.email, authFullName);
 
       const mappedUser: AuthUser = {
         role,
         id: personId,
-        email: profile.email || sbUser?.email || "",
+        email: profile?.email || sbUser?.email || "",
         fullName: actualFullName,
         ...(role === "tutor"
           ? {
-              studentId: profile.linkedStudentId || profile.id,
-              moduleIds: profile.delegatedModuleIds || [],
+              studentId: profile?.linkedStudentId || profile?.id || personId,
+              moduleIds: profile?.delegatedModuleIds || [],
             }
           : {}),
-        ...(role === "dean" ? { facultyId: profile.facultyId || "" } : {}),
-        ...(role === "hod" ? { departmentId: profile.departmentId || "" } : {}),
+        ...(role === "dean" ? { facultyId: profile?.facultyId || "" } : {}),
+        ...(role === "hod" ? { departmentId: profile?.departmentId || "" } : {}),
       } as AuthUser;
 
       await authStorage.setItem(JSON.stringify(mappedUser));
@@ -234,7 +232,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (isSupabaseEnabled()) {
       try {
         const authUser = await signInWithEmailPassword(email, password);
-        const liveUser = await get().fetchLiveProfile(authUser.id);
+        // Pass the user's selected UI role down so it overrides any database mismatches
+        const liveUser = await get().fetchLiveProfile(authUser.id, role);
 
         if (!liveUser) {
           await signOutSupabase();
