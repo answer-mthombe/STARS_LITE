@@ -471,19 +471,31 @@ async grantModuleDelegation(args: {
 export async function listModulesForTutor(
   studentId: string
 ): Promise<ModuleModel[]> {
-
   const client = requireSupabaseClient();
 
-  const { data: modules, error } = await client
+  // Two-step fetch: PostgREST cannot embed `modules` inside `module_delegations`
+  // because there is no detectable FK relationship between the tables, so a
+  // `.select("modules (*)")` embed 400s (PGRST200). Fetch the delegated module
+  // ids first, then load those modules directly.
+  const { data: dels, error: delErr } = await client
     .from(TABLES.moduleDelegations)
-    .select(`
-      modules (*)
-    `)
+    .select("module_id")
     .eq("delegate_student_id", studentId)
     .eq("active", true);
 
-  if (error) throw error;
+  if (delErr) throw delErr;
 
-  return (modules ?? [])
-    .map((row: any) => fromRow(row.modules) as ModuleModel);
+  const moduleIds = [
+    ...new Set((dels ?? []).map((d: any) => d.module_id).filter(Boolean)),
+  ];
+  if (moduleIds.length === 0) return [];
+
+  const { data: mods, error: modErr } = await client
+    .from(TABLES.modules)
+    .select("*")
+    .in("id", moduleIds);
+
+  if (modErr) throw modErr;
+
+  return (mods ?? []).map((row: any) => fromRow(row) as ModuleModel);
 }

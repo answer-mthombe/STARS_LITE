@@ -25,6 +25,8 @@ yarn-error.*
 .env
 .env.*
 !.env.example
+# Bare `env` file at repo root (holds local Supabase creds / DB_PASSWORD — never commit)
+/env
 
 # TypeScript
 *.tsbuildinfo

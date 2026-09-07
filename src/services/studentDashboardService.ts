@@ -49,9 +49,7 @@ export async function getStudentDashboard(
 
   // JOB-014 Aggregate Calculation: Calculate real live metrics for the dashboard card
   const totalSessions = attendanceRecords.length;
-  const attended = attendanceRecords.filter(
-    (record) => record.status === "present" || record.status === "late"
-  ).length;
+  const attended = attendanceRecords.filter((record) => record.passed).length;
   const attendanceRate = totalSessions > 0 ? attended / totalSessions : 0;
 
   // Build the live student model matching your application domain structure

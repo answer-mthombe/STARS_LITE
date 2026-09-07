@@ -37,9 +37,27 @@ export default function DeanDashboardScreen() {
   const faculty = useMemo(() => mockDB.read("faculties", facultyId), [facultyId, v]);
   //const overview = useMemo(() => institutionAnalytics.facultyOverview(user?.facultyId ?? ""), [user]);
 
-   const overview = useMemo(() => {
+  const [overview, setOverview] = useState<any>({
+    facultyId: "",
+    facultyAttendancePct: 0,
+    departmentStats: [],
+    lecturerPerformance: [],
+    activeSessions: 0,
+    lowPerformingDepartments: [],
+  });
+
+  useEffect(() => {
+    let cancelled = false;
     mockDB.touch();
-    return institutionAnalytics.facultyOverview(facultyId);
+    institutionAnalytics
+      .facultyOverview(facultyId)
+      .then((data) => {
+        if (!cancelled && data) setOverview(data);
+      })
+      .catch((err) => console.warn("facultyOverview load failed:", err));
+    return () => {
+      cancelled = true;
+    };
   }, [facultyId, v]);
 
   const { departments, lecturers, loading } = useDeanData(facultyId);
@@ -51,7 +69,7 @@ export default function DeanDashboardScreen() {
   const displayLecturers = useLive ? lecturers : overview.lecturerPerformance;
   
   const liveTotalAttendance = displayDepartments.length > 0 
-    ? displayDepartments.reduce((acc, d) => {
+    ? displayDepartments.reduce((acc: number, d: any) => {
         // TYPE GUARD: If 'avg_attendance' is in the object, TS knows it's the Live data
         const attendance = 'avg_attendance' in d ? d.avg_attendance : (d.avgAttendance * 100);
         return acc + attendance;
@@ -126,7 +144,7 @@ if (loading) {
           />
         ))} */}
 
-        {displayDepartments.map((d) => {
+        {displayDepartments.map((d: any) => {
           // Check which type of data we are rendering
           const isLiveType = 'avg_attendance' in d;
           
@@ -158,7 +176,7 @@ if (loading) {
           </Stack>
         ))} */}
 
-        {displayLecturers.map((l) => {
+        {displayLecturers.map((l: any) => {
           // Check which type of data we are rendering
           const isLiveType = 'lecturer_id' in l;
 

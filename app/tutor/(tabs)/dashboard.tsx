@@ -73,9 +73,9 @@ const modules = useMemo(() => {
     .map((id) => mockDB.read("modules", id))
     .filter(Boolean)
     .map((m) => {
-      const del = delegationService
-        .listModuleDelegations(m!.id)
-        .find((d) => d.delegateStudentId === user.studentId && d.active);
+      const del = mockDB
+        .list("moduleDelegations")
+        .find((d) => d.moduleId === m!.id && d.delegateStudentId === user.studentId && d.active);
 
       return {
         module: m!,

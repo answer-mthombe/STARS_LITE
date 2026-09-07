@@ -29,9 +29,9 @@ export default function TutorSessionsScreen() {
       .map((id) => mockDB.read("modules", id))
       .filter((m): m is NonNullable<typeof m> => m != null)
       .map((module) => {
-        const delegation = delegationService
-          .listModuleDelegations(module.id)
-          .find((d) => d.delegateStudentId === user.studentId && d.active);
+        const delegation = mockDB
+          .list("moduleDelegations")
+          .find((d) => d.moduleId === module.id && d.delegateStudentId === user.studentId && d.active);
         return { module, delegation };
       });
   }, [user, v]);
@@ -145,9 +145,9 @@ export default function TutorSessionsScreen() {
       .map((id) => mockDB.read("modules", id))
       .filter((m): m is NonNullable<typeof m> => m != null)
       .map((module) => {
-        const delegation = delegationService
-          .listModuleDelegations(module.id)
-          .find((d) => d.delegateStudentId === user.studentId && d.active);
+        const delegation = mockDB
+          .list("moduleDelegations")
+          .find((d) => d.moduleId === module.id && d.delegateStudentId === user.studentId && d.active);
         return { module, delegation };
       });
   }, [user, v, supabaseModules]);

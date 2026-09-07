@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "expo-router";
 
 import { AppText, ListPressableItem, ScreenShell, SectionHeader, Spacer, Stack } from "@/components/ui";
@@ -14,11 +14,26 @@ export default function TutorRegistersScreen() {
   const user = useAuthStore((s) => s.user);
   const v = useMockDbVersionStore((s) => s.version);
 
-  const { classRegs, testRegs } = useMemo(() => {
-    if (!user || user.role !== "tutor") return { classRegs: [], testRegs: [] };
-    return {
-      classRegs: classRegisterService.listForTutor(user.studentId),
-      testRegs: testInvigilationService.listRegistersVisibleToTutor(user.studentId),
+  const [classRegs, setClassRegs] = useState<any[]>([]);
+
+  const testRegs = useMemo(() => {
+    if (!user || user.role !== "tutor") return [];
+    return testInvigilationService.listRegistersVisibleToTutor(user.studentId);
+  }, [user, v]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!user || user.role !== "tutor") {
+      setClassRegs([]);
+      return;
+    }
+    Promise.resolve(classRegisterService.listForTutor(user.studentId))
+      .then((regs) => {
+        if (!cancelled) setClassRegs(regs);
+      })
+      .catch((err) => console.warn("listForTutor failed:", err));
+    return () => {
+      cancelled = true;
     };
   }, [user, v]);
 

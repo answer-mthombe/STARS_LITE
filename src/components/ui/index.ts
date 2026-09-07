@@ -37,5 +37,6 @@ export { StatTile, HighlightStat } from "./StatTile";
 export { StarsWordmark } from "./StarsWordmark";
 export { ToastNotification } from "./ToastNotification";
 
-export { LogoutButton } from "../navigation/LogoutButton";
-export { MoreMenuScreen } from "../navigation/MoreMenuScreen";
+// Note: navigation components (LogoutButton, MoreMenuScreen) are imported directly
+// from "@/components/navigation/*". Re-exporting them here created a require cycle
+// (ui/index -> MoreMenuScreen -> ui/index) with no consumers, so they were removed.

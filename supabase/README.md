@@ -34,16 +34,15 @@ Run scripts from `migrations/` in order in the Supabase Dashboard → SQL.
 
 ## Edge Functions
 
-### `verify-attendance-record` (STORY-008 / JOB-032)
-This function acts as the server-side gatekeeper for attendance submissions, recomputing the challenge math and verifying GPS/Time constraints before writing to the database.
+### `verify-attendance-record` (STORY-008 / JOB-032 / JOB-033)
+This function acts as the server-side gatekeeper for attendance submissions, recomputing the challenge seed (SHA-256), verifying the tapped object, and enforcing GPS radius (Haversine) + per-tier plausibility before the client writes the record.
 
-**Status:** Stub only (M0). Full implementation scheduled for M6.
+**Status:** Implemented and wired. The client invokes it from `src/services/attendanceChallengeService.ts` (`supabase.functions.invoke("verify-attendance-record", …)`); on `passed: true` the client persists the `attendance_records` row via `saveRecord`, otherwise it surfaces the failing check.
 
-**To deploy (when ready):**
+**To deploy:**
 ```bash
 supabase functions deploy verify-attendance-record
 ```
-*Note: This is not wired to the app in M0.*
 
 ## Env (Expo app)
 

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
 
@@ -29,14 +29,28 @@ export default function DeanAnalyticsSimulationScreen() {
   const useLive = isSupabaseDataSource();
   const { departments, loading } = useDeanData(facultyId);
 
-  const overview = useMemo(() => {
+  const [overview, setOverview] = useState<any>({
+    facultyAttendancePct: 0,
+    departmentStats: [],
+  });
+
+  useEffect(() => {
+    let cancelled = false;
     mockDB.touch();
-    return institutionAnalytics.facultyOverview(facultyId);
+    institutionAnalytics
+      .facultyOverview(facultyId)
+      .then((data) => {
+        if (!cancelled && data) setOverview(data);
+      })
+      .catch((err) => console.warn("facultyOverview load failed:", err));
+    return () => {
+      cancelled = true;
+    };
   }, [facultyId, v]);
 
   const displayDepartments = useLive ? departments : overview.departmentStats;
   const liveTotalAttendance = displayDepartments.length > 0 
-        ? displayDepartments.reduce((acc, d: any) => {
+        ? displayDepartments.reduce((acc: number, d: any) => {
         const attendance = 'avg_attendance' in d ? (d.avg_attendance || 0) : (d.avgAttendance * 100);
         return acc + attendance;
       }, 0) / displayDepartments.length 

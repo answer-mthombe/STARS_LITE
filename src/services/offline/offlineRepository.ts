@@ -11,7 +11,7 @@ export async function upsertEntity<T extends object>(args: {
   const now = args.updatedAtIso ?? new Date().toISOString();
 
   try {
-    const existing = await db.get<OfflineEntityDoc<T>>(_id);
+    const existing = (await db.get(_id)) as OfflineEntityDoc<T>;
     const next: OfflineEntityDoc<T> = {
       ...existing,
       ...(args.entity as any),
