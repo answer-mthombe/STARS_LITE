@@ -13,6 +13,8 @@ export const colors = {
   surface: {
     base: "#FFFFFF",
     soft: "#E8E8E8",
+    /** Card surface — white so cards lift off the #E8E8E8 canvas */
+    card: "#FFFFFF",
   },
   border: {
     accent: "#006281",

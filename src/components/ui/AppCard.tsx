@@ -7,16 +7,16 @@ export function AppCard({ children, padded = true }: { children: ReactNode; padd
   return (
     <View
       style={{
-        backgroundColor: colors.surface.soft,
+        backgroundColor: colors.surface.card,
         borderRadius: radius.lg,
         borderWidth: 1,
-        borderColor: colors.border.subtle,
-        padding: padded ? 14 : 0,
+        borderColor: "rgba(11,15,20,0.06)",
+        padding: padded ? 16 : 0,
         shadowColor: colors.shadow.color,
-        shadowOpacity: 0.12,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 2,
+        shadowOpacity: 0.1,
+        shadowRadius: 14,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 3,
       }}
     >
       {children}

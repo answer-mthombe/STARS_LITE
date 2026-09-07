@@ -42,13 +42,14 @@ export function AppButton({
         ? colors.palette.accent
         : "transparent";
   const borderColor = variant === "outline" ? colors.palette.accent : "transparent";
-  const textColor =
-    variant === "primary" || variant === "accent" ? colors.ink.inverse : colors.palette.primary;
+  const isFilled = variant === "primary" || variant === "accent";
+  const textColor = isFilled ? colors.ink.inverse : colors.palette.primary;
 
   return (
     <Animated.View style={[anim, fullWidth ? { width: "100%" } : null]}>
       <Pressable
         accessibilityRole="button"
+        accessibilityState={{ disabled: !!disabled }}
         disabled={disabled}
         onPress={onPress}
         onPressIn={() => {
@@ -68,6 +69,17 @@ export function AppButton({
           alignItems: "center",
           justifyContent: "center",
           gap: spacing.sm,
+          cursor: "pointer",
+          // Lift filled buttons so the primary action reads as tappable
+          ...(isFilled && !disabled
+            ? {
+                shadowColor: bg,
+                shadowOpacity: 0.3,
+                shadowRadius: 10,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 3,
+              }
+            : {}),
         }}
       >
         {leftIcon ? <View>{leftIcon}</View> : null}
