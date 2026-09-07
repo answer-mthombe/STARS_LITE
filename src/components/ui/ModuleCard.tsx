@@ -22,13 +22,23 @@ export function ModuleCard({
   return (
     <View
       style={{
+        borderRadius: radius.lg,
+        shadowColor: colors.shadow.color,
+        shadowOpacity: 0.1,
+        shadowRadius: 14,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 3,
+      }}
+    >
+     <View
+      style={{
         backgroundColor: colors.surface.base,
         borderRadius: radius.lg,
         borderWidth: 1,
-        borderColor: colors.palette.accent,
+        borderColor: colors.border.subtle,
         overflow: "hidden",
       }}
-    >
+     >
       <Pressable
         onPress={onPress}
         style={({ pressed }) => ({
@@ -68,6 +78,7 @@ export function ModuleCard({
           </AppText>
         </Pressable>
       ) : null}
+     </View>
     </View>
   );
 }
