@@ -4,6 +4,8 @@ Welcome! These are **step-by-step testing stories**. You have never done formal 
 
 > Golden rule of testing: you are not trying to prove the app works — you are trying to **find where it breaks**. Finding a bug is a *win*, not a failure. Write down exactly what you saw.
 
+> 🔐 **Security stories** (RLS, no-forge, route guards, secrets) live in **[SECURITY_TEST_STORIES.md](./SECURITY_TEST_STORIES.md)** — TC-S1…TC-S6. Do the functional stories first, then the security ones.
+
 ---
 
 ## Who does what
