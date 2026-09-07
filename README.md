@@ -90,6 +90,7 @@ See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--integration-sprint
 
 | Date | Change | Notes |
 | :--- | :--- | :--- |
+| **2026-09-07** | Supabase integration verified live | All six roles authenticate against the live DB; added `get_faculty_overview` RPC; new **lecturer analytics**; UI depth pass. See **[TEAM_TEST_REPORT.md](./TEAM_TEST_REPORT.md)** |
 | **2026-05-21** | Integration sprint + workboards | M0 in **SUPABASE_INTEGRATION.md**; `dataSource.ts`; `challenge-object-library.json` |
 | **2026-05-21** | Expo SDK 54 | React 19.1, React Native 0.81.5 — see `package.json` |
 
@@ -122,10 +123,12 @@ Before testing Supabase integration:
    - `EXPO_PUBLIC_SUPABASE_URL`
    - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
    - `EXPO_PUBLIC_DATA_SOURCE`
-3. Keep `EXPO_PUBLIC_DATA_SOURCE=mock` during development until integration tasks are complete.
+3. Set `EXPO_PUBLIC_DATA_SOURCE=supabase` to run against the live backend, or `mock` for the offline JSON store. **The Supabase path is now verified end-to-end** — all six roles (student, tutor, lecturer, dean, HOD, admin) authenticate and load live data. Every service keeps a mock fallback, so the app still runs with `mock`.
 
 For detailed setup instructions, see:
 - [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)
+
+**QA & status:** see **[TEAM_TEST_REPORT.md](./TEAM_TEST_REPORT.md)** (issue → resolution, JOB/STORY status marks, QA test stories) and **[ISSUES_AND_FIXES.md](./ISSUES_AND_FIXES.md)** (detailed fix log).
 
 
 
@@ -140,6 +143,19 @@ See **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** for **ER diagrams**, **table 
 See **[full-challenge-mechanism.md](./full-challenge-mechanism.md)** for attendance **challenge gates**, tiers, and `attendance_records` fields.
 
 See **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)** for **faculty → department → course** structure, **Admin / Dean / HOD / Lecturer / Student** roles, and **scoped analytics**.
+
+## Analytics
+
+Analytics are **role-scoped** and live in `src/services/institutionAnalytics.ts` (aggregates) and `src/services/analyticsRepository.ts` (trend/heatmap views). Every method has a **live Supabase path with a mock fallback**, so screens work in both `mock` and `supabase` modes.
+
+| Role | Screen | Metrics | Live source |
+|------|--------|---------|-------------|
+| **Admin** | `/admin` Overview + Charts | Students, lecturers, faculties, departments, courses, overall attendance %, active sessions, faculty performance | `get_university_overview()` RPC |
+| **Dean** | `/dean` Faculty overview + Charts | Faculty attendance index, per-department attendance + student counts, lecturer performance, low-performing departments | `useDeanData` hook + `get_faculty_overview()` RPC |
+| **HOD** | `/hod` Department overview + Charts | Department attendance rate, at-risk students, module performance, risk trends, heatmap | `get_department_overview()` RPC + `module_performance` view |
+| **Lecturer** | `/lecturer` Analytics | Overall attendance, live sessions, marks, **per-module participation** (bar chart + breakdown), top / needs-attention module | `institutionAnalytics.lecturerAnalytics()` over `modules` / `attendance_sessions` / `attendance_records` |
+
+**Participation** = average share of enrolled students marked present per session, clamped to `[0,1]`. The analytics RPCs live in `supabase/migrations/` (e.g. `get_faculty_overview` in `20260907090000_analytics_overview_functions.sql`); deploy with `supabase db push`.
 
 ## Web document head & SEO
 

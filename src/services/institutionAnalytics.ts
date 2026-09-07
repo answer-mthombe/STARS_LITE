@@ -15,6 +15,88 @@ function modulesForLecturer(lecturerId: string): ModuleModel[] {
   return mockDB.list("modules").filter((m) => m.lecturerId === lecturerId);
 }
 
+/** Per-lecturer teaching analytics shape consumed by the Lecturer › Analytics screen. */
+export type LecturerModuleStat = {
+  moduleId: string;
+  code: string;
+  name: string;
+  enrolled: number;
+  sessions: number;
+  records: number;
+  /** Average share of enrolled students marked present per session, clamped to [0,1]. */
+  participation: number;
+};
+
+export type LecturerAnalytics = {
+  moduleCount: number;
+  sessionCount: number;
+  recordCount: number;
+  activeSessions: number;
+  /** Overall attendance rate across this lecturer's sessions, [0,1]. */
+  overallParticipation: number;
+  moduleStats: LecturerModuleStat[];
+};
+
+/** Normalise mock (camelCase) or Supabase (snake_case) rows into LecturerAnalytics. */
+function buildLecturerAnalytics(
+  modules: any[],
+  sessions: any[],
+  records: any[]
+): LecturerAnalytics {
+  const now = Date.now();
+  const sessModuleId = (s: any) => s.module_id ?? s.moduleId;
+  const sessId = (s: any) => s.id;
+  const recSessId = (r: any) => r.session_id ?? r.sessionId;
+  const enrolledCount = (m: any) => {
+    const list = m.enrolled_students ?? m.enrolledStudents ?? [];
+    return Array.isArray(list) ? list.length : 0;
+  };
+
+  const recordsBySession = new Map<string, number>();
+  for (const r of records) {
+    const sid = recSessId(r);
+    recordsBySession.set(sid, (recordsBySession.get(sid) ?? 0) + 1);
+  }
+
+  let totalWeighted = 0; // sum(enrolled * sessions) — denominator
+  let totalRecords = 0;
+
+  const moduleStats: LecturerModuleStat[] = modules.map((m: any) => {
+    const id = m.id;
+    const modSessions = sessions.filter((s) => sessModuleId(s) === id);
+    const records = modSessions.reduce((acc, s) => acc + (recordsBySession.get(sessId(s)) ?? 0), 0);
+    const enrolled = enrolledCount(m);
+    const denom = Math.max(enrolled * modSessions.length, 1);
+    const participation = Math.min(records / denom, 1);
+    totalWeighted += enrolled * modSessions.length;
+    totalRecords += records;
+    return {
+      moduleId: id,
+      code: m.module_code ?? m.moduleCode ?? "—",
+      name: m.module_name ?? m.moduleName ?? "Module",
+      enrolled,
+      sessions: modSessions.length,
+      records,
+      participation,
+    };
+  });
+
+  const activeSessions = sessions.filter((s) => {
+    const active = s.active ?? true;
+    const exp = s.expires_at ?? s.expiresAt;
+    return active && (exp ? new Date(exp).getTime() > now : false);
+  }).length;
+
+  return {
+    moduleCount: modules.length,
+    sessionCount: sessions.length,
+    recordCount: records.length,
+    activeSessions,
+    overallParticipation: totalWeighted > 0 ? Math.min(totalRecords / totalWeighted, 1) : 0,
+    moduleStats: moduleStats.sort((a, b) => b.participation - a.participation),
+  };
+}
+
 /** Scoped aggregates for dashboards — handles real-time Supabase queries or safe MockDB fallbacks */
 export const institutionAnalytics = {
   async universityOverview() {
@@ -208,6 +290,50 @@ export const institutionAnalytics = {
         return { moduleId: m.id, code: m.moduleCode, participation: rec.length / denom };
       }),
     };
+  },
+
+  /** Rich teaching analytics for one lecturer (live Supabase or mock fallback). */
+  async lecturerAnalytics(lecturerId: string): Promise<LecturerAnalytics> {
+    if (getDataSource() === "supabase") {
+      try {
+        const supabase = requireSupabaseClient();
+        const [{ data: mods, error: me }, { data: sess, error: se }] = await Promise.all([
+          supabase
+            .from("modules")
+            .select("id, module_code, module_name, enrolled_students, active_session_id")
+            .eq("lecturer_id", lecturerId),
+          supabase
+            .from("attendance_sessions")
+            .select("id, module_id, active, expires_at")
+            .eq("lecturer_id", lecturerId),
+        ]);
+        if (me) throw me;
+        if (se) throw se;
+
+        const sessions = sess ?? [];
+        const sessionIds = sessions.map((s: any) => s.id);
+        let records: any[] = [];
+        if (sessionIds.length > 0) {
+          const { data: recs, error: re } = await supabase
+            .from("attendance_records")
+            .select("session_id")
+            .in("session_id", sessionIds);
+          if (re) throw re;
+          records = recs ?? [];
+        }
+        return buildLecturerAnalytics(mods ?? [], sessions, records);
+      } catch (err) {
+        console.warn("Supabase lecturerAnalytics failed, falling back to mock data:", err);
+      }
+    }
+
+    // --- Mock fallback ---
+    mockDB.touch();
+    const modules = mockDB.list("modules").filter((m) => m.lecturerId === lecturerId);
+    const sessions = mockDB.list("attendanceSessions").filter((s) => s.lecturerId === lecturerId);
+    const sessionIds = new Set(sessions.map((s) => s.id));
+    const records = mockDB.list("attendanceRecords").filter((r) => sessionIds.has(r.sessionId));
+    return buildLecturerAnalytics(modules, sessions, records);
   },
 
   studentScoped(studentId: string) {
