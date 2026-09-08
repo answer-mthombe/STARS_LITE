@@ -6,6 +6,8 @@ Welcome! These are **step-by-step testing stories**. You have never done formal 
 
 > 🔐 **Security stories** (RLS, no-forge, route guards, secrets) live in **[SECURITY_TEST_STORIES.md](./SECURITY_TEST_STORIES.md)** — TC-S1…TC-S6. Do the functional stories first, then the security ones.
 
+> ✍️ **Write your own:** once you've run a few of these, learn to author your own in **[AUTHORING_TEST_CASES.md](./AUTHORING_TEST_CASES.md)** — method, template, starter ideas, and a "Test case proposal" issue template. This is part of the learning goal, not optional.
+
 ---
 
 ## Who does what
