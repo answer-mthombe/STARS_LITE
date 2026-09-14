@@ -150,6 +150,8 @@ export async function createSession(session: {
   radius: number;
   expiresAt: string;
   active: boolean;
+  /** Venue that defines the geofence — required for server-side attendance. */
+  venueId?: string | null;
 }): Promise<AttendanceSessionModel> {
   const client = requireSupabaseClient();
 
@@ -168,6 +170,7 @@ lecturer_id: session.lecturerId,
   radius: session.radius,
   expires_at: session.expiresAt,
   active: session.active,
+  venue_id: session.venueId ?? null,
 })
     .select()
     .single();

@@ -315,6 +315,8 @@ export const attendanceSimulationService = {
     longitude: number;
     radiusMeters?: number;
     durationMinutes?: number;
+    /** Venue that defines the geofence (required by the server attendance RPC). */
+    venueId?: string;
   }): Promise<AttendanceSessionModel> {
     const radius = args.radiusMeters ?? 40;
     const mins = args.durationMinutes ?? 20;
@@ -378,6 +380,7 @@ if (!allowed) {
         radius,
         expiresAt,
         active: true,
+        venueId: args.venueId ?? null,
       });
 
       // keep modules.active_session_id in sync so students/tutors can find the
