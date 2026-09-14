@@ -4,4 +4,4 @@
 
 Keep each file focused (e.g. `mapAuthError.ts`, `withPostgrestRetry.ts`, `mergeDelegationCapabilities.ts`). Repositories in `src/services/supabase/` should stay thin and call into utils when logic repeats. Mirror checks from `src/utils/delegation.ts` when enforcing session hosts in RLS tests.
 
-See **[SUPABASE_INTEGRATION.md](../../SUPABASE_INTEGRATION.md)** for milestone tasks.
+See **[SUPABASE_INTEGRATION.md](../../docs/SUPABASE_INTEGRATION.md)** for milestone tasks.

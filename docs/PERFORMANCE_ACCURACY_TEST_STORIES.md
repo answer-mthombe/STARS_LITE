@@ -6,6 +6,15 @@ Goal: prove the attendance system is **fast even for a large audience** (a full 
 
 The server-side attendance authority (`begin_attendance` / `submit_attendance`, migration `20260914090000`) was tested live: **16/16 functional checks**, including **10 concurrent submits on one token → exactly 1 row** (atomic race handling), and the `begin_attendance` burst harness hit **100% success, p50 ~250 ms, p95 ~565 ms at 10 concurrent**. These stories let devs re-run and push harder.
 
+## Who does what
+
+| Owner | Stories | Focus |
+|-------|---------|-------|
+| **Basil** | TC-P1, TC-P2, TC-P3 | Performance & scaling (read load, submit-burst, EXPLAIN/index audit) |
+| **Gugu** | TC-A1, TC-A2, TC-A3 | Accuracy (exactly-once, geofence boundary, code-window boundary) |
+
+Pair up on the first run of each. Both use the terminal + the harness scripts.
+
 ## The scaling rule (read this first)
 
 From the database-scaling-playbook: **scale in order of cost, and only climb a rung when a *measured* bottleneck demands it.** Never reach for sharding / partitioning / multi-region "just in case."
@@ -23,7 +32,7 @@ From the database-scaling-playbook: **scale in order of cost, and only climb a r
 
 ## TC-P1 · Read-path load (code polling + analytics)
 
-**Type:** Performance · reads
+**Type:** Performance · reads · **Owner:** Basil
 
 **Goal:** confirm the read hot paths stay fast under many simultaneous callers.
 
@@ -46,7 +55,7 @@ node scripts/stress-test-rpc.mjs get_university_overview 500 50
 
 ## TC-P2 · Attendance submit burst — the large-audience test
 
-**Type:** Performance · writes (the important one)
+**Type:** Performance · writes (the important one) · **Owner:** Basil
 
 **Goal:** simulate a hall marking at once and confirm speed **and** exactly-once accuracy under that burst.
 
@@ -75,7 +84,7 @@ Latency ms : min .. p50 ~250  p95 <1000  max ..
 
 ## TC-P3 · Index / EXPLAIN audit at scale
 
-**Type:** Performance · scaling audit
+**Type:** Performance · scaling audit · **Owner:** Basil
 
 **Goal:** confirm the hot-path queries use indexes once the tables are big (they choose seq scans on tiny demo data — that's correct, not a bug).
 
@@ -98,7 +107,7 @@ Latency ms : min .. p50 ~250  p95 <1000  max ..
 
 ## TC-A1 · Exactly-once under concurrency
 
-**Type:** Accuracy
+**Type:** Accuracy · **Owner:** Gugu
 
 **Goal:** a student can never be double-marked, even with parallel taps or two devices.
 
@@ -114,7 +123,7 @@ Latency ms : min .. p50 ~250  p95 <1000  max ..
 
 ## TC-A2 · Geofence boundary accuracy
 
-**Type:** Accuracy
+**Type:** Accuracy · **Owner:** Gugu
 
 **Goal:** the mandatory geofence accepts inside, rejects outside, and the server distance is right.
 
@@ -132,7 +141,7 @@ Latency ms : min .. p50 ~250  p95 <1000  max ..
 
 ## TC-A3 · Rotating-code window accuracy
 
-**Type:** Accuracy
+**Type:** Accuracy · **Owner:** Gugu
 
 **Goal:** only the current (and one previous, for skew) window's code is accepted.
 

@@ -12,7 +12,7 @@ Running the ready-made stories (TC-G1…, TC-B1…, TC-S1…) teaches you the **
 - **Specific & repeatable.** Someone else can follow your steps and get the same result without asking you.
 - **A concrete expected result.** Not "it works" — say *what* ("a red message: 'Invalid email or password' appears and I stay on the login screen").
 - **Independent.** It stands alone, or it lists **preconditions** (e.g. "logged in as a student").
-- **Traceable.** Note which requirement or story it checks (the app's requirements are the **FR-…** table in [README](./README.md#functional-requirements); backend jobs are **JOB-…** in [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md)).
+- **Traceable.** Note which requirement or story it checks (the app's requirements are the **FR-…** table in [README](../README.md#functional-requirements); backend jobs are **JOB-…** in [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md)).
 
 **Your IDs:** so yours never clash with the ready-made ones, number them from **TC-G4** upward (Gugu) and **TC-B4** upward (Basil). Security ones: **TC-SG1+ / TC-SB1+**.
 

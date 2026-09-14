@@ -590,7 +590,7 @@ You will create many tables in STORY-004; the dashboard **Table Editor** can pre
    EXPO_PUBLIC_DATA_SOURCE=mock
    ```
 
-5. Add a **“Local environment”** subsection to [README.md](./README.md) (see STORY-010) pointing here.
+5. Add a **“Local environment”** subsection to [README.md](../README.md) (see STORY-010) pointing here.
 
 6. Run `npx expo start` with `mock` — app unchanged. With `supabase` + keys, `tryGetSupabaseClient()` must not throw.
 

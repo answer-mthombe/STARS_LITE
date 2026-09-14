@@ -56,12 +56,12 @@ EXPO_PUBLIC_DATA_SOURCE=supabase
 
 ## User stories
 
-- **M0 integration sprint (start here):** **[SUPABASE_INTEGRATION.md](../SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)** — Supabase setup, service wiring, remove mock/dummy data; UI already built.
-- **Full milestone register:** **[SUPABASE_INTEGRATION.md](../SUPABASE_INTEGRATION.md)** — **JOB-001** … **JOB-034**.
+- **M0 integration sprint (start here):** **[SUPABASE_INTEGRATION.md](../docs/SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)** — Supabase setup, service wiring, remove mock/dummy data; UI already built.
+- **Full milestone register:** **[SUPABASE_INTEGRATION.md](../docs/SUPABASE_INTEGRATION.md)** — **JOB-001** … **JOB-034**.
 
-Table definitions, ER diagrams, and FK connections: **[DATABASE_SCHEMA.md](../DATABASE_SCHEMA.md)**.
+Table definitions, ER diagrams, and FK connections: **[DATABASE_SCHEMA.md](../docs/DATABASE_SCHEMA.md)**.
 
-Challenge mechanism (gates + record shape): **[full-challenge-mechanism.md](../full-challenge-mechanism.md)**.
+Challenge mechanism (gates + record shape): **[full-challenge-mechanism.md](../docs/full-challenge-mechanism.md)**.
 
 Challenge parameter JSON (not in Postgres): **`../src/data/challenge-object-library.json`**.
 

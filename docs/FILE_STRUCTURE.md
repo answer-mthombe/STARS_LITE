@@ -316,7 +316,7 @@ Scaffolded for live backend work; screens still use **mock** services until you 
 
 ## Related docs
 
-- **[README.md](./README.md)** — quick start, diagrams, functional requirements summary.
+- **[README.md](../README.md)** — quick start, diagrams, functional requirements summary.
 - **[DOCUMENTATION.md](./DOCUMENTATION.md)** — stack, process, troubleshooting.
 - **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md)** — milestones, user stories, Brightman / Gugulethu / Basil ownership.
 - **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** — ER diagrams, tables, columns, and FK connections.

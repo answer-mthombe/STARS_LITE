@@ -968,7 +968,7 @@ ATTANDANCE/
 
 | Document | Contents |
 |----------|----------|
-| [README.md](./README.md) | Quick start, scripts, demo logins |
+| [README.md](../README.md) | Quick start, scripts, demo logins |
 | [FILE_STRUCTURE.md](./FILE_STRUCTURE.md) | “I need to change…” lookup table |
 | [INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md) | Roles, delegation, proxy, collections |
 | [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md) | Postgres tables, RLS, job breakdown |

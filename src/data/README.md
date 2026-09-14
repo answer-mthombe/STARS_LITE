@@ -2,7 +2,7 @@
 
 ## `challenge-object-library.json`
 
-This file is the **vocabulary** for the visual attendance challenge described in [full-challenge-mechanism.md](../../full-challenge-mechanism.md).
+This file is the **vocabulary** for the visual attendance challenge described in [full-challenge-mechanism.md](../../docs/full-challenge-mechanism.md).
 
 | Stored here | Stored in Supabase (`attendance_records`) |
 |-------------|-------------------------------------------|
@@ -22,7 +22,7 @@ The app **generates** six on-screen objects from the seed using the same logic a
 
 - `src/utils/challengeBuckets.ts` — `time_bucket`, `gps_bucket_hash`, `computeChallengeSeed`
 - `src/components/attendance/AttendanceChallengeGrid.tsx` — renders primitives from `ChallengeObject`
-- [DATABASE_SCHEMA.md](../../DATABASE_SCHEMA.md) §5.12 — `attendance_records` columns
+- [DATABASE_SCHEMA.md](../../docs/DATABASE_SCHEMA.md) §5.12 — `attendance_records` columns
 
 
 

@@ -24,7 +24,7 @@
 
 **Mon–Fri only · ≈ 3.5 working weeks · the date is fixed, scope flexes**
 
-▶ **[Open the LIVE ticking clock → `PILOT_COUNTDOWN.html`](./PILOT_COUNTDOWN.html)** &nbsp;·&nbsp; **[Full dated plan](./SUPABASE_INTEGRATION.md#pilot-sprint-plan--schedule-m1--pilot-10-jul-2026)**
+▶ **[Open the LIVE ticking clock → `PILOT_COUNTDOWN.html`](./PILOT_COUNTDOWN.html)** &nbsp;·&nbsp; **[Full dated plan](./docs/SUPABASE_INTEGRATION.md#pilot-sprint-plan--schedule-m1--pilot-10-jul-2026)**
 
 </div>
 
@@ -82,15 +82,15 @@ npx expo start -c
 
 1. Copy **[.env.example](./.env.example)** → **`.env`** (never commit `.env`).
 2. Paste **Project URL** and **anon key** from the Supabase dashboard (shared securely by JOB-001 owner).
-3. Use **`EXPO_PUBLIC_DATA_SOURCE=mock`** until your integrated flows work; set to **`supabase`** to test against Postgres (see [integration workboards](./SUPABASE_INTEGRATION.md#developer-integration-workboards)).
+3. Use **`EXPO_PUBLIC_DATA_SOURCE=mock`** until your integrated flows work; set to **`supabase`** to test against Postgres (see [integration workboards](./docs/SUPABASE_INTEGRATION.md#developer-integration-workboards)).
 
-See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)** (M0 section at the top) for per-developer integration tasks: Supabase, wire services, remove mock/dummy data on existing screens.
+See **[SUPABASE_INTEGRATION.md](./docs/SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)** (M0 section at the top) for per-developer integration tasks: Supabase, wire services, remove mock/dummy data on existing screens.
 
 ### Version changelog
 
 | Date | Change | Notes |
 | :--- | :--- | :--- |
-| **2026-09-07** | Supabase integration verified live | All six roles authenticate against the live DB; added `get_faculty_overview` RPC; new **lecturer analytics**; UI depth pass. See **[TEAM_TEST_REPORT.md](./TEAM_TEST_REPORT.md)** |
+| **2026-09-07** | Supabase integration verified live | All six roles authenticate against the live DB; added `get_faculty_overview` RPC; new **lecturer analytics**; UI depth pass. See **[TEAM_TEST_REPORT.md](./docs/TEAM_TEST_REPORT.md)** |
 | **2026-05-21** | Integration sprint + workboards | M0 in **SUPABASE_INTEGRATION.md**; `dataSource.ts`; `challenge-object-library.json` |
 | **2026-05-21** | Expo SDK 54 | React 19.1, React Native 0.81.5 — see `package.json` |
 
@@ -98,7 +98,7 @@ When you upgrade Expo, Node, or Supabase CLI, add a row here and note any clean-
 
 ## Documentation
 
-See **[DOCUMENTATION.md](./DOCUMENTATION.md)** for the full **tech stack**, **engineering process**, routing notes, and attendance simulation overview.
+See **[DOCUMENTATION.md](./docs/DOCUMENTATION.md)** for the full **tech stack**, **engineering process**, routing notes, and attendance simulation overview.
 
 ## Integration Sprint (M0)
 
@@ -106,7 +106,7 @@ The M0 integration sprint introduces Supabase into STARS while preserving existi
 
 ### Developer workboards
 
-- See [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)
+- See [SUPABASE_INTEGRATION.md](./docs/SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)
 - Follow the assigned developer workboards for:
   - Supabase setup
   - Service wiring
@@ -126,25 +126,25 @@ Before testing Supabase integration:
 3. Set `EXPO_PUBLIC_DATA_SOURCE=supabase` to run against the live backend, or `mock` for the offline JSON store. **The Supabase path is now verified end-to-end** — all six roles (student, tutor, lecturer, dean, HOD, admin) authenticate and load live data. Every service keeps a mock fallback, so the app still runs with `mock`.
 
 For detailed setup instructions, see:
-- [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)
+- [SUPABASE_INTEGRATION.md](./docs/SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)
 
-**QA & status:** see **[TEAM_TEST_REPORT.md](./TEAM_TEST_REPORT.md)** (issue → resolution, JOB/STORY status marks, QA test stories) and **[ISSUES_AND_FIXES.md](./ISSUES_AND_FIXES.md)** (detailed fix log).
+**QA & status:** see **[TEAM_TEST_REPORT.md](./docs/TEAM_TEST_REPORT.md)** (issue → resolution, JOB/STORY status marks, QA test stories) and **[ISSUES_AND_FIXES.md](./docs/ISSUES_AND_FIXES.md)** (detailed fix log).
 
 
 
-See **[FILE_STRUCTURE.md](./FILE_STRUCTURE.md)** for a **beginner-friendly map** of every important file and **which file to open for which kind of work**.
+See **[FILE_STRUCTURE.md](./docs/FILE_STRUCTURE.md)** for a **beginner-friendly map** of every important file and **which file to open for which kind of work**.
 
-See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)** for **M0 integration sprint** (first section): Supabase + wire services + remove dummy data on existing screens.
+See **[SUPABASE_INTEGRATION.md](./docs/SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here)** for **M0 integration sprint** (first section): Supabase + wire services + remove dummy data on existing screens.
 
-See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md)** for **milestones (M0–M6)**, **JOB register**, and later app wiring (**Brightman**, **Gugulethu**, **Basil**).
+See **[SUPABASE_INTEGRATION.md](./docs/SUPABASE_INTEGRATION.md)** for **milestones (M0–M6)**, **JOB register**, and later app wiring (**Brightman**, **Gugulethu**, **Basil**).
 
-See **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** for **ER diagrams**, **table columns**, and **relationship connections**.
+See **[DATABASE_SCHEMA.md](./docs/DATABASE_SCHEMA.md)** for **ER diagrams**, **table columns**, and **relationship connections**.
 
-See **[ATTENDANCE_SECURITY_ARCHITECTURE.md](./ATTENDANCE_SECURITY_ARCHITECTURE.md)** for the **authoritative attendance security design + implementation plan** (rotating code, mandatory geofencing, one-time tokens, server-side validation RPC, RLS, offline, threats, testing).
+See **[ATTENDANCE_SECURITY_ARCHITECTURE.md](./docs/ATTENDANCE_SECURITY_ARCHITECTURE.md)** for the **authoritative attendance security design + implementation plan** (rotating code, mandatory geofencing, one-time tokens, server-side validation RPC, RLS, offline, threats, testing).
 
-See **[full-challenge-mechanism.md](./full-challenge-mechanism.md)** for the original attendance **challenge gates**, tiers, and `attendance_records` fields (superseded by the architecture doc above).
+See **[full-challenge-mechanism.md](./docs/full-challenge-mechanism.md)** for the original attendance **challenge gates**, tiers, and `attendance_records` fields (superseded by the architecture doc above).
 
-See **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)** for **faculty → department → course** structure, **Admin / Dean / HOD / Lecturer / Student** roles, and **scoped analytics**.
+See **[INSTITUTION_HIERARCHY.md](./docs/INSTITUTION_HIERARCHY.md)** for **faculty → department → course** structure, **Admin / Dean / HOD / Lecturer / Student** roles, and **scoped analytics**.
 
 ## Analytics
 

@@ -38,7 +38,7 @@ foundation = foundation.replace(
   "### Foundation user stories (detailed)"
 );
 
-const supabasePath = path.join(root, "SUPABASE_INTEGRATION.md");
+const supabasePath = path.join(root, "docs", "SUPABASE_INTEGRATION.md");
 const supabaseLines = fs.readFileSync(supabasePath, "utf8").split(/\r?\n/);
 const tail = supabaseLines.slice(10).join("\n");
 
