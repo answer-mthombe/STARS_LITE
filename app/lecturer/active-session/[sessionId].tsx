@@ -16,6 +16,7 @@ import { AttendanceSessionModel } from "@/models/Attendance";
 import { attendanceSessionRepository } from "@/services/supabase/attendanceSessionRepository";
 import { isSupabaseEnabled } from "@/supabase/client";
 import { attendanceSimulationService } from "@/services/attendanceSimulationService";
+import { getActiveSessionCode } from "@/services/serverAttendanceService";
 import { colors } from "@/theme/colors";
 
 export default function LecturerActiveSessionScreen() {
@@ -28,6 +29,7 @@ export default function LecturerActiveSessionScreen() {
   const [tick, setTick] = useState(0);
   const [busy, setBusy] = useState(false);
   const [session, setSession] = useState<AttendanceSessionModel | null>(null);
+  const [serverCode, setServerCode] = useState<{ code: string; secondsRemaining: number } | null>(null);
 
   // const session = useMemo(() => {
   //   mockDB.touch();
@@ -52,10 +54,28 @@ export default function LecturerActiveSessionScreen() {
     return () => clearInterval(id);
   }, []);
 
+  // Poll the SERVER for the current rotating code (seed stays server-side).
+  // Mock mode / offline falls back to the local derivation below.
+  useEffect(() => {
+    if (!session || !isSupabaseEnabled()) return;
+    let cancelled = false;
+    const poll = async () => {
+      const res = await getActiveSessionCode(session.id);
+      if (!cancelled) setServerCode(res);
+    };
+    void poll();
+    const id = setInterval(poll, 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [session]);
+
   const rot = session ? currentAttendanceCode(session.algorithmSeed) : null;
-  const code = rot?.code ?? "------";
-  const qrPayload = session && rot ? buildAttendanceQrPayload(session.id, session.algorithmSeed) : "";
   const secsToRefresh = rot ? Math.max(0, Math.ceil((rot.nextChangeAt - Date.now()) / 1000)) : 0;
+  // Prefer the server code; fall back to local derivation in mock mode.
+  const code = serverCode?.code ?? rot?.code ?? "------";
+  const codeSecs = serverCode ? serverCode.secondsRemaining : secsToRefresh;
   const isLecturer = user?.role === "lecturer";
 
   const endClass = async () => {
@@ -118,28 +138,27 @@ export default function LecturerActiveSessionScreen() {
            <SessionTimer expiresAtIso={session.expiresAt} />
           <Spacer size="lg" />
           <AppCard>
-            <AppText variant="label" align="center">Broadcast Active</AppText>
-            
-            {/* Audio Icon & Frequency Visualizer Placeholder */}
-            <View style={{ alignItems: "center", justifyContent: "center", marginVertical: 20 }}>
-              {/* You can replace this with an actual icon component if you have one imported, e.g., Ionicons */}
-              <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.surface.soft, alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
-                <Text style={{ fontSize: 28 }}>🔊</Text>
-              </View>
-              
-              {/* Simulated Frequency Waveform / Bars */}
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, height: 24 }}>
-                <View style={{ width: 4, height: 12, backgroundColor: colors.palette.primary, borderRadius: 2 }} />
-                <View style={{ width: 4, height: 22, backgroundColor: colors.palette.primary, borderRadius: 2 }} />
-                <View style={{ width: 4, height: 16, backgroundColor: colors.palette.primary, borderRadius: 2 }} />
-                <View style={{ width: 4, height: 24, backgroundColor: colors.palette.primary, borderRadius: 2 }} />
-                <View style={{ width: 4, height: 10, backgroundColor: colors.palette.primary, borderRadius: 2 }} />
-                <View style={{ width: 4, height: 18, backgroundColor: colors.palette.primary, borderRadius: 2 }} />
-              </View>
+            <AppText variant="label" align="center">Attendance code</AppText>
+            <AppText
+              variant="metric"
+              color={colors.palette.primary}
+              style={{ fontSize: 52, letterSpacing: 8, textAlign: "center", marginTop: 12 }}
+            >
+              {code}
+            </AppText>
+            {/* Rotation countdown bar */}
+            <View style={{ height: 6, borderRadius: 3, backgroundColor: colors.border.subtle, marginTop: 16, overflow: "hidden" }}>
+              <View
+                style={{
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: colors.palette.accent,
+                  width: `${Math.max(0, Math.min(100, (codeSecs / 20) * 100))}%`,
+                }}
+              />
             </View>
-
-            <AppText variant="caption" align="center" style={{ color: colors.ink.muted }}>
-              Broadcasting ultrasonic check-in frequency to nearby devices.
+            <AppText variant="caption" align="center" style={{ color: colors.ink.muted, marginTop: 10 }}>
+              Changes every ~20s · new code in ~{codeSecs}s. Students type this; the server checks it with GPS.
             </AppText>
           </AppCard>
           <Spacer size="lg" />
