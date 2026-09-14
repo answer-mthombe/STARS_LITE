@@ -140,7 +140,9 @@ See **[SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md)** for **milestones (M
 
 See **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** for **ER diagrams**, **table columns**, and **relationship connections**.
 
-See **[full-challenge-mechanism.md](./full-challenge-mechanism.md)** for attendance **challenge gates**, tiers, and `attendance_records` fields.
+See **[ATTENDANCE_SECURITY_ARCHITECTURE.md](./ATTENDANCE_SECURITY_ARCHITECTURE.md)** for the **authoritative attendance security design + implementation plan** (rotating code, mandatory geofencing, one-time tokens, server-side validation RPC, RLS, offline, threats, testing).
+
+See **[full-challenge-mechanism.md](./full-challenge-mechanism.md)** for the original attendance **challenge gates**, tiers, and `attendance_records` fields (superseded by the architecture doc above).
 
 See **[INSTITUTION_HIERARCHY.md](./INSTITUTION_HIERARCHY.md)** for **faculty → department → course** structure, **Admin / Dean / HOD / Lecturer / Student** roles, and **scoped analytics**.
 

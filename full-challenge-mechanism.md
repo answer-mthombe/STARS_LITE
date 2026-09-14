@@ -1,4 +1,10 @@
 # Attendance Challenge System — Full Mechanism Documentation
+
+> ⚠️ **Superseded.** The authoritative attendance design is now
+> **[ATTENDANCE_SECURITY_ARCHITECTURE.md](./ATTENDANCE_SECURITY_ARCHITECTURE.md)**
+> (mandatory geofencing, server-side rotating code, one-time tokens, atomic
+> validation RPC, RLS). This file is kept for historical challenge-gate detail.
+
 ## Hard Gates · Visual Game · Five-Tier Input · GPS-Embedded Answer Key · Zero Wasted Submissions
 
 **Implementation stories:** [SUPABASE_INTEGRATION.md](./SUPABASE_INTEGRATION.md#m0--integration-sprint-start-here) (STORY-006 challenge JSON, STORY-004 `attendance_records` migration) · [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) §5.12 · `src/data/challenge-object-library.json`
