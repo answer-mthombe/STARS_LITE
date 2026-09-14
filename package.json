@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "stress:rpc": "node scripts/stress-test-rpc.mjs",
+    "loadtest:attendance": "node scripts/load-test-attendance.mjs",
     "validate:challenge-library": "node scripts/validate-challenge-library.mjs",
     "doctor": "expo-doctor --verbose",
     "build:web": "expo export -p web",

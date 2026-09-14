@@ -8,6 +8,8 @@ Welcome! These are **step-by-step testing stories**. You have never done formal 
 
 > ✍️ **Write your own:** once you've run a few of these, learn to author your own in **[AUTHORING_TEST_CASES.md](./AUTHORING_TEST_CASES.md)** — method, template, starter ideas, and a "Test case proposal" issue template. This is part of the learning goal, not optional.
 
+> ⚡ **Performance & accuracy** (speed at large-audience scale + no double-marking) live in **[PERFORMANCE_ACCURACY_TEST_STORIES.md](./PERFORMANCE_ACCURACY_TEST_STORIES.md)** — TC-P1…P3, TC-A1…A3, backed by the attendance load harness and the scaling playbook.
+
 ---
 
 ## Who does what
