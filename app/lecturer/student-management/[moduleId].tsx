@@ -164,7 +164,7 @@ export default function LecturerStudentManagementScreen() {
             {(mod.pendingRequests || []).length === 0 ? (
               <Text style={{ color: colors.ink.muted }}>None</Text>
             ) : (
-              mod.pendingRequests.map((sid: string) => (
+              (mod.pendingRequests || mod.pending_requests || []).map((sid: string) => (
                 <View key={sid} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border.subtle }}>
                   <Text style={{ color: colors.ink.default, fontWeight: "700" }}>{studentName(sid)}</Text>
                   <View style={{ flexDirection: "row", gap: 10 }}>
@@ -186,7 +186,7 @@ export default function LecturerStudentManagementScreen() {
             {(mod.enrolledStudents || []).length === 0 ? (
               <Text style={{ color: colors.ink.muted }}>No students yet</Text>
             ) : (
-              mod.enrolledStudents.map((sid: string) => (
+              (mod.enrolledStudents || mod.enrolled_students || []).map((sid: string) => (
                 <View
                   key={sid}
                   style={{

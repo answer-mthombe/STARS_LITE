@@ -19,6 +19,7 @@ export const TABLES = {
   moduleDelegations: "module_delegations",
   attendanceSessions: "attendance_sessions",
   attendanceRecords: "attendance_records",
+  attendanceEvents: "attendance_events",
   auditLogs: "audit_logs",
   classRegisters: "class_registers",
   testSessions: "test_sessions",

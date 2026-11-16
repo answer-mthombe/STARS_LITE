@@ -1,198 +1,204 @@
-import { useMemo ,useEffect, useState} from "react";
+import { useCallback, useEffect, useState } from "react";
+import { View } from "react-native";
 import { useRouter } from "expo-router";
 
-
-import { getDataSource } from "@/services/dataSource";
-import { listModulesForStudent } from "@/services/supabase/moduleRepository";
-import { requireSupabaseClient } from "@/supabase";
-
+import { requireSupabaseClient } from "@/supabase/client";
+import { TABLES } from "@/supabase/tables";
 import {
-  AppCard,
+  studentAttendanceRepository,
+  type ActiveSessionForStudent,
+} from "@/services/supabase/studentAttendanceRepository";
+import { useAuthStore } from "@/store/authStore";
+import { useRoleGuard } from "@/hooks/useRoleGuard";
+import {
   AppText,
-  Avatar,
-  LinkText,
-  ModuleCard,
+  Chip,
   Row,
   ScreenShell,
   SectionHeader,
   Spacer,
   Stack,
-  StarsWordmark,
 } from "@/components/ui";
-import { LogoutButton } from "@/components/navigation/LogoutButton";
-import { RoleQuickNav } from "@/components/navigation/RoleQuickNav";
-import { useAuthStore } from "@/store/authStore";
-import { useRoleGuard } from "@/hooks/useRoleGuard";
-import { mockDB } from "@/mockDB/mockDBService";
-import { useMockDbVersionStore } from "@/store/mockDbVersionStore";
-import type { ModuleModel } from "@/models/Module";
+
+type EnrolledModule = {
+  id: string;
+  moduleCode: string;
+  moduleName: string;
+};
 
 export default function StudentDashboard() {
   useRoleGuard("student");
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const v = useMockDbVersionStore((s) => s.version);
- const [modules, setModules] = useState<ModuleModel[]>([]);
-  const [ratePct, setRatePct] = useState(0);
 
-  // const data = useMemo(() => {
-  //   mockDB.touch();
-  //   if (!user || user.role !== "student") return { student: null, modules: [] as ModuleModel[] };
-  //   const student = mockDB.read("students", user.id);
-  //   const modules: ModuleModel[] = (student?.registeredModules ?? [])
-  //     .map((id) => mockDB.read("modules", id))
-  //     .filter((m): m is ModuleModel => m != null);
-  //   return { student, modules };
-  // }, [user, v]);
+  const [sessions, setSessions] = useState<ActiveSessionForStudent[]>([]);
+  const [modules, setModules] = useState<EnrolledModule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  //const ratePct = data.student ? Math.round((data.student.attendanceStats.attendanceRate ?? 0) * 100) : 0;
+  const load = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const client = requireSupabaseClient();
 
+      // 1. Enrolled modules for this student
+      const { data: mods, error: modErr } = await client
+        .from(TABLES.modules)
+        .select("id, module_code, module_name")
+        .contains("enrolled_students", JSON.stringify([user.id]));
 
+      if (modErr) throw modErr;
 
+      setModules(
+        (mods ?? []).map((m: any) => ({
+          id: m.id,
+          moduleCode: m.module_code,
+          moduleName: m.module_name,
+        }))
+      );
 
- useEffect(() => {
-    async function loadDashboard() {
-      if (!user || user.role !== "student") {
-        setModules([]);
-        setRatePct(0);
-        return;
-      }
-
-      if (getDataSource() === "mock") {
-        mockDB.touch();
-
-        const student = mockDB.read("students", user.id);
-
-        const moduleList: ModuleModel[] = (student?.registeredModules ?? [])
-          .map((id) => mockDB.read("modules", id))
-          .filter((m): m is ModuleModel => m != null);
-
-        setModules(moduleList);
-
-        setRatePct(
-          Math.round(
-            (student?.attendanceStats.attendanceRate ?? 0) * 100
-          )
-        );
-      } else {
-        try {
-          const moduleList = await listModulesForStudent(user.id);
-          setModules(moduleList);
-
-          // Attendance migration comes later
-          setRatePct(0);
-        } catch (error) {
-          console.error("[JOB-012] Failed to load modules:", error);
-          setModules([]);
-          setRatePct(0);
-        }
-      }
+      // 2. Active sessions for those modules
+      const active =
+        await studentAttendanceRepository.getActiveSessionsForStudent(user.id);
+      setSessions(active);
+      setError(null);
+    } catch (e: any) {
+      console.error(e);
+      setError(e?.message ?? "Failed to load data");
+    } finally {
+      setLoading(false);
     }
+  }, [user?.id]);
 
-    loadDashboard();
-  }, [user, v]);
- 
-useEffect(() => {
-    if (!user || getDataSource() === "mock") return;
+  useEffect(() => {
+    load();
+    const interval = setInterval(load, 5000);
+    return () => clearInterval(interval);
+  }, [load]);
 
-    const supabase = requireSupabaseClient();
-
-    // Listen to UPDATE events on the 'modules' table
-    const channel = supabase
-      .channel('student-modules-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'modules',
-        },
-        (payload) => {
-          console.log("Realtime module update received!", payload.new);
-          const updatedDbModule = payload.new;
-
-          // Update the specific module in our local React state
-          setModules((prevModules) =>
-            prevModules.map((m) => {
-              if (m.id === updatedDbModule.id) {
-                return {
-                  ...m,
-                  activeSessionId: updatedDbModule.active_session_id,
-                };
-              }
-              return m;
-            })
-          );
-        }
-      )
-      .subscribe();
-
-    // Cleanup subscription when the screen unmounts
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
-
-  const first = user?.role === "student" ? user.fullName.split(" ")[0] : "";
-
-
-
-  
   return (
-    <ScreenShell scroll hideHeader>
-      <Row style={{ justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-        <Stack gap="xs" style={{ flex: 1, paddingRight: 12 }}>
-          <StarsWordmark />
-          <AppText variant="caption" style={{ letterSpacing: 0.5 }}>
-            Student home
-          </AppText>
-        </Stack>
-        <Row gap="sm">
-          <LinkText onPress={() => router.push("/notifications")}>Alerts</LinkText>
-          <LogoutButton compact />
-          {user && user.role === "student" ? <Avatar name={user.fullName} size={40} /> : null}
-        </Row>
-      </Row>
+    <ScreenShell title="My classes" subtitle="Join an active session">
+      {/* ── ACTIVE SESSIONS ────────────────────────────── */}
+      <SectionHeader title="Active sessions" overline />
 
-      {user && user.role === "student" ? (
-        <AppText variant="display" color="#0B0F14" style={{ fontSize: 26, marginBottom: 4 }}>
-          Hello, {first}
+      {loading ? (
+        <AppText variant="body" style={{ color: "#687076" }}>
+          Checking for sessions…
+        </AppText>
+      ) : sessions.length === 0 ? (
+        <View
+          style={{
+            backgroundColor: "#F4F6F8",
+            padding: 16,
+            borderRadius: 10,
+            marginBottom: 16,
+          }}
+        >
+          <AppText variant="body" style={{ color: "#687076" }}>
+            No active sessions right now. Your lecturer will start one when
+            class begins.
+          </AppText>
+        </View>
+      ) : (
+        <Stack gap="sm" style={{ marginBottom: 16 }}>
+          {sessions.map((s) => (
+            <View
+              key={s.sessionId}
+              style={{
+                borderWidth: 1,
+                borderColor: "#A5D6A7",
+                borderRadius: 10,
+                padding: 16,
+                backgroundColor: "#F1F8E9",
+              }}
+            >
+              <AppText
+                variant="body"
+                style={{ fontWeight: "700", fontSize: 16 }}
+              >
+                {s.moduleCode}
+              </AppText>
+              <AppText
+                variant="body"
+                style={{ fontSize: 13, color: "#555", marginTop: 2 }}
+              >
+                {s.moduleName}
+              </AppText>
+              <AppText
+                variant="body"
+                style={{ fontSize: 12, color: "#687076", marginTop: 6 }}
+              >
+                Started {new Date(s.startedAt).toLocaleTimeString()}
+              </AppText>
+
+              <Row gap="sm" style={{ marginTop: 12 }}>
+                <Chip
+                  label="▶ Join class"
+                  variant="accent"
+                  onPress={() =>
+                    router.push(`/student/join/${s.sessionId}` as never)
+                  }
+                />
+              </Row>
+            </View>
+          ))}
+        </Stack>
+      )}
+
+      {/* ── MY MODULES ─────────────────────────────────── */}
+      <SectionHeader title="My modules" overline />
+
+      {loading ? (
+        <AppText variant="body" style={{ color: "#687076" }}>
+          Loading…
+        </AppText>
+      ) : modules.length === 0 ? (
+        <View
+          style={{
+            backgroundColor: "#F4F6F8",
+            padding: 16,
+            borderRadius: 10,
+          }}
+        >
+          <AppText variant="body" style={{ color: "#687076" }}>
+            You're not enrolled in any modules yet. Ask your lecturer to add
+            you.
+          </AppText>
+        </View>
+      ) : (
+        <Stack gap="sm">
+          {modules.map((m) => (
+            <View
+              key={m.id}
+              style={{
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+                borderRadius: 10,
+                padding: 14,
+                backgroundColor: "#FFFFFF",
+              }}
+            >
+              <AppText variant="body" style={{ fontWeight: "600" }}>
+                {m.moduleCode}
+              </AppText>
+              <AppText
+                variant="body"
+                style={{ fontSize: 13, color: "#555", marginTop: 2 }}
+              >
+                {m.moduleName}
+              </AppText>
+            </View>
+          ))}
+        </Stack>
+      )}
+
+      {error ? (
+        <AppText variant="body" style={{ color: "#C0392B", marginTop: 12 }}>
+          {error}
         </AppText>
       ) : null}
-      <AppText variant="body" style={{ marginBottom: 22 }}>
-        Start with your classes — tap Attend when a session is live, then scan the QR or enter the code.
-      </AppText>
-
-      <SectionHeader title="My classes" overline />
-
-      <Stack gap="md" style={{ marginBottom: 22 }}>
-        {modules.map((m) => (
-          <ModuleCard
-            key={m.id}
-            code={m.moduleCode}
-            name={m.moduleName}
-            meta={m.activeSessionId ? "Session active — scan lecturer QR or enter rotating code" : "No active session"}
-            onPress={() => router.push(`/student/modules/${m.id}`)}
-            actionLabel={m.activeSessionId ? "Attend now" : undefined}
-            onActionPress={m.activeSessionId ? () => router.push(`/student/mark-attendance/${m.id}`) : undefined}
-          />
-        ))}
-{modules.length === 0 ? (
-          <AppText variant="body">
-            No modules yet. Use Join class with your code.
-          </AppText>
-        ) : null}      </Stack>
-
-      <AppCard>
-        <AppText variant="overline">Attendance</AppText>
-        <AppText variant="metric">{ratePct}%</AppText>
-        <AppText variant="caption" style={{ marginTop: 6 }}>
-          Simulated aggregate across sessions
-        </AppText>
-      </AppCard>
 
       <Spacer size="lg" />
-      <RoleQuickNav role="student" />
     </ScreenShell>
   );
 }
