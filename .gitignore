@@ -58,3 +58,6 @@ Desktop.ini
 
 # @generated / caches (Expo / tooling)
 expo-env.d.ts
+# Android build files
+*.apk
+*.aab
