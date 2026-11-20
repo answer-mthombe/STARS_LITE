@@ -27,7 +27,13 @@ const BREAK_LIMIT_MS = 7 * 60 * 1000;
 
 export default function LiveAttendanceScreen() {
   const router = useRouter();
-  const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
+  const params = useLocalSearchParams();
+const sessionId =
+  typeof params.sessionId === "string"
+    ? params.sessionId
+    : Array.isArray(params.sessionId)
+      ? params.sessionId[0]
+      : "";
 
   const [roster, setRoster] = useState<StudentStatus[]>([]);
   const [lastSync, setLastSync] = useState<Date | null>(null);

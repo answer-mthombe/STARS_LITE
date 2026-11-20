@@ -1,10 +1,12 @@
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { stopBroadcast } from "@blunt-ly/ble-advertiser";
-import { Audio } from "expo-av"; // <-- Added Audio
+import { Audio } from "expo-av";
 
 import { attendanceRepository } from "@/services/supabase/attendanceRepository";
+
 import {
   AppText,
   Chip,
@@ -24,109 +26,178 @@ type StudentStatus = {
   lastRssi: number | null;
   exitCount: number;
   lastBreakAt: string | null;
+  wasPresent: boolean;
 };
 
-const POLL_MS = 3000; // Poll faster (3s) so the alarm triggers quicker
-const BREAK_LIMIT_MS = 7 * 60 * 1000;
+const POLL_MS = 3000;
+
+function formatTime(seconds: number) {
+  const safe = Math.max(0, seconds);
+  const minutes = Math.floor(safe / 60);
+  const remainingSeconds = safe % 60;
+
+  return `${String(minutes).padStart(2, "0")}:${String(
+    remainingSeconds
+  ).padStart(2, "0")}`;
+}
 
 export default function LiveAttendanceScreen() {
   const router = useRouter();
-  const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
+  const params = useLocalSearchParams();
+
+  const sessionId =
+    typeof params.sessionId === "string"
+      ? params.sessionId
+      : Array.isArray(params.sessionId)
+        ? params.sessionId[0]
+        : "";
 
   const [roster, setRoster] = useState<StudentStatus[]>([]);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ending, setEnding] = useState(false);
 
-  // 🎯 Keep track of the previous number of students who left
+  const closingRef = useRef(false);
   const prevLeftCountRef = useRef(0);
 
-  // 🎯 Function to play the alarm
-  async function playAlarm() {
-    try {
-      const { sound } = await Audio.Sound.createAsync(
-        require("../../../../assets/alarm.mp3.wav")
-      );
-      await sound.playAsync();
-      // Unload the sound after 3 seconds to free memory
-      setTimeout(() => sound.unloadAsync().catch(() => {}), 3000);
-    } catch (e) {
-      console.warn("[alarm] failed to play:", e);
-    }
-  }
+  const goToFinalRegister = useCallback(() => {
+    router.replace(
+      `/lecturer/attendance/final/${sessionId}` as never
+    );
+  }, [router, sessionId]);
+
+  const closeSession = useCallback(
+    async (navigate = true) => {
+      if (!sessionId || closingRef.current) return;
+
+      closingRef.current = true;
+      setEnding(true);
+
+      try {
+        try {
+          await stopBroadcast();
+          console.log("[STARS] Lecturer beacon stopped.");
+        } catch (stopError) {
+          console.warn("[STARS] Beacon stop warning:", stopError);
+        }
+
+        await attendanceRepository.endAttendanceSession(sessionId);
+
+        if (navigate) {
+          goToFinalRegister();
+        }
+      } catch (e: any) {
+        console.error("[STARS] Could not close session:", e);
+        setError(e?.message ?? "Could not close the session.");
+        closingRef.current = false;
+        setEnding(false);
+      }
+    },
+    [sessionId, goToFinalRegister]
+  );
 
   const load = useCallback(async () => {
-    if (!sessionId) return;
+    if (!sessionId || closingRef.current) return;
+
     try {
-      const data = await attendanceRepository.getSessionRosterWithNames(sessionId);
+      const [session, data] = await Promise.all([
+        attendanceRepository.getAttendanceSession(sessionId),
+        attendanceRepository.getSessionRosterWithNames(sessionId),
+      ]);
+
+      if (!session) {
+        setError("Attendance session could not be found.");
+        setLoading(false);
+        return;
+      }
+
       setRoster(data);
+      setExpiresAt(session.expiresAt);
       setLastSync(new Date());
       setError(null);
+
+      const expired =
+        new Date(session.expiresAt).getTime() <= Date.now();
+
+      // Both flags must be true for a session to remain live.
+      // An expired or already-ended session goes to the final register.
+      if (
+        expired ||
+        !session.isActive ||
+        !session.active ||
+        session.endedAt
+      ) {
+        await closeSession(true);
+      }
     } catch (e: any) {
-      console.error("Live roster load failed:", e);
-      setError(e?.message ?? "Failed to load roster");
+      console.error("[STARS] Live roster load failed:", e);
+      setError(e?.message ?? "Failed to load the attendance register.");
     } finally {
       setLoading(false);
     }
-  }, [sessionId]);
+  }, [sessionId, closeSession]);
 
   useEffect(() => {
-    load();
-    const interval = setInterval(load, POLL_MS);
+    void load();
+
+    const interval = setInterval(() => {
+      void load();
+    }, POLL_MS);
+
     return () => clearInterval(interval);
   }, [load]);
 
-  const inside = roster.filter((s) => s.status === "inside").length;
-  const onBreak = roster.filter((s) => s.status === "on_break").length;
-  const left = roster.filter((s) => s.status === "left").length;
-  const notSeen = roster.filter((s) => s.status === "not_seen").length;
-  const total = roster.length;
-  const hasAlerts = left > 0;
+  // Countdown is calculated from the stored expiry timestamp.
+  useEffect(() => {
+    if (!expiresAt || closingRef.current) return;
 
-  // 🎯 Trigger the alarm when a new student leaves
+    const updateCountdown = () => {
+      const seconds = Math.max(
+        0,
+        Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 1000)
+      );
+
+      setRemainingSeconds(seconds);
+
+      if (seconds <= 0) {
+        void closeSession(true);
+      }
+    };
+
+    updateCountdown();
+
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt, closeSession]);
+
+  const inside = roster.filter((student) => student.status === "inside").length;
+  const onBreak = roster.filter((student) => student.status === "on_break").length;
+  const left = roster.filter((student) => student.status === "left").length;
+  const notSeen = roster.filter((student) => student.status === "not_seen").length;
+  const total = roster.length;
+
   useEffect(() => {
     if (left > prevLeftCountRef.current) {
-      console.log("[alarm] New student left! Playing sound...");
-      playAlarm();
+      void playAlarm();
     }
+
     prevLeftCountRef.current = left;
   }, [left]);
 
-  const now = Date.now();
-  const expiredBreaks = roster.filter(
-    (s) =>
-      s.status === "on_break" &&
-      s.lastBreakAt &&
-      now - new Date(s.lastBreakAt).getTime() > BREAK_LIMIT_MS
-  );
-
   async function handleEnd() {
-    if (!sessionId) return;
-    setEnding(true);
-    try {
-      // Stop the BLE beacon
-      try {
-        await stopBroadcast();
-        console.log("[beacon] stopped");
-      } catch (e) {
-        console.warn("[beacon] stop failed:", e);
-      }
-
-      // Close the session in the database
-      await attendanceRepository.endAttendanceSession(sessionId);
-      router.replace("/lecturer/(tabs)/dashboard" as never);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to end session");
-      setEnding(false);
-    }
+    await closeSession(true);
   }
 
   return (
     <ScreenShell
       title="Live attendance"
       subtitle={
-        lastSync ? `Synced ${lastSync.toLocaleTimeString()}` : "Syncing…"
+        lastSync
+          ? `Last synced ${lastSync.toLocaleTimeString()}`
+          : "Syncing attendance…"
       }
       right={
         <Chip
@@ -136,27 +207,48 @@ export default function LiveAttendanceScreen() {
         />
       }
     >
-      {hasAlerts ? (
-        <View
+      <View
+        style={{
+          backgroundColor: remainingSeconds <= 60 ? "#FFF4E5" : "#F1F8E9",
+          borderRadius: 12,
+          padding: 16,
+          marginBottom: 18,
+        }}
+      >
+        <AppText
+          variant="body"
           style={{
-            backgroundColor: "#FDECEA",
-            borderLeftWidth: 4,
-            borderLeftColor: "#C0392B",
-            padding: 12,
-            borderRadius: 8,
-            marginBottom: 12,
+            fontSize: 13,
+            color: "#555",
+            marginBottom: 5,
           }}
         >
-          <AppText
-            variant="body"
-            style={{ color: "#C0392B", fontWeight: "600" }}
-          >
-            ⚠ {left} student{left > 1 ? "s" : ""} left the room
-          </AppText>
-        </View>
-      ) : null}
+          SESSION TIME REMAINING
+        </AppText>
 
-      <SectionHeader title="Summary" overline />
+        <AppText
+          variant="body"
+          style={{
+            fontSize: 32,
+            fontWeight: "800",
+            color: remainingSeconds <= 60 ? "#B45309" : "#33691E",
+          }}
+        >
+          {formatTime(remainingSeconds)}
+        </AppText>
+
+        <AppText
+          variant="body"
+          style={{ fontSize: 12, color: "#555", marginTop: 5 }}
+        >
+          {expiresAt
+            ? `Ends at ${new Date(expiresAt).toLocaleTimeString()}`
+            : "Loading session expiry…"}
+        </AppText>
+      </View>
+
+      <SectionHeader title="Live summary" overline />
+
       <Row gap="sm" style={{ flexWrap: "wrap", marginBottom: 16 }}>
         <Chip label={`🟢 ${inside} inside`} variant="accent" />
         <Chip label={`🟡 ${onBreak} on break`} variant="outline" />
@@ -165,45 +257,25 @@ export default function LiveAttendanceScreen() {
         <Chip label={`Total ${total}`} variant="outline" />
       </Row>
 
-      {expiredBreaks.length > 0 ? (
-        <View
-          style={{
-            backgroundColor: "#FFF4E5",
-            borderLeftWidth: 4,
-            borderLeftColor: "#E67E22",
-            padding: 12,
-            borderRadius: 8,
-            marginBottom: 12,
-          }}
-        >
-          <AppText
-            variant="body"
-            style={{ color: "#A05000", fontWeight: "600" }}
-          >
-            ⏱ {expiredBreaks.length} break(s) exceeded 7 minutes
-          </AppText>
-        </View>
-      ) : null}
-
       <SectionHeader title="Students" overline />
+
       {loading ? (
-        <AppText variant="body" style={{ color: "#687076" }}>
-          Loading roster…
-        </AppText>
+        <AppText variant="body">Loading students…</AppText>
       ) : roster.length === 0 ? (
-        <AppText variant="body" style={{ color: "#687076" }}>
-          No students enrolled in this module.
-        </AppText>
+        <AppText variant="body">No enrolled students were found.</AppText>
       ) : (
         <Stack gap="sm">
-          {roster.map((s) => (
-            <StudentRow key={s.studentId} student={s} />
+          {roster.map((student) => (
+            <StudentRow key={student.studentId} student={student} />
           ))}
         </Stack>
       )}
 
       {error ? (
-        <AppText variant="body" style={{ color: "#C0392B", marginTop: 12 }}>
+        <AppText
+          variant="body"
+          style={{ color: "#C0392B", marginTop: 12 }}
+        >
           {error}
         </AppText>
       ) : null}
@@ -213,63 +285,88 @@ export default function LiveAttendanceScreen() {
   );
 }
 
+async function playAlarm() {
+  try {
+    const { sound } = await Audio.Sound.createAsync(
+      require("../../../../assets/alarm.mp3.wav")
+    );
+
+    await sound.playAsync();
+
+    setTimeout(() => {
+      void sound.unloadAsync().catch(() => {});
+    }, 3000);
+  } catch (e) {
+    console.warn("[STARS] Alarm playback failed:", e);
+  }
+}
+
 function StudentRow({ student }: { student: StudentStatus }) {
-  const { status, fullName, studentNumber, lastEventAt, lastRssi, exitCount } =
-    student;
-
-  const dot =
-    status === "inside"
-      ? "🟢"
-      : status === "on_break"
-      ? "🟡"
-      : status === "left"
-      ? "🔴"
-      : "⚪";
-
-  const label =
-    status === "inside"
+  const statusLabel =
+    student.status === "inside"
       ? "Inside"
-      : status === "on_break"
-      ? "On break"
-      : status === "left"
-      ? "Left room"
-      : "Not seen yet";
+      : student.status === "on_break"
+        ? "On break"
+        : student.status === "left"
+          ? "Left"
+          : "Not seen";
 
-  const time = lastEventAt ? new Date(lastEventAt).toLocaleTimeString() : "—";
+  const statusColor =
+    student.status === "inside"
+      ? "#2E7D32"
+      : student.status === "on_break"
+        ? "#B7791F"
+        : student.status === "left"
+          ? "#C0392B"
+          : "#687076";
 
   return (
     <View
       style={{
-        flexDirection: "row",
-        alignItems: "center",
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-        backgroundColor:
-          status === "left"
-            ? "#FDECEA"
-            : status === "on_break"
-            ? "#FFF9E5"
-            : status === "inside"
-            ? "#F1F8E9" // Light green background when inside
-            : "#F6F8FA",
+        borderWidth: 1,
+        borderColor: "#E5E7EB",
+        borderRadius: 10,
+        padding: 13,
+        backgroundColor: "#FFFFFF",
       }}
     >
-      <AppText variant="body" style={{ fontSize: 18, marginRight: 10 }}>
-        {dot}
+      <Row
+  style={{
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  }}
+>
+        <View style={{ flex: 1 }}>
+          <AppText variant="body" style={{ fontWeight: "700" }}>
+            {student.fullName}
+          </AppText>
+
+          <AppText
+            variant="body"
+            style={{ color: "#687076", fontSize: 12, marginTop: 3 }}
+          >
+            {student.studentNumber}
+          </AppText>
+        </View>
+
+        <AppText
+          variant="body"
+          style={{ color: statusColor, fontWeight: "700" }}
+        >
+          {statusLabel}
+        </AppText>
+      </Row>
+
+      <AppText
+        variant="body"
+        style={{ color: "#687076", fontSize: 11, marginTop: 7 }}
+      >
+        {student.lastEventAt
+          ? `Last event: ${new Date(student.lastEventAt).toLocaleTimeString()}`
+          : "No beacon event recorded"}
+        {student.lastRssi !== null ? `  •  RSSI ${student.lastRssi} dBm` : ""}
       </AppText>
-      <View style={{ flex: 1 }}>
-        <AppText variant="body" style={{ fontWeight: "600" }}>
-          {fullName}
-        </AppText>
-        <AppText variant="body" style={{ fontSize: 12, color: "#687076" }}>
-          {studentNumber} · {label} · {time}
-          {lastRssi != null ? ` · RSSI ${lastRssi}` : ""}
-          {exitCount > 0
-            ? ` · ${exitCount} exit${exitCount > 1 ? "s" : ""}`
-            : ""}
-        </AppText>
-      </View>
     </View>
   );
 }

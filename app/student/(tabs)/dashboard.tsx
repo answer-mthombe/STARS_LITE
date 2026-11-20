@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 import { useRouter } from "expo-router";
@@ -28,6 +29,7 @@ type EnrolledModule = {
 
 export default function StudentDashboard() {
   useRoleGuard("student");
+
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
 
@@ -37,11 +39,15 @@ export default function StudentDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const client = requireSupabaseClient();
 
-      // 1. Enrolled modules for this student
+      // 1. Get modules enrolled by this student.
       const { data: mods, error: modErr } = await client
         .from(TABLES.modules)
         .select("id, module_code, module_name")
@@ -57,14 +63,17 @@ export default function StudentDashboard() {
         }))
       );
 
-      // 2. Active sessions for those modules
+      // 2. Get active attendance sessions.
       const active =
-        await studentAttendanceRepository.getActiveSessionsForStudent(user.id);
+        await studentAttendanceRepository.getActiveSessionsForStudent(
+          user.id
+        );
+
       setSessions(active);
       setError(null);
     } catch (e: any) {
-      console.error(e);
-      setError(e?.message ?? "Failed to load data");
+      console.error("[STARS] Dashboard loading error:", e);
+      setError(e?.message ?? "Failed to load data.");
     } finally {
       setLoading(false);
     }
@@ -72,13 +81,43 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 5000);
+
+    const interval = setInterval(() => {
+      load();
+    }, 5000);
+
     return () => clearInterval(interval);
   }, [load]);
 
+  // Open the selected attendance session.
+  const joinSession = (rawSessionId: string | null | undefined) => {
+    const sessionId = rawSessionId?.trim();
+
+    if (!sessionId) {
+      console.error("[STARS] Cannot join: session ID is empty.");
+      setError("This attendance session has an invalid ID. Please refresh.");
+      return;
+    }
+
+    if (!user?.id) {
+      console.error("[STARS] Cannot join: student ID is missing.");
+      setError("Your student account is not ready. Please sign in again.");
+      return;
+    }
+
+    console.log("[STARS] Opening attendance session:", sessionId);
+    console.log("[STARS] Current student ID:", user.id);
+
+    router.push({
+      pathname: "/student/join/[sessionId]",
+      params: {
+        sessionId: sessionId,
+      },
+    } as never);
+  };
+
   return (
     <ScreenShell title="My classes" subtitle="Join an active session">
-      {/* ── ACTIVE SESSIONS ────────────────────────────── */}
       <SectionHeader title="Active sessions" overline />
 
       {loading ? (
@@ -118,12 +157,14 @@ export default function StudentDashboard() {
               >
                 {s.moduleCode}
               </AppText>
+
               <AppText
                 variant="body"
                 style={{ fontSize: 13, color: "#555", marginTop: 2 }}
               >
                 {s.moduleName}
               </AppText>
+
               <AppText
                 variant="body"
                 style={{ fontSize: 12, color: "#687076", marginTop: 6 }}
@@ -135,9 +176,7 @@ export default function StudentDashboard() {
                 <Chip
                   label="▶ Join class"
                   variant="accent"
-                  onPress={() =>
-                    router.push(`/student/join/${s.sessionId}` as never)
-                  }
+                  onPress={() => joinSession(s.sessionId)}
                 />
               </Row>
             </View>
@@ -145,7 +184,6 @@ export default function StudentDashboard() {
         </Stack>
       )}
 
-      {/* ── MY MODULES ─────────────────────────────────── */}
       <SectionHeader title="My modules" overline />
 
       {loading ? (
@@ -181,6 +219,7 @@ export default function StudentDashboard() {
               <AppText variant="body" style={{ fontWeight: "600" }}>
                 {m.moduleCode}
               </AppText>
+
               <AppText
                 variant="body"
                 style={{ fontSize: 13, color: "#555", marginTop: 2 }}
