@@ -6,6 +6,8 @@ import { Stack } from "expo-router";
 import { StatusBar } from "react-native";
 import { AppProviders } from "@/providers/AppProviders";
 import { processOutboxOnce } from "@/services/offline/offlineSync";
+// FINGERPRINT: lock screen for students
+import { FingerprintGate } from "@/components/FingerprintGate";
 
 
 
@@ -40,7 +42,8 @@ export default function RootLayout() {
           animation: "fade",
         }}
       />
+      {/* FINGERPRINT: sits on top of the app until a student passes the fingerprint check */}
+      <FingerprintGate />
     </AppProviders>
   );
 }
-

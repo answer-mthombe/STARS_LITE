@@ -13,6 +13,8 @@ import { useToastStore } from "@/store/toastStore";
 import { getAllCourses } from "@/services/supabase";
 import { getAllFaculties } from "@/services/supabase/facultyRepository";
 import { isSupabaseEnabled } from "@/supabase/client";
+// FINGERPRINT: sign-up enrolment
+import { confirmFingerprintOnDevice, saveFingerprintEnrolment } from "@/services/biometricService";
 
 export default function RegisterStudentScreen() {
   const router = useRouter();
@@ -26,6 +28,27 @@ export default function RegisterStudentScreen() {
   const [courseId, setCourseId] = useState("");
   const [gender, setGender] = useState<"male" | "female" | "other">("female");
   const [busy, setBusy] = useState(false);
+
+  // FINGERPRINT: "done" means the phone confirmed a fingerprint during this sign-up.
+  const [fp, setFp] = useState<"idle" | "checking" | "done">("idle");
+  const [fpMessage, setFpMessage] = useState<string | null>(null);
+
+  async function handleRegisterFingerprint() {
+    setFpMessage(null);
+    setFp("checking");
+    try {
+      const result = await confirmFingerprintOnDevice("Register your fingerprint for STARS");
+      if (result.ok) {
+        setFp("done");
+      } else {
+        setFp("idle");
+        setFpMessage(result.message);
+      }
+    } catch (e) {
+      setFp("idle");
+      setFpMessage(e instanceof Error ? e.message : "Could not read your fingerprint. Try again.");
+    }
+  }
 
 
   const [faculties, setFaculties] = useState<any[]>([]);
@@ -145,14 +168,46 @@ useEffect(() => {
         </View>
       )}
 
+      {/* FINGERPRINT: required before the account can be created */}
+      <View style={{ height: 16 }} />
+      <Text style={{ color: colors.palette.accent, fontWeight: "900", marginBottom: 4 }}>Fingerprint</Text>
+      <Text style={{ color: colors.ink.default, marginBottom: 8 }}>
+        Register your fingerprint now. You will use it to unlock the app every time you open it.
+      </Text>
+      <AppButton
+        title={fp === "done" ? "Fingerprint registered ✓" : fp === "checking" ? "Waiting for fingerprint…" : "Register fingerprint"}
+        variant={fp === "done" ? "outline" : "accent"}
+        disabled={busy || fp === "checking" || fp === "done"}
+        onPress={handleRegisterFingerprint}
+      />
+      {fpMessage ? (
+        <Text style={{ color: "#C0392B", marginTop: 8 }}>{fpMessage}</Text>
+      ) : null}
+
       <View style={{ height: 18 }} />
       <AppButton
         title={busy ? "Creating…" : "Create account"}
-        disabled={busy || !fullName.trim() || !studentNumber.trim() || !facultyId || !courseId}
+        disabled={busy || fp !== "done" || !fullName.trim() || !studentNumber.trim() || !facultyId || !courseId}
         onPress={async () => {
           setBusy(true);
           try {
             await registerStudent({ fullName, studentNumber, gender, facultyId, courseId, password });
+
+            // FINGERPRINT: the account (and login session) exists now, so record the registration.
+            // If this fails the account is still created; the lock screen asks them to register on next open.
+            if (isSupabaseEnabled()) {
+              try {
+                await saveFingerprintEnrolment();
+              } catch (enrolErr) {
+                console.error("Fingerprint enrolment failed:", enrolErr);
+                show({
+                  type: "info",
+                  title: "Fingerprint not saved",
+                  message: "Your account is ready. You will be asked to register your fingerprint the next time you open the app.",
+                });
+              }
+            }
+
             router.replace("/student/dashboard");
           } catch (e) {
             show({ type: "error", title: "Registration failed", message: e instanceof Error ? e.message : "Try again." });
